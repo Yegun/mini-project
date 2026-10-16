@@ -21,8 +21,10 @@ def sort_by_priority(tasks):
 
 def main():
     sys.stdout.reconfigure(encoding="utf-8")
-    for title, priority, _ in sort_by_priority(pending_tasks(TASKS)):
-        print(f"[{priority}] {title}")
+    tasks = TASKS if "--all" in sys.argv[1:] else pending_tasks(TASKS)
+    for title, priority, done in sort_by_priority(tasks):
+        suffix = " (완료)" if done else ""
+        print(f"[{priority}] {title}{suffix}")
 
 
 if __name__ == "__main__":
