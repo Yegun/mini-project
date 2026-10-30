@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { changeFoodStorage, deleteFood, processFood, updateFood } from '../api/foodDetail'
 import ConfirmDialog from '../components/ConfirmDialog'
 import ErrorNotice from '../components/ErrorNotice'
@@ -40,6 +40,12 @@ export default function FoodDetailPage({ id, onBack, onDone }: Props) {
   const [error, setError] = useState<string | null>(null)
   const [pending, setPending] = useState<Pending | null>(null)
   const lock = useRef(false) // 연타해도 요청은 한 번
+  const errorBox = useRef<HTMLDivElement>(null)
+
+  // 아래쪽 버튼을 눌러 실패해도 화면 위 오류 알림이 보이게 한다
+  useEffect(() => {
+    if (error) errorBox.current?.scrollIntoView({ block: 'nearest' })
+  }, [error])
 
   // 요청 하나를 보낸다. 성공하면 홈으로, 실패하면 화면 위 오류 알림. 입력값은 그대로 둔다.
   async function run<T extends SaveResult | ActionResult>(request: () => Promise<T>, failMessage: string) {
@@ -88,7 +94,11 @@ export default function FoodDetailPage({ id, onBack, onDone }: Props) {
 
       {result.status === 'ready' && (
         <>
-          {error && <ErrorNotice message={error} />}
+          {error && (
+            <div ref={errorBox}>
+              <ErrorNotice message={error} />
+            </div>
+          )}
           <FoodSummary food={result.food} />
 
           <section className="detail__section" aria-labelledby="info-heading">
