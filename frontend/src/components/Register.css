@@ -1,0 +1,212 @@
+/* 식품 등록 화면. 색은 홈과 같은 값을 쓴다 (#0f7a52 초록, #d9e3df 테두리). */
+.register {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.register__header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.register__back {
+  width: 2.75rem;
+  height: 2.75rem;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 2rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.register__title {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.register__section,
+.register__form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* 검색 */
+.search-form {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.search-form .input {
+  flex: 1;
+  min-width: 0;
+}
+
+.rule-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.rule-list__item {
+  width: 100%;
+  min-height: 3rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #d9e3df;
+  border-radius: 0.75rem;
+  background: #fff;
+  font: inherit;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.picked-food {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #d9e3df;
+  border-radius: 0.75rem;
+  background: #fff;
+}
+
+.picked-food__name {
+  font-size: 1.125rem;
+  overflow-wrap: anywhere;
+}
+
+/* 입력칸 */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  min-width: 0;
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.field__label {
+  font-weight: 700;
+}
+
+.field__hint {
+  color: #5d6670;
+  font-size: 0.875rem;
+}
+
+.field__error {
+  color: #b3261e;
+  font-size: 0.875rem;
+  word-break: keep-all;
+}
+
+.input {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0 0.75rem;
+  border: 1px solid #b9c9c3;
+  border-radius: 0.75rem;
+  background: #fff;
+  font: inherit; /* 16px 이상이어야 휴대폰에서 확대되지 않는다 */
+  color: inherit;
+}
+
+.input[aria-invalid='true'] {
+  border-color: #b3261e;
+}
+
+.input:focus-visible {
+  outline: 3px solid #0f7a52;
+  outline-offset: 2px;
+}
+
+.input-suffix {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.input-suffix .input {
+  width: 6rem;
+}
+
+/* 고르기 버튼 묶음 (보관 방법, 기한 방식) */
+.choice-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.choice {
+  flex: 1;
+  min-height: 2.75rem;
+  padding: 0 0.5rem;
+  border: 1px solid #b9c9c3;
+  border-radius: 0.75rem;
+  background: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.choice--selected {
+  border-color: #0f7a52;
+  background: #0f7a52;
+  color: #fff;
+}
+
+/* 불가: 숨기지 않고 흐리게 (D-005) */
+.choice--dim {
+  border-style: dashed;
+  background: #f4faf7;
+  color: #8a9691;
+  cursor: not-allowed;
+}
+
+.choice:disabled,
+.button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* 버튼 */
+.button {
+  min-height: 2.75rem;
+  padding: 0 1.25rem;
+  border: 1px solid #0f7a52;
+  border-radius: 999px;
+  background: #fff;
+  color: #0f7a52;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.button--primary {
+  background: #0f7a52;
+  color: #fff;
+}
+
+.button--wide {
+  width: 100%;
+  min-height: 3.25rem;
+}
+
+.button--link {
+  padding: 0 0.5rem;
+  border: none;
+  background: none;
+  text-decoration: underline;
+}

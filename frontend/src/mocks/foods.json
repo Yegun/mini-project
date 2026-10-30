@@ -1,0 +1,11 @@
+{
+  "today": "2026-10-30",
+  "foods": [
+    { "id": "00000000-0000-4000-8000-000000000001", "name": "상추", "storage": "fridge", "purchase_date": "2026-10-22", "expiry_date": "2026-10-28", "expiry_level": "expired", "show_on_calendar": true },
+    { "id": "00000000-0000-4000-8000-000000000002", "name": "두부", "storage": "fridge", "purchase_date": "2026-10-27", "expiry_date": "2026-11-01", "expiry_level": "urgent", "show_on_calendar": true },
+    { "id": "00000000-0000-4000-8000-000000000003", "name": "딸기", "storage": "fridge", "purchase_date": "2026-10-29", "expiry_date": "2026-11-03", "expiry_level": "caution", "show_on_calendar": true },
+    { "id": "00000000-0000-4000-8000-000000000004", "name": "우유", "storage": "fridge", "purchase_date": "2026-10-20", "expiry_date": "2026-11-06", "expiry_level": "relaxed", "show_on_calendar": true },
+    { "id": "00000000-0000-4000-8000-000000000005", "name": "돼지고기", "storage": "freezer", "purchase_date": "2026-11-02", "expiry_date": "2026-11-30", "expiry_level": "relaxed", "show_on_calendar": true },
+    { "id": "00000000-0000-4000-8000-000000000006", "name": "시금치", "storage": "fridge", "purchase_date": "2026-10-15", "expiry_date": "2026-10-25", "expiry_level": "expired", "show_on_calendar": false }
+  ]
+}

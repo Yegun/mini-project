@@ -1,0 +1,43 @@
+.notice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.25rem 1rem;
+  border-radius: 0.75rem;
+  text-align: center;
+}
+
+.notice__text {
+  margin: 0;
+  line-height: 1.5;
+  word-break: keep-all; /* 한글을 단어 중간에서 끊지 않는다 */
+}
+
+.notice--error {
+  background: #fdeaea;
+  color: #7a1f1f;
+}
+
+.notice--empty {
+  background: #fff;
+  border: 1px solid #d9e3df;
+}
+
+.notice__button {
+  min-height: 2.75rem;
+  padding: 0 1.25rem;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.notice__button--primary {
+  border-color: #0f7a52;
+  background: #0f7a52;
+  color: #fff;
+}

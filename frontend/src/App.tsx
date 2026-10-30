@@ -1,24 +1,41 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import './App.css'
+import FoodDetailPage from './pages/FoodDetailPage'
+import HomePage from './pages/HomePage'
+import RegisterPage from './pages/RegisterPage'
 
-type ApiState = 'checking' | 'ok' | 'fail'
+// 화면 전환은 상태값으로 한다 (홈 / 식품 등록 / 식품 상세). 상세에서 새로고침하면 홈으로 돌아온다.
+type Screen =
+  | { name: 'home' }
+  | { name: 'register'; today: string }
+  | { name: 'detail'; id: string }
 
 function App() {
-  const [api, setApi] = useState<ApiState>('checking')
+  const [screen, setScreen] = useState<Screen>({ name: 'home' })
 
-  useEffect(() => {
-    fetch('/api/health')
-      .then((res) => setApi(res.ok ? 'ok' : 'fail'))
-      .catch(() => setApi('fail'))
-  }, [])
-
-  const label = { checking: '확인 중...', ok: 'API 연결됨', fail: 'API 연결 안 됨' }[api]
-
+  if (screen.name === 'register') {
+    return (
+      <RegisterPage
+        today={screen.today}
+        onBack={() => setScreen({ name: 'home' })}
+        onDone={() => setScreen({ name: 'home' })} // 홈이 다시 열리면서 목록을 새로 불러온다
+      />
+    )
+  }
+  if (screen.name === 'detail') {
+    return (
+      <FoodDetailPage
+        id={screen.id}
+        onBack={() => setScreen({ name: 'home' })}
+        onDone={() => setScreen({ name: 'home' })} // 저장 · 처리 · 삭제 성공 → 홈 (D-020). 홈이 목록을 새로 불러온다
+      />
+    )
+  }
   return (
-    <main>
-      <h1>task-flow</h1>
-      <p>{label}</p>
-    </main>
+    <HomePage
+      onAddFood={(today) => setScreen({ name: 'register', today })}
+      onSelectFood={(id) => setScreen({ name: 'detail', id })}
+    />
   )
 }
 
