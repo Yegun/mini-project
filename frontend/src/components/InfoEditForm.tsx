@@ -48,6 +48,10 @@ export default function InfoEditForm({ food, busy, onSave }: Props) {
     if (Object.keys(found).length > 0) return
 
     const patch = buildInfoPatch(food, values)
+    if (!expiryOpen && Object.keys(patch).length === 0) {
+      setValues(valuesFromDetail(food)) // 글자만 다른 입력(01 → 1)은 요청 없이 저장된 값 모양으로 되돌린다
+      return
+    }
     if (expiryOpen) patch.expiry_date = expiryDate
     const result = await onSave(patch)
 
