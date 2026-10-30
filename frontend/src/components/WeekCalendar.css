@@ -1,0 +1,56 @@
+/* 왼쪽 이름 칸 + 요일 7칸. 머리글과 식품 줄이 같은 열 폭을 쓴다. */
+.week-calendar {
+  --week-label-w: 5.5rem;
+  --today-color: #0f7a52;
+}
+
+.week-grid {
+  display: grid;
+  grid-template-columns: var(--week-label-w) repeat(7, minmax(0, 1fr));
+  align-items: center;
+}
+
+.week-calendar__day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0;
+  font-size: 0.8125rem;
+}
+
+.week-calendar__weekday {
+  color: #5d6670;
+}
+
+.week-calendar__date {
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 0.9375rem;
+}
+
+.week-calendar__date--today {
+  background: var(--today-color);
+  color: #fff;
+}
+
+.week-calendar__body {
+  position: relative;
+}
+
+/* 오늘 칸의 가운데를 지나는 세로 점선. 7칸 영역(이름 칸 제외) 안에서 위치를 잡는다. */
+.week-calendar__today-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(
+    var(--week-label-w) + (100% - var(--week-label-w)) * (var(--today-col) + 0.5) / 7
+  );
+  border-left: 2px dashed var(--today-color);
+  pointer-events: none;
+  z-index: 1;
+}
