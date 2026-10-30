@@ -36,8 +36,10 @@ export default function InfoEditForm({ food, busy, onSave }: Props) {
       return next
     })
     // 이름·구매일이 바뀌면 기한이 필요한지 API 가 다시 판단하게 한다
-    setExpiryOpen(false)
-    setExpiryDate('')
+    if ('name' in patch || 'purchaseDate' in patch) {
+      setExpiryOpen(false)
+      setExpiryDate('')
+    }
   }
 
   async function submit() {
