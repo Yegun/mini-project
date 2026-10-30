@@ -11,6 +11,14 @@ export const STATUS_COLOR: Record<ExpiryLevel, string> = {
   expired: '#1f2328', // 지남 검정
 }
 
+// 색을 못 보는 사람을 위한 읽어 주는 글자(aria-label 용). 화면에는 따로 보이지 않는다.
+export const STATUS_LABEL: Record<ExpiryLevel, string> = {
+  relaxed: '여유',
+  caution: '주의',
+  urgent: '임박',
+  expired: '지남',
+}
+
 // 서버가 모르는 값을 보내도 화면이 깨지지 않게 하는 대비색(회색)
 const UNKNOWN_COLOR = '#9aa3ad'
 

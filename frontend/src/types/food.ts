@@ -3,6 +3,13 @@
 
 export type Storage = 'room' | 'fridge' | 'freezer' // D-032
 
+// 화면에 보이는 보관 방법 이름 (D-032 값 ↔ 글자)
+export const STORAGE_LABEL: Record<Storage, string> = {
+  room: '상온',
+  fridge: '냉장',
+  freezer: '냉동',
+}
+
 // 상태 판정은 API 가 한다 (D-009). 값 이름은 제안.
 export type ExpiryLevel = 'relaxed' | 'caution' | 'urgent' | 'expired' // 여유 · 주의 · 임박 · 지남
 
