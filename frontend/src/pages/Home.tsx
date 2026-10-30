@@ -1,23 +1,52 @@
+import EmptyHome from '../components/EmptyHome'
+import ErrorNotice from '../components/ErrorNotice'
 import FoodBarRow from '../components/FoodBarRow'
 import FoodList from '../components/FoodList'
 import WeekCalendar from '../components/WeekCalendar'
-import type { FoodListResponse } from '../types/food'
+import type { FoodsResult } from '../hooks/useFoods'
 
 interface Props {
-  data: FoodListResponse
+  result: FoodsResult
+  onRetry: () => void
   onSelectFood?: (id: string) => void // 상세 화면은 이번 범위 밖이라 아직 연결하지 않는다
+  onAddFood?: () => void // 등록 화면은 이번 범위 밖이라 아직 연결하지 않는다
 }
 
-// 홈 (식품이 있을 때). 순서는 API 가 준 그대로 쓴다. 빈 홈·실패·불러오는 중은 7단계에서 추가한다.
-export default function Home({ data, onSelectFood }: Props) {
+// 홈. 순서는 API 가 준 그대로 쓴다. 날짜 판정은 하지 않는다.
+export default function Home({ result, onRetry, onSelectFood, onAddFood }: Props) {
+  if (result.status === 'loading') {
+    return (
+      <main className="home">
+        <p role="status">불러오는 중…</p>
+      </main>
+    )
+  }
+
+  if (result.status === 'error') {
+    return (
+      <main className="home">
+        <ErrorNotice onRetry={onRetry} />
+      </main>
+    )
+  }
+
+  const { today, foods } = result.data
+  if (foods.length === 0) {
+    return (
+      <main className="home">
+        <EmptyHome onAdd={onAddFood} />
+      </main>
+    )
+  }
+
   return (
     <main className="home">
-      <WeekCalendar today={data.today}>
-        {data.foods.map((food) => (
-          <FoodBarRow key={food.id} food={food} today={data.today} onSelect={onSelectFood} />
+      <WeekCalendar today={today}>
+        {foods.map((food) => (
+          <FoodBarRow key={food.id} food={food} today={today} onSelect={onSelectFood} />
         ))}
       </WeekCalendar>
-      <FoodList foods={data.foods} onSelect={onSelectFood} />
+      <FoodList foods={foods} onSelect={onSelectFood} />
     </main>
   )
 }

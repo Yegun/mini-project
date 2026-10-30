@@ -1,4 +1,15 @@
-main {
-  padding: 2rem;
-  text-align: center;
+/* 홈 화면 배치: 한 열, 위에서 아래로 */
+.home {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+/* 달력 카드 */
+.week-calendar {
+  padding: 1rem 0.75rem;
+  border: 1px solid #d9e3df;
+  border-radius: 1rem;
+  background: #fff;
 }

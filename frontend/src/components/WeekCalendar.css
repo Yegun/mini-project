@@ -1,6 +1,6 @@
 /* 왼쪽 이름 칸 + 요일 7칸. 머리글과 식품 줄이 같은 열 폭을 쓴다. */
 .week-calendar {
-  --week-label-w: 5.5rem;
+  --week-label-w: clamp(4.25rem, 22vw, 5.5rem); /* 좁은 화면에서 7칸이 찌그러지지 않게 */
   --today-color: #0f7a52;
 }
 
