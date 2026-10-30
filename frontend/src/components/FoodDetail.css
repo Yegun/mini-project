@@ -1,0 +1,95 @@
+/* 식품 상세 전용 모양. 입력칸·버튼은 Register.css 의 것을 그대로 쓴다. */
+.detail__section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid #d9e3df;
+  border-radius: 1rem;
+  background: #fff;
+}
+
+.detail__heading {
+  margin: 0;
+  font-size: 1.125rem;
+}
+
+.detail__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.detail__actions .button--danger {
+  grid-column: 1 / -1;
+}
+
+.button--danger {
+  border-color: #b3261e;
+  color: #b3261e;
+}
+
+/* 요약 */
+.summary {
+  padding: 1rem;
+  border: 1px solid #d9e3df;
+  border-radius: 1rem;
+  background: #fff;
+}
+
+.summary__name {
+  margin: 0 0 0.5rem;
+  font-size: 1.5rem;
+  overflow-wrap: anywhere;
+}
+
+.summary__list {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.25rem 1rem;
+  margin: 0;
+}
+
+.summary__list dt {
+  color: #5d6670;
+}
+
+.summary__list dd {
+  margin: 0;
+}
+
+.summary__expiry {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.summary__dot {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+}
+
+/* 확인 창 */
+.confirm {
+  width: min(22rem, calc(100% - 2rem));
+  padding: 1.25rem;
+  border: none;
+  border-radius: 1rem;
+}
+
+.confirm::backdrop {
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.confirm__message {
+  margin-bottom: 1rem;
+  line-height: 1.5;
+  word-break: keep-all;
+}
+
+.confirm__buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}

@@ -4,7 +4,7 @@ import './FoodList.css'
 
 interface Props {
   foods: Food[] // API 가 정렬해서 준 순서 그대로
-  onSelect?: (id: string) => void // 상세 화면 이동은 아직 없다 (이번 범위 밖)
+  onSelect?: (id: string) => void // 식품 상세 화면으로
 }
 
 // 달력 아래 식품 목록. 달력에 안 보이는 식품도 여기에는 모두 나온다.

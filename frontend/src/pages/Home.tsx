@@ -8,7 +8,7 @@ import type { FoodsResult } from '../hooks/useFoods'
 interface Props {
   result: FoodsResult
   onRetry: () => void
-  onSelectFood?: (id: string) => void // 상세 화면은 이번 범위 밖이라 아직 연결하지 않는다
+  onSelectFood?: (id: string) => void // 식품 상세 화면으로
   onAddFood?: () => void // 식품 등록 화면으로
 }
 

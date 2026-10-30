@@ -32,7 +32,7 @@ export function emptyValues(today: string): FormValues {
 }
 
 // 0보다 큰 숫자, 소수 둘째 자리까지 (V-02, D-027)
-function checkQuantity(raw: string): string | undefined {
+export function checkQuantity(raw: string): string | undefined {
   const text = raw.trim()
   if (text === '') return '수량을 적어 주세요.'
   if (!/^\d+(\.\d+)?$/.test(text)) return '수량은 숫자로 적어 주세요.'

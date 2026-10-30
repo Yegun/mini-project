@@ -7,7 +7,7 @@ import './FoodBarRow.css'
 interface Props {
   food: Food
   today: string // API 가 준 오늘 날짜
-  onSelect?: (id: string) => void // 상세 화면 이동은 아직 없다 (이번 범위 밖)
+  onSelect?: (id: string) => void // 식품 상세 화면으로
 }
 
 // 달력 안의 식품 한 줄. 이번 주에 보이지 않는 식품은 줄 자체를 그리지 않는다 (목록에는 남는다).
