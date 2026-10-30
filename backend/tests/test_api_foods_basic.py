@@ -1,7 +1,7 @@
 from datetime import date
 from decimal import Decimal
 
-from app import repo_foods
+from app import foods_store
 
 
 def add_food(conn, **overrides):
@@ -15,7 +15,7 @@ def add_food(conn, **overrides):
         "source": "rule",
     }
     values.update(overrides)
-    food = repo_foods.create_food(conn, **values)
+    food = foods_store.create_food(conn, **values)
     conn.commit()
     return food
 
@@ -79,7 +79,7 @@ def test_a1_sorted_by_expiry_then_purchase_then_name(client, conn):
 def test_a1_hides_processed_foods(client, conn):
     keep = add_food(conn, name="당근")
     eaten = add_food(conn, name="우유")
-    repo_foods.set_status(conn, eaten["id"], "eaten")
+    foods_store.set_status(conn, eaten["id"], "eaten")
     conn.commit()
     names = [f["name"] for f in client.get("/foods").json()["foods"]]
     assert names == [keep["name"]]
@@ -102,13 +102,13 @@ def test_a5_missing_food_is_404(client):
     assert error_body(response) == (None, "not_found")
 
 
-def test_a5_processed_food_is_409(client, conn):
+def test_a5_processed_food_is_404_like_a_missing_one(client, conn):
     food = add_food(conn)
-    repo_foods.set_status(conn, food["id"], "discarded")
+    foods_store.set_status(conn, food["id"], "discarded")
     conn.commit()
     response = client.get(f"/foods/{food['id']}")
-    assert response.status_code == 409
-    assert error_body(response) == (None, "already_processed")
+    assert response.status_code == 404  # 처리된 식품은 없는 식품과 똑같이 (D-037)
+    assert error_body(response) == (None, "not_found")
 
 
 # ---- A8 다 먹음 / 버림 PATCH /foods/{id}/process ----
@@ -122,7 +122,7 @@ def test_a8_eaten_keeps_row_and_leaves_home(client, conn):
     assert body["days_left"] is None
     assert body["show_on_calendar"] is None
     assert client.get("/foods").json()["foods"] == []
-    assert repo_foods.get_food(conn, food["id"])["status"] == "eaten"  # 행은 남는다
+    assert foods_store.get_food(conn, food["id"], include_processed=True)["status"] == "eaten"  # 행은 남는다
 
 
 def test_a8_discarded(client, conn):
@@ -138,15 +138,15 @@ def test_a8_cannot_go_back_or_use_other_values(client, conn):
         response = client.patch(f"/foods/{food['id']}/process", json={"status": value})
         assert response.status_code == 422
         assert error_body(response)[0] == "status"
-    assert repo_foods.get_food(conn, food["id"])["status"] == "none"
+    assert foods_store.get_food(conn, food["id"])["status"] == "none"
 
 
-def test_a8_already_processed_is_409(client, conn):
+def test_a8_already_processed_is_404_like_a_missing_one(client, conn):
     food = add_food(conn)
     client.patch(f"/foods/{food['id']}/process", json={"status": "eaten"})
     response = client.patch(f"/foods/{food['id']}/process", json={"status": "discarded"})
-    assert response.status_code == 409
-    assert error_body(response) == (None, "already_processed")
+    assert response.status_code == 404  # 처리된 식품은 없는 식품과 똑같이 (D-037)
+    assert error_body(response) == (None, "not_found")
 
 
 def test_a8_missing_food_is_404(client):
@@ -175,7 +175,7 @@ def test_a9_deletes_the_row_completely(client, conn):
     response = client.delete(f"/foods/{food['id']}")
     assert response.status_code == 204
     assert response.content == b""
-    assert repo_foods.get_food(conn, food["id"]) is None
+    assert foods_store.get_food(conn, food["id"]) is None
     assert client.get(f"/foods/{food['id']}").status_code == 404
 
 
@@ -185,14 +185,14 @@ def test_a9_missing_food_is_404(client):
     assert error_body(response) == (None, "not_found")
 
 
-def test_a9_processed_food_is_409(client, conn):
+def test_a9_processed_food_is_404_like_a_missing_one(client, conn):
     food = add_food(conn)
-    repo_foods.set_status(conn, food["id"], "eaten")
+    foods_store.set_status(conn, food["id"], "eaten")
     conn.commit()
     response = client.delete(f"/foods/{food['id']}")
-    assert response.status_code == 409
-    assert error_body(response) == (None, "already_processed")
-    assert repo_foods.get_food(conn, food["id"]) is not None
+    assert response.status_code == 404  # 처리된 식품은 없는 식품과 똑같이 (D-037)
+    assert error_body(response) == (None, "not_found")
+    assert foods_store.get_food(conn, food["id"], include_processed=True) is not None  # 행은 그대로
 
 
 # ---- 서버가 저장소를 못 열 때 ----

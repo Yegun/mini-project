@@ -6,7 +6,8 @@
 import sqlite3
 from datetime import date
 
-from app import repo_foods, repo_rules
+from app import foods_store
+from app.db import rules_repo
 from app.calc import (
     expiry_from_days,
     new_expiry_after_storage_change,
@@ -27,9 +28,30 @@ from app.validation import (
 )
 
 
+STORAGE_ORDER = ("room", "fridge", "freezer")
+
+
+def allowed_storages(rule: dict) -> set[str]:
+    return {info["storage"] for info in rule["storages"] if info["allowed"]}
+
+
+def not_allowed_storages(rule: dict) -> list[str]:
+    """고를 수 없는("불가") 보관 방법. 상온·냉장·냉동 순서 (D-005)."""
+    allowed = allowed_storages(rule)
+    return [storage for storage in STORAGE_ORDER if storage not in allowed]
+
+
+def max_days(rule: dict, storage: str) -> int | None:
+    """그 보관 방법의 최대 보관 기간(일). 불가한 방법이면 None."""
+    for info in rule["storages"]:
+        if info["storage"] == storage:
+            return info["max_days"]
+    return None
+
+
 def rule_max_days(rule: dict, storage: str) -> int:
     """허용된 보관 방법인데 기간이 비어 있으면 규칙표 DB 가 잘못된 것이다."""
-    days = repo_rules.max_days(rule, storage)
+    days = max_days(rule, storage)
     if days is None:
         raise ApiError(500, "load_failed")
     return days
@@ -45,14 +67,14 @@ def register_rule_food(
     purchase_date = parse_date(raw["purchase_date"], "purchase_date")
     storage = validate_storage(raw["storage"])
 
-    rule = repo_rules.find_rule_by_name(rules_conn, name)
+    rule = rules_repo.get_rule_by_name(rules_conn, name)
     if rule is None:
         raise ValidationError("name", "not_in_rules")
-    validate_storage_allowed(storage, repo_rules.allowed_storages(rule))
+    validate_storage_allowed(storage, allowed_storages(rule))
 
     expiry_date = expiry_from_days(purchase_date, rule_max_days(rule, storage))
     check_purchase_not_after_expiry(purchase_date, expiry_date)
-    return repo_foods.create_food(
+    return foods_store.create_food(
         conn,
         name=name,
         storage=storage,
@@ -74,7 +96,7 @@ def register_manual_food(conn: sqlite3.Connection, raw: dict, today: date) -> di
     expiry_date = resolve_manual_expiry(
         purchase_date, raw["expiry_date"], raw["expiry_in_days"], today
     )
-    return repo_foods.create_food(
+    return foods_store.create_food(
         conn,
         name=name,
         storage=storage,
@@ -111,10 +133,10 @@ def change_storage(
     else:
         if _is_given(raw["expiry_date"]):
             raise ValidationError("expiry_date", "invalid")
-        rule = repo_rules.find_rule_by_name(rules_conn, food["name"])
+        rule = rules_repo.get_rule_by_name(rules_conn, food["name"])
         if rule is None:
             raise ApiError(500, "load_failed")
-        validate_storage_allowed(storage, repo_rules.allowed_storages(rule))
+        validate_storage_allowed(storage, allowed_storages(rule))
         current_max = rule_max_days(rule, food["storage"])
         new_max = rule_max_days(rule, storage)
         remaining = remaining_days_after_storage_change(
@@ -128,7 +150,7 @@ def change_storage(
         if remaining < 0 or (already_expired and expiry_date <= today):
             raise ValidationError("storage", "change_blocked")
 
-    return repo_foods.update_food(conn, food["id"], storage=storage, expiry_date=expiry_date)
+    return foods_store.update_food(conn, food["id"], storage=storage, expiry_date=expiry_date)
 
 
 def _expiry_keeping_ratio(
@@ -170,15 +192,15 @@ def change_info(
     name_changed = new_name != food["name"]
 
     if name_changed:
-        rule = repo_rules.find_rule_by_name(rules_conn, new_name)
+        rule = rules_repo.get_rule_by_name(rules_conn, new_name)
         if rule is not None:
             # 규칙표에 있는 이름: 규칙표 기준으로 다시 계산한다. 기한은 계산되므로 따로 받지 않는다.
             if has_expiry_input:
                 raise ValidationError("expiry_date", "invalid")
-            validate_storage_allowed(food["storage"], repo_rules.allowed_storages(rule))
+            validate_storage_allowed(food["storage"], allowed_storages(rule))
             new_max = rule_max_days(rule, food["storage"])
             if food["source"] == "rule":
-                old_rule = repo_rules.find_rule_by_name(rules_conn, food["name"])
+                old_rule = rules_repo.get_rule_by_name(rules_conn, food["name"])
                 if old_rule is None:
                     raise ApiError(500, "load_failed")
                 current_max = rule_max_days(old_rule, food["storage"])
@@ -212,4 +234,4 @@ def change_info(
         updates["expiry_date"] = expiry_date
     if source != food["source"]:
         updates["source"] = source
-    return repo_foods.update_food(conn, food["id"], **updates)
+    return foods_store.update_food(conn, food["id"], **updates)

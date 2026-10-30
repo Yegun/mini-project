@@ -17,7 +17,7 @@ from app.main import app
 
 @pytest.fixture
 def files(tmp_path, monkeypatch):
-    foods_path = tmp_path / "foods.db"
+    foods_path = tmp_path / "fridge.db"
     rules_path = tmp_path / "rules.db"
 
     foods = sqlite3.connect(foods_path)
@@ -36,7 +36,7 @@ def files(tmp_path, monkeypatch):
     )
     rules.close()
 
-    monkeypatch.setenv("FOODS_DB_PATH", str(foods_path))
+    monkeypatch.setenv("FRIDGE_DB_PATH", str(foods_path))
     monkeypatch.setenv("RULES_DB_PATH", str(rules_path))
     app.dependency_overrides[get_today] = lambda: TODAY  # 오늘 날짜만 고정한다
     yield foods_path, rules_path
@@ -81,7 +81,7 @@ def test_whole_flow_works_with_real_files_and_is_really_saved(files):
     assert client.get("/foods").json()["foods"] == []
 
     gone = client.delete(f"/foods/{food_id}")
-    assert gone.status_code == 409  # 이미 처리된 식품은 지울 수 없다 (V-14)
+    assert gone.status_code == 404  # 처리된 식품은 없는 식품과 같다 (D-037)
 
 
 def test_delete_really_removes_the_row_from_the_file(files):
@@ -115,7 +115,7 @@ def test_rules_file_is_opened_read_only(files):
 
 def test_missing_db_file_is_a_500_and_no_file_is_created(tmp_path, monkeypatch):
     missing = tmp_path / "nope.db"
-    monkeypatch.setenv("FOODS_DB_PATH", str(missing))
+    monkeypatch.setenv("FRIDGE_DB_PATH", str(missing))
     client = TestClient(app)
     response = client.get("/foods")
     assert response.status_code == 500
@@ -126,8 +126,24 @@ def test_missing_db_file_is_a_500_and_no_file_is_created(tmp_path, monkeypatch):
 def test_db_without_the_tables_is_a_500_with_the_same_error_shape(tmp_path, monkeypatch):
     empty = tmp_path / "empty.db"
     sqlite3.connect(empty).close()  # 표가 하나도 없는 DB
-    monkeypatch.setenv("FOODS_DB_PATH", str(empty))
+    monkeypatch.setenv("FRIDGE_DB_PATH", str(empty))
     client = TestClient(app)
     response = client.get("/foods")
     assert response.status_code == 500
     assert set(response.json()) == {"field", "reason", "message"}
+
+
+def test_api_reads_the_db_made_by_init_db(tmp_path, monkeypatch):
+    """init_db 가 만든 진짜 DB 를 API 가 그대로 읽는다 (파일 이름·환경 변수가 어긋나면 500)."""
+    from app.db.init_db import init_db
+
+    monkeypatch.setenv("FRIDGE_DB_PATH", str(tmp_path / "fridge.db"))
+    monkeypatch.setenv("RULES_DB_PATH", str(tmp_path / "rules.db"))
+    init_db()
+    app.dependency_overrides[get_today] = lambda: TODAY
+    try:
+        client = TestClient(app)
+        assert client.get("/foods").status_code == 200
+        assert client.get("/rules", params={"q": "양파"}).status_code == 200
+    finally:
+        app.dependency_overrides.clear()

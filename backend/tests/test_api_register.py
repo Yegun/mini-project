@@ -1,4 +1,4 @@
-from app import repo_foods
+from app import foods_store
 
 # 규칙표 값은 conftest 의 시험용 가짜 값이다: 두부(냉장 10일, 냉동 30일, 상온 불가), 당근(상온 7일 ...).
 
@@ -21,7 +21,6 @@ def test_a2_finds_by_name_containing_the_word(client):
         "rules": [
             {
                 "name": "두부",
-                "aliases": ["연두부"],
                 "default_storage": "fridge",
                 "not_allowed": ["room"],
             }
@@ -44,11 +43,12 @@ def test_a2_does_not_fix_typos(client):
     assert client.get("/rules", params={"q": "두무"}).json() == {"rules": []}
 
 
-def test_a2_blank_or_missing_word_is_422(client):
+def test_a2_blank_or_missing_word_is_an_empty_list(client):
+    # D-035: 검색어가 비면 결과는 없다. 오류가 아니라 빈 목록(성공)이다.
     for params in ({"q": ""}, {"q": "   "}, {}):
         response = client.get("/rules", params=params)
-        assert response.status_code == 422
-        assert error_body(response)[0] == "q"
+        assert response.status_code == 200
+        assert response.json() == {"rules": []}
 
 
 def test_a2_does_not_show_period_numbers(client):
@@ -77,7 +77,7 @@ def test_a3_creates_with_expiry_from_the_rule(client, conn):
     assert body["days_left"] == 10
     assert body["expiry_status"] == "fresh"
     assert len(body["id"]) == 36
-    assert repo_foods.get_food(conn, body["id"])["name"] == "두부"
+    assert foods_store.get_food(conn, body["id"])["name"] == "두부"
 
 
 def test_a3_expiry_follows_the_chosen_storage(client):
@@ -161,7 +161,7 @@ def test_a4_creates_with_the_given_expiry_date(client, conn):
     assert body["source"] == "manual"
     assert body["status"] == "none"
     assert body["storage"] == "room"  # 직접 등록은 세 방법 모두 고를 수 있다
-    assert repo_foods.get_food(conn, body["id"])["source"] == "manual"
+    assert foods_store.get_food(conn, body["id"])["source"] == "manual"
 
 
 def test_a4_days_later_is_purchase_date_plus_n(client):

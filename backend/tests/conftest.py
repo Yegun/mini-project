@@ -60,6 +60,7 @@ def today():
 def conn():
     # 서버는 요청마다 다른 스레드를 쓸 수 있어서 check_same_thread=False 로 연다.
     connection = sqlite3.connect(":memory:", check_same_thread=False)
+    connection.row_factory = sqlite3.Row
     connection.execute(FOODS_SCHEMA)
     yield connection
     connection.close()
@@ -68,6 +69,7 @@ def conn():
 @pytest.fixture
 def rules_conn():
     connection = sqlite3.connect(":memory:", check_same_thread=False)
+    connection.row_factory = sqlite3.Row
     for statement in RULES_SCHEMA:
         connection.execute(statement)
     yield connection

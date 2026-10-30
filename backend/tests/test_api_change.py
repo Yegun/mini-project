@@ -1,7 +1,7 @@
 from datetime import date
 from decimal import Decimal
 
-from app import repo_foods
+from app import foods_store
 
 # 오늘은 2026-10-30. 규칙표는 conftest 의 시험용 가짜 값:
 # 두부(냉장 10, 냉동 30, 상온 불가) / 당근(상온 7, 냉장 20, 냉동 60) / 우유(냉장 7만 가능)
@@ -18,7 +18,7 @@ def add_food(conn, **overrides):
         "source": "rule",
     }
     values.update(overrides)
-    food = repo_foods.create_food(conn, **values)
+    food = foods_store.create_food(conn, **values)
     conn.commit()
     return food
 
@@ -30,7 +30,7 @@ def error_body(response):
 
 
 def stored(conn, food):
-    return repo_foods.get_food(conn, food["id"])
+    return foods_store.get_food(conn, food["id"])
 
 
 # ======== A7 보관 방법 변경 PATCH /foods/{id}/storage ========
@@ -188,10 +188,10 @@ def test_a7_missing_or_processed_food(client, conn):
     response = client.patch("/foods/없는-번호/storage", json={"storage": "freezer"})
     assert (response.status_code, error_body(response)) == (404, (None, "not_found"))
     food = add_food(conn)
-    repo_foods.set_status(conn, food["id"], "eaten")
+    foods_store.set_status(conn, food["id"], "eaten")
     conn.commit()
     response = change_storage(client, food, storage="freezer")
-    assert (response.status_code, error_body(response)) == (409, (None, "already_processed"))
+    assert (response.status_code, error_body(response)) == (404, (None, "not_found"))
 
 
 # ======== A6 정보 수정 PATCH /foods/{id} ========
@@ -388,7 +388,7 @@ def test_a6_missing_or_processed_food(client, conn):
     response = client.patch("/foods/없는-번호", json={"unit": "개"})
     assert (response.status_code, error_body(response)) == (404, (None, "not_found"))
     food = add_food(conn)
-    repo_foods.set_status(conn, food["id"], "discarded")
+    foods_store.set_status(conn, food["id"], "discarded")
     conn.commit()
     response = edit(client, food, unit="개")
-    assert (response.status_code, error_body(response)) == (409, (None, "already_processed"))
+    assert (response.status_code, error_body(response)) == (404, (None, "not_found"))

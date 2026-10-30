@@ -45,6 +45,19 @@ rules = connect_rules()   # 읽기 전용 (쓰면 오류)
 
 규칙표 한 건: `{"id", "name", "default_storage", "storages": [{"storage", "allowed", "max_days"}, ...]}` (상온·냉장·냉동 순). `allowed` 가 `False` 면 "불가"이고 `max_days` 는 `None`.
 
+## 규칙표를 고친 뒤 — 기한 다시 계산 (개발자용)
+
+규칙표 값(`seed_rules.py`)을 고치고 `init_db` 로 다시 채운 뒤, 이미 등록된 식품의 기한도 맞춘다 (DATA-MODEL 4절). 앱·API 에서는 부르지 않는다.
+
+```
+python -m app.db.recalc_expiry --dry-run   # 저장하지 않고 바뀔 내용만 본다
+python -m app.db.recalc_expiry             # 저장한다
+```
+
+- 대상은 `source = rule`, `status = none` 인 식품이다. 새 기한 = 구매일 + 지금 보관 방법의 새 `max_days`. 직접 등록·처리된 식품은 그대로다.
+- 이름이 규칙표에 없거나 지금 보관 방법이 "불가"가 된 식품은 문서에 처리 방법이 없어서 **계산하지 않고 건너뛴 뒤 알려 준다.**
+- 한 번에 성공하거나, 실패하면 아무것도 바뀌지 않는다. 여러 번 돌려도 같은 결과다.
+
 ## 알아 둘 것
 
 - **DB 는 저장만 한다.** 기한 계산, 상태 판정, 오늘 날짜, 입력 검사 메시지, 규칙표의 "불가" 보관 방법 거절은 API 가 한다.

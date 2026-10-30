@@ -10,10 +10,9 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, Response
 from pydantic import BaseModel, ConfigDict
 
-from app import repo_foods, services
+from app import foods_store, services
 from app.database import get_foods_conn, get_rules_conn, get_today, transaction
 from app.errors import ApiError
-from app.status import sort_key
 from app.validation import ValidationError
 from app.view import food_json
 
@@ -63,12 +62,10 @@ class ProcessBody(Body):
 
 
 def get_active_food(conn: sqlite3.Connection, food_id: str) -> dict:
-    """없는 식품, 이미 처리된 식품은 오류로 알린다 (V-14, D-008)."""
-    food = repo_foods.get_food(conn, food_id)
+    """없는 식품, 이미 처리된 식품은 같은 오류로 알린다 (V-14, D-008, D-037)."""
+    food = foods_store.get_food(conn, food_id)
     if food is None:
         raise ApiError(404, "not_found")
-    if food["status"] != "none":
-        raise ApiError(409, "already_processed")
     return food
 
 
@@ -76,8 +73,7 @@ def get_active_food(conn: sqlite3.Connection, food_id: str) -> dict:
 def list_foods(conn: FoodsConn, today: Today):
     """A1 홈 목록. 오늘 날짜도 함께 돌려준다 (D-021)."""
     with transaction(conn, "load_failed"):
-        foods = repo_foods.list_active_foods(conn)
-    foods.sort(key=sort_key)
+        foods = foods_store.list_active_foods(conn)
     return {"today": today.isoformat(), "foods": [food_json(food, today) for food in foods]}
 
 
@@ -134,9 +130,9 @@ def process_food(food_id: str, body: ProcessBody, conn: FoodsConn, today: Today)
     if body.status not in ("eaten", "discarded"):
         raise ValidationError("status", "invalid")
     with transaction(conn):
-        get_active_food(conn, food_id)
-        repo_foods.set_status(conn, food_id, body.status)
-        food = repo_foods.get_food(conn, food_id)
+        food = foods_store.set_status(conn, food_id, body.status)
+        if food is None:
+            raise ApiError(404, "not_found")
     return food_json(food, today)
 
 
@@ -144,6 +140,6 @@ def process_food(food_id: str, body: ProcessBody, conn: FoodsConn, today: Today)
 def delete_food(food_id: str, conn: FoodsConn):
     """A9 삭제. 행을 완전히 지운다 (D-013)."""
     with transaction(conn):
-        get_active_food(conn, food_id)
-        repo_foods.delete_food(conn, food_id)
+        if not foods_store.delete_food(conn, food_id):
+            raise ApiError(404, "not_found")
     return Response(status_code=204)
