@@ -6,7 +6,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 
 from app import repo_rules
-from app.db import get_rules_conn, transaction
+from app.database import get_rules_conn, transaction
 from app.validation import ValidationError
 
 router = APIRouter()

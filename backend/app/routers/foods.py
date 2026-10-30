@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, Response
 from pydantic import BaseModel, ConfigDict
 
 from app import repo_foods, services
-from app.db import get_foods_conn, get_rules_conn, get_today, transaction
+from app.database import get_foods_conn, get_rules_conn, get_today, transaction
 from app.errors import ApiError
 from app.status import sort_key
 from app.validation import ValidationError

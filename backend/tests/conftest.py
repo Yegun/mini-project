@@ -4,7 +4,7 @@ from datetime import date
 import pytest
 from fastapi.testclient import TestClient
 
-from app.db import get_foods_conn, get_rules_conn, get_today
+from app.database import get_foods_conn, get_rules_conn, get_today
 from app.main import app
 
 # 시험에서만 쓰는 연습용 임시 창고(메모리 DB). 시험이 끝나면 사라진다.

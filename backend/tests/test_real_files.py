@@ -11,7 +11,7 @@ import pytest
 from conftest import FOODS_SCHEMA, RULES_SCHEMA, TODAY, add_rule
 from fastapi.testclient import TestClient
 
-from app.db import get_today
+from app.database import get_today
 from app.main import app
 
 
@@ -102,7 +102,7 @@ def test_failed_request_leaves_the_file_unchanged(files):
 
 
 def test_rules_file_is_opened_read_only(files):
-    from app.db import _connect
+    from app.database import _connect
 
     _, rules_path = files
     connection = _connect(rules_path, "ro")
