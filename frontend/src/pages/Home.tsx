@@ -9,7 +9,7 @@ interface Props {
   result: FoodsResult
   onRetry: () => void
   onSelectFood?: (id: string) => void // 상세 화면은 이번 범위 밖이라 아직 연결하지 않는다
-  onAddFood?: () => void // 등록 화면은 이번 범위 밖이라 아직 연결하지 않는다
+  onAddFood?: () => void // 식품 등록 화면으로
 }
 
 // 홈. 순서는 API 가 준 그대로 쓴다. 날짜 판정은 하지 않는다.
@@ -47,6 +47,11 @@ export default function Home({ result, onRetry, onSelectFood, onAddFood }: Props
         ))}
       </WeekCalendar>
       <FoodList foods={foods} onSelect={onSelectFood} />
+      <div className="home__add">
+        <button type="button" className="home__add-button" onClick={onAddFood}>
+          식품 등록
+        </button>
+      </div>
     </main>
   )
 }

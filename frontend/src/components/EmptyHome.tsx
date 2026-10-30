@@ -1,7 +1,7 @@
 import './StateNotice.css'
 
 interface Props {
-  onAdd?: () => void // 등록 화면은 이번 범위 밖이라 아직 연결하지 않는다
+  onAdd?: () => void // 식품 등록 화면으로
 }
 
 // 빈 홈 안내: 안내 문구 + 식품 등록 버튼 (OQ-05). 문구는 임시 문구다 (OQ-03).

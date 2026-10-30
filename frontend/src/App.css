@@ -13,3 +13,23 @@
   border-radius: 1rem;
   background: #fff;
 }
+
+/* 식품이 있을 때의 식품 등록 버튼: 화면 아래에 붙어 따라온다 */
+.home__add {
+  position: sticky;
+  bottom: 0;
+  padding: 0.75rem 0 1rem;
+  background: linear-gradient(to bottom, transparent, var(--bg) 30%);
+}
+
+.home__add-button {
+  width: 100%;
+  min-height: 3.25rem;
+  border: none;
+  border-radius: 999px;
+  background: #0f7a52;
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
