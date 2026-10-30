@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS foods (
     id            TEXT PRIMARY KEY CHECK (length(id) = 36),
     name          TEXT NOT NULL CHECK (length(trim(name)) > 0),
     storage       TEXT NOT NULL CHECK (storage IN ('room', 'fridge', 'freezer')),
-    quantity      REAL NOT NULL CHECK (quantity > 0),
+    quantity      REAL NOT NULL CHECK (typeof(quantity) IN ('real', 'integer') AND quantity > 0),
     unit          TEXT NOT NULL CHECK (length(trim(unit)) > 0),
     purchase_date TEXT NOT NULL CHECK (date(purchase_date) IS purchase_date),
     expiry_date   TEXT NOT NULL CHECK (date(expiry_date) IS expiry_date),

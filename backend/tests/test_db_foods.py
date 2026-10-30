@@ -67,6 +67,21 @@ def test_bad_values_rejected_and_nothing_saved(conn, bad):
     assert list_active_foods(conn) == []
 
 
+def test_quantity_must_be_number_not_text(conn):
+    with pytest.raises(sqlite3.IntegrityError):
+        make(conn, quantity="abc")
+    food = make(conn)
+    with pytest.raises(sqlite3.IntegrityError):
+        update_food(conn, food["id"], quantity="abc")
+    assert get_food(conn, food["id"]) == food
+    assert len(list_active_foods(conn)) == 1
+
+
+def test_quantity_number_like_text_and_decimal_ok(conn):
+    assert make(conn, quantity="2")["quantity"] == 2
+    assert make(conn, quantity=0.25)["quantity"] == 0.25
+
+
 def test_purchase_equals_expiry_ok(conn):
     make(conn, purchase_date="2026-10-30", expiry_date="2026-10-30")
 
