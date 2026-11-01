@@ -64,13 +64,18 @@ function maxDays(rule: MockRule | undefined, storage: Storage): number {
   return rule?.storages.find((s) => s.storage === storage)?.max_days ?? FALLBACK_DAYS
 }
 
+// 직접 등록은 기한(expiry_date 또는 expiry_in_days)을 보내고, 규칙표 등록은 보내지 않는다.
+function isManual(input: RuleRegisterInput | ManualRegisterInput): input is ManualRegisterInput {
+  return 'expiry_date' in input || 'expiry_in_days' in input
+}
+
 function expiryOf(input: RuleRegisterInput | ManualRegisterInput): string {
-  if ('rule_id' in input) {
-    const rule = (rulesMock.rules as MockRule[]).find((r) => r.id === input.rule_id)
+  if (!isManual(input)) {
+    const rule = ruleByName(input.name)
     return addDays(input.purchase_date, maxDays(rule, input.storage))
   }
   if (input.expiry_date) return input.expiry_date
-  return addDays(input.purchase_date, input.expiry_days ?? FALLBACK_DAYS)
+  return addDays(input.purchase_date, input.expiry_in_days ?? FALLBACK_DAYS)
 }
 
 export function addMockFood(input: RuleRegisterInput | ManualRegisterInput, today: string): void {
@@ -85,7 +90,7 @@ export function addMockFood(input: RuleRegisterInput | ManualRegisterInput, toda
     show_on_calendar: true,
     quantity: input.quantity,
     unit: input.unit,
-    source: 'rule_id' in input ? 'rule' : 'manual',
+    source: isManual(input) ? 'manual' : 'rule',
   })
 }
 

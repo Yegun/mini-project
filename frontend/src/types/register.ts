@@ -4,7 +4,6 @@ import type { Storage } from './food'
 
 // 규칙표에서 골라 등록 (A3). 기한은 API 가 계산한다.
 export interface RuleRegisterInput {
-  rule_id: string
   name: string
   storage: Storage
   quantity: number // 0보다 큰 숫자, 소수 둘째 자리까지 (D-027)
@@ -20,7 +19,7 @@ export interface ManualRegisterInput {
   unit: string
   purchase_date: string
   expiry_date?: string // YYYY-MM-DD
-  expiry_days?: number // 구매일 + N일
+  expiry_in_days?: number // 구매일 + N일
 }
 
 // 입력칸 이름. 입력 오류 응답이 "어느 칸 문제인지" 알려 줄 때 쓴다.

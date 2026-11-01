@@ -114,12 +114,12 @@ export default function RegisterPage({ today, onBack, onDone }: Props) {
     setSubmitting(true)
     const result =
       step === 'rule' && rule
-        ? await createRuleFood({ ...base, rule_id: rule.id })
+        ? await createRuleFood(base)
         : await createManualFood({
             ...base,
             ...(values.expiryMode === 'date'
               ? { expiry_date: values.expiryDate }
-              : { expiry_days: Number(values.expiryDays.trim()) }),
+              : { expiry_in_days: Number(values.expiryDays.trim()) }),
           })
     submitLock.current = false
 
