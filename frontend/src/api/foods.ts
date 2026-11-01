@@ -14,6 +14,7 @@ import type {
   RegisterResult,
   RuleRegisterInput,
 } from '../types/register'
+import { readFailure } from './errors'
 import foodsMock from '../mocks/foods.json'
 import foodsEmptyMock from '../mocks/foods.empty.json'
 import { addMockFood, withCreatedFoods } from '../mocks/createdFoods'
@@ -44,23 +45,21 @@ export async function getFoods(): Promise<FoodListResponse> {
 }
 
 // [임시 계약] 식품 등록 요청. 경로·본문·오류 응답 모양은 백엔드 담당 확인 전까지 임시다.
-// 임시 약속: 성공은 2xx, 입력 규칙 위반은 422 + { errors: { 칸이름: 안내 } }, 그 밖의 실패는 모두 "저장 실패".
+// 성공은 2xx, 입력 규칙 위반은 422 + { field, reason, message }, 그 밖의 실패는 모두 "저장 실패" (api/errors.ts).
 async function postFood(path: string, body: object): Promise<RegisterResult> {
+  let res: Response
   try {
-    const res = await fetch(path, {
+    res = await fetch(path, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     })
-    if (res.ok) return { status: 'ok' }
-    if (res.status === 422) {
-      const data = (await res.json().catch(() => null)) as { errors?: FieldErrors } | null
-      return { status: 'invalid', fieldErrors: data?.errors ?? {} }
-    }
-    return { status: 'failed' }
   } catch {
     return { status: 'failed' } // API 에 닿지 못함도 같은 오류로 보인다
   }
+  if (res.ok) return { status: 'ok' }
+  const failure = await readFailure(res)
+  return failure.status === 'need_expiry' ? { status: 'failed' } : failure // 등록에는 "기한 다시 적기"가 없다
 }
 
 // 가짜 등록 응답. 성공하면 mock 목록에 식품을 쌓는다.

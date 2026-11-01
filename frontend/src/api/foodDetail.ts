@@ -1,12 +1,13 @@
 // [임시 계약] 식품 상세(A5), 수정(A6), 보관 방법 변경(A7), 처리(A8), 삭제(A9) 요청.
 // 경로·본문·응답 모양은 백엔드 담당 확인 전까지 임시다. 모양은 types/foodDetail.ts 에 있다.
-// 임시 약속: 성공은 2xx, 입력 규칙 위반은 422 + { errors: { 칸이름: 안내 } },
-//   "기한을 다시 적어야 함"은 실패가 아니라 200 + { status: "need_expiry" }, 그 밖의 실패는 모두 "실패".
+// 약속(백엔드 기준): 성공은 2xx, 입력 규칙 위반은 422 + { field, reason, message },
+//   "기한을 다시 적어야 함"은 실패가 아니라 409 + reason "expiry_required", 그 밖의 실패는 모두 "실패". (api/errors.ts)
 // 개발 중 가짜 데이터: VITE_USE_MOCK 이 켜져 있으면 mocks/ 를 쓴다 (홈, 등록과 같은 값).
 //   VITE_USE_MOCK=detail-error  상세 불러오기 실패
 //   VITE_USE_MOCK=save-error    수정 · 보관 방법 · 처리 · 삭제 실패
 //   VITE_USE_MOCK=save-invalid  수정 · 보관 방법 입력 오류 응답 (칸 옆 안내)
 //   VITE_USE_MOCK=slow          저장 · 처리 · 삭제가 2초 걸림 (요청 중 확인용)
+import { readFailure } from './errors'
 import foodsMock from '../mocks/foods.json'
 import {
   changeMockStorage,
@@ -68,16 +69,8 @@ async function send(path: string, method: string, body?: object): Promise<Respon
 
 async function patchFood(path: string, body: object): Promise<SaveResult> {
   const res = await send(path, 'PATCH', body)
-  if (!res) return { status: 'failed' } // API 에 닿지 못함도 같은 오류로 보인다
-  if (res.ok) {
-    const data = (await res.json().catch(() => null)) as { status?: string } | null
-    return data?.status === 'need_expiry' ? { status: 'need_expiry' } : { status: 'ok' }
-  }
-  if (res.status === 422) {
-    const data = (await res.json().catch(() => null)) as { errors?: FieldErrors } | null
-    return { status: 'invalid', fieldErrors: data?.errors ?? {} }
-  }
-  return { status: 'failed' }
+  if (res?.ok) return { status: 'ok' }
+  return readFailure(res) // API 에 닿지 못함(null)도 같은 오류로 보인다
 }
 
 async function requestAction(path: string, method: string, body?: object): Promise<ActionResult> {
