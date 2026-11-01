@@ -15,7 +15,9 @@ import {
   removeMockFood,
   updateMockFood,
 } from '../mocks/createdFoods'
+import { searchRules, storagesFromNotAllowed } from './rules'
 import type { FieldErrors } from '../types/register'
+import type { RuleStorageOption } from '../types/rule'
 import type {
   ActionResult,
   ChangeStorageInput,
@@ -48,10 +50,22 @@ export async function getFoodDetail(id: string): Promise<FoodDetail> {
   try {
     const res = await fetch(foodPath(id))
     if (!res.ok) throw new LoadFoodDetailError(`status ${res.status}`)
-    return (await res.json()) as FoodDetail
+    const food = (await res.json()) as Omit<FoodDetail, 'storages'>
+    return { ...food, storages: await storagesFor(food) }
   } catch (e) {
     throw e instanceof LoadFoodDetailError ? e : new LoadFoodDetailError('network')
   }
+}
+
+// 백엔드의 식품 상세 응답에는 보관 방법별 가능 여부가 없다. 그래서 여기서 채운다 (D-005).
+// - 직접 등록 식품: 규칙표가 없으니 세 방법 모두 가능
+// - 규칙표 식품: 규칙표 검색(A2)에서 이름이 정확히 같은 항목의 "불가" 목록을 쓴다.
+//   못 찾거나 검색이 실패하면, 가능 여부를 모른 채 모두 고르게 둘 수 없어서 불러오기 실패로 본다.
+async function storagesFor(food: Omit<FoodDetail, 'storages'>): Promise<RuleStorageOption[]> {
+  if (food.source === 'manual') return storagesFromNotAllowed([])
+  const found = (await searchRules(food.name)).rules.find((rule) => rule.name === food.name)
+  if (!found) throw new LoadFoodDetailError('rule not found')
+  return found.storages
 }
 
 // 요청을 보내고 Response 를 돌려준다. API 에 닿지 못하면 null.
