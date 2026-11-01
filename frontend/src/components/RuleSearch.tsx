@@ -49,7 +49,7 @@ export default function RuleSearch({ query, search, onQueryChange, onSearch, onP
       {search.status === 'done' && search.rules.length > 0 && (
         <ul className="rule-list" aria-label="검색 결과">
           {search.rules.map((rule) => (
-            <li key={rule.id}>
+            <li key={rule.name}>
               <button type="button" className="rule-list__item" onClick={() => onPick(rule)}>
                 {rule.name}
               </button>
