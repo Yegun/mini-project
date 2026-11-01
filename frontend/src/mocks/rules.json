@@ -1,0 +1,676 @@
+{
+  "_notice": "개발용 가짜 값이다. 실제 규칙표가 아니다. 이름 30개만 D-018 에서 왔고, 별칭·기본 보관 방법·불가·보관 기간은 지어낸 값이다. 규칙표 내용이 정해지면 이 파일을 교체한다.",
+  "rules": [
+    {
+      "id": "00000000-0000-4000-8000-000000000101",
+      "name": "양파",
+      "aliases": [],
+      "default_storage": "room",
+      "storages": [
+        {
+          "storage": "room",
+          "allowed": true,
+          "max_days": 30
+        },
+        {
+          "storage": "fridge",
+          "allowed": true,
+          "max_days": 60
+        },
+        {
+          "storage": "freezer",
+          "allowed": false
+        }
+      ]
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000102",
+      "name": "대파",
+      "aliases": [
+        "파"
+      ],
+      "default_storage": "fridge",
+      "storages": [
+        {
+          "storage": "room",
+          "allowed": true,
+          "max_days": 3
+        },
+        {
+          "storage": "fridge",
+          "allowed": true,
+          "max_days": 14
+        },
+        {
+          "storage": "freezer",
+          "allowed": true,
+          "max_days": 60
+        }
+      ]
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000103",
+      "name": "감자",
+      "aliases": [],
+      "default_storage": "room",
+      "storages": [
+        {
+          "storage": "room",
+          "allowed": true,
+          "max_days": 30
+        },
+        {
+          "storage": "fridge",
+          "allowed": true,
+          "max_days": 20
+        },
+        {
+          "storage": "freezer",
+          "allowed": false
+        }
+      ]
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000104",
+      "name": "당근",
+      "aliases": [],
+      "default_storage": "fridge",
+      "storages": [
+        {
+          "storage": "room",
+          "allowed": true,
+          "max_days": 5
+        },
+        {
+          "storage": "fridge",
+          "allowed": true,
+          "max_days": 21
+        },
+        {
+          "storage": "freezer",
+          "allowed": false
+        }
+      ]
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000105",
+      "name": "양배추",
+      "aliases": [],
+      "default_storage": "fridge",
+      "storages": [
+        {
+          "storage": "room",
+          "allowed": true,
+          "max_days": 3
+        },
+        {
+          "storage": "fridge",
+          "allowed": true,
+          "max_days": 14
+        },
+        {
+          "storage": "freezer",
+          "allowed": false
+        }
+      ]
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000106",
+      "name": "오이",
+      "aliases": [],
+      "default_storage": "fridge",
+      "storages": [
+        {
+          "storage": "room",
+          "allowed": true,
+          "max_days": 3
+        },
+        {
+          "storage": "fridge",
+          "allowed": true,
+          "max_days": 7
+        },
+        {
+          "storage": "freezer",
+          "allowed": false
+        }
+      ]
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000107",
+      "name": "상추",
+      "aliases": [],
+      "default_storage": "fridge",
+      "storages": [
+        {
+          "storage": "room",
+          "allowed": false
+        },
+        {
+          "storage": "fridge",
+          "allowed": true,
+          "max_days": 5
+        },
+        {
+          "storage": "freezer",
+          "allowed": false
+        }
+      ]
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000108",
+      "name": "시금치",
+      "aliases": [],
+      "default_storage": "fridge",
+      "storages": [
+        {
+          "storage": "room",
+          "allowed": false
+        },
+        {
+          "storage": "fridge",
+          "allowed": true,
+          "max_days": 5
+        },
+        {
+          "storage": "freezer",
+          "allowed": true,
+          "max_days": 30
+        }
+      ]
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000109",
+      "name": "마늘",
+      "aliases": [],
+      "default_storage": "room",
+      "storages": [
+        {
+          "storage": "room",
+          "allowed": true,
+          "max_days": 30
+        },
+        {
+          "storage": "fridge",
+          "allowed": true,
+          "max_days": 60
+        },
+        {
+          "storage": "freezer",
+          "allowed": true,
+          "max_days": 180
+        }
+      ]
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000110",
+      "name": "애호박",
+      "aliases": [],
+      "default_storage": "fridge",
+      "storages": [
+        {
+          "storage": "room",
+          "allowed": true,
+          "max_days": 3
+        },
+        {
+          "storage": "fridge",
+          "allowed": true,
+          "max_days": 7
+        },
+        {
+          "storage": "freezer",
+          "allowed": false
+        }
+      ]
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000111",
+      "name": "토마토",
+      "aliases": [],
+      "default_storage": "room",
+      "storages": [
+        {
+          "storage": "room",
+          "allowed": true,
+          "max_days": 5
+        },
+        {
+          "storage": "fridge",
+          "allowed": true,
+          "max_days": 10
+        },
+        {
+          "storage": "freezer",
+          "allowed": true,
+          "max_days": 60
+        }
+      ]
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000112",
+      "name": "배추",
+      "aliases": [],
+      "default_storage": "fridge",
+      "storages": [
+        {
+          "storage": "room",
+          "allowed": true,
+          "max_days": 3
+        },
+        {
+          "storage": "fridge",
+          "allowed": true,
+          "max_days": 14
+        },
+        {
+          "storage": "freezer",
+          "allowed": false
+        }
+      ]
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000113",
+      "name": "버섯",
+      "aliases": [],
+      "default_storage": "fridge",
+      "storages": [
+        {
+          "storage": "room",
+          "allowed": false
+        },
+        {
+          "storage": "fridge",
+          "allowed": true,
+          "max_days": 5
+        },
+        {
+          "storage": "freezer",
+          "allowed": true,
+          "max_days": 30
+        }
+      ]
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000114",
+      "name": "사과",
+      "aliases": [],
+      "default_storage": "fridge",
+      "storages": [
+        {
+          "storage": "room",
+          "allowed": true,
+          "max_days": 7
+        },
+        {
+          "storage": "fridge",
+          "allowed": true,
+          "max_days": 30
+        },
+        {
+          "storage": "freezer",
+          "allowed": false
+        }
+      ]
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000115",
+      "name": "바나나",
+      "aliases": [],
+      "default_storage": "room",
+      "storages": [
+        {
+          "storage": "room",
+          "allowed": true,
+          "max_days": 5
+        },
+        {
+          "storage": "fridge",
+          "allowed": true,
+          "max_days": 7
+        },
+        {
+          "storage": "freezer",
+          "allowed": true,
+          "max_days": 60
+        }
+      ]
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000116",
+      "name": "딸기",
+      "aliases": [],
+      "default_storage": "fridge",
+      "storages": [
+        {
+          "storage": "room",
+          "allowed": false
+        },
+        {
+          "storage": "fridge",
+          "allowed": true,
+          "max_days": 3
+        },
+        {
+          "storage": "freezer",
+          "allowed": true,
+          "max_days": 60
+        }
+      ]
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000117",
+      "name": "귤",
+      "aliases": [],
+      "default_storage": "room",
+      "storages": [
+        {
+          "storage": "room",
+          "allowed": true,
+          "max_days": 7
+        },
+        {
+          "storage": "fridge",
+          "allowed": true,
+          "max_days": 21
+        },
+        {
+          "storage": "freezer",
+          "allowed": false
+        }
+      ]
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000118",
+      "name": "포도",
+      "aliases": [],
+      "default_storage": "fridge",
+      "storages": [
+        {
+          "storage": "room",
+          "allowed": true,
+          "max_days": 3
+        },
+        {
+          "storage": "fridge",
+          "allowed": true,
+          "max_days": 7
+        },
+        {
+          "storage": "freezer",
+          "allowed": true,
+          "max_days": 60
+        }
+      ]
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000119",
+      "name": "배",
+      "aliases": [],
+      "default_storage": "fridge",
+      "storages": [
+        {
+          "storage": "room",
+          "allowed": true,
+          "max_days": 7
+        },
+        {
+          "storage": "fridge",
+          "allowed": true,
+          "max_days": 30
+        },
+        {
+          "storage": "freezer",
+          "allowed": false
+        }
+      ]
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000120",
+      "name": "돼지고기",
+      "aliases": [
+        "삼겹살"
+      ],
+      "default_storage": "fridge",
+      "storages": [
+        {
+          "storage": "room",
+          "allowed": false
+        },
+        {
+          "storage": "fridge",
+          "allowed": true,
+          "max_days": 3
+        },
+        {
+          "storage": "freezer",
+          "allowed": true,
+          "max_days": 90
+        }
+      ]
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000121",
+      "name": "소고기",
+      "aliases": [
+        "쇠고기"
+      ],
+      "default_storage": "fridge",
+      "storages": [
+        {
+          "storage": "room",
+          "allowed": false
+        },
+        {
+          "storage": "fridge",
+          "allowed": true,
+          "max_days": 3
+        },
+        {
+          "storage": "freezer",
+          "allowed": true,
+          "max_days": 90
+        }
+      ]
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000122",
+      "name": "닭고기",
+      "aliases": [
+        "닭"
+      ],
+      "default_storage": "fridge",
+      "storages": [
+        {
+          "storage": "room",
+          "allowed": false
+        },
+        {
+          "storage": "fridge",
+          "allowed": true,
+          "max_days": 2
+        },
+        {
+          "storage": "freezer",
+          "allowed": true,
+          "max_days": 90
+        }
+      ]
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000123",
+      "name": "고등어",
+      "aliases": [],
+      "default_storage": "fridge",
+      "storages": [
+        {
+          "storage": "room",
+          "allowed": false
+        },
+        {
+          "storage": "fridge",
+          "allowed": true,
+          "max_days": 2
+        },
+        {
+          "storage": "freezer",
+          "allowed": true,
+          "max_days": 60
+        }
+      ]
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000124",
+      "name": "오징어",
+      "aliases": [],
+      "default_storage": "fridge",
+      "storages": [
+        {
+          "storage": "room",
+          "allowed": false
+        },
+        {
+          "storage": "fridge",
+          "allowed": true,
+          "max_days": 2
+        },
+        {
+          "storage": "freezer",
+          "allowed": true,
+          "max_days": 60
+        }
+      ]
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000125",
+      "name": "새우",
+      "aliases": [],
+      "default_storage": "fridge",
+      "storages": [
+        {
+          "storage": "room",
+          "allowed": false
+        },
+        {
+          "storage": "fridge",
+          "allowed": true,
+          "max_days": 2
+        },
+        {
+          "storage": "freezer",
+          "allowed": true,
+          "max_days": 90
+        }
+      ]
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000126",
+      "name": "연어",
+      "aliases": [],
+      "default_storage": "fridge",
+      "storages": [
+        {
+          "storage": "room",
+          "allowed": false
+        },
+        {
+          "storage": "fridge",
+          "allowed": true,
+          "max_days": 3
+        },
+        {
+          "storage": "freezer",
+          "allowed": true,
+          "max_days": 60
+        }
+      ]
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000127",
+      "name": "달걀",
+      "aliases": [
+        "계란"
+      ],
+      "default_storage": "fridge",
+      "storages": [
+        {
+          "storage": "room",
+          "allowed": true,
+          "max_days": 7
+        },
+        {
+          "storage": "fridge",
+          "allowed": true,
+          "max_days": 30
+        },
+        {
+          "storage": "freezer",
+          "allowed": false
+        }
+      ]
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000128",
+      "name": "우유",
+      "aliases": [],
+      "default_storage": "fridge",
+      "storages": [
+        {
+          "storage": "room",
+          "allowed": false
+        },
+        {
+          "storage": "fridge",
+          "allowed": true,
+          "max_days": 7
+        },
+        {
+          "storage": "freezer",
+          "allowed": false
+        }
+      ]
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000129",
+      "name": "두부",
+      "aliases": [],
+      "default_storage": "fridge",
+      "storages": [
+        {
+          "storage": "room",
+          "allowed": false
+        },
+        {
+          "storage": "fridge",
+          "allowed": true,
+          "max_days": 5
+        },
+        {
+          "storage": "freezer",
+          "allowed": false
+        }
+      ]
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000130",
+      "name": "콩나물",
+      "aliases": [],
+      "default_storage": "fridge",
+      "storages": [
+        {
+          "storage": "room",
+          "allowed": false
+        },
+        {
+          "storage": "fridge",
+          "allowed": true,
+          "max_days": 3
+        },
+        {
+          "storage": "freezer",
+          "allowed": false
+        }
+      ]
+    }
+  ]
+}
