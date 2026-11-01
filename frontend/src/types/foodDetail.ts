@@ -1,12 +1,12 @@
 // [임시 계약] 식품 상세(A5), 정보 수정(A6), 보관 방법 변경(A7), 처리(A8), 삭제(A9) 요청·응답 모양.
 // 백엔드 담당과 합의 전 제안이다. 칸 이름·값이 바뀌면 이 파일과 api/foodDetail.ts, mocks/ 만 고친다.
-import type { ExpiryLevel, Storage } from './food'
+import type { ExpiryStatus, Storage } from './food'
 import type { FieldErrors } from './register'
 import type { RuleStorageOption } from './rule'
 
 export type FoodSource = 'rule' | 'manual' // 규칙표 등록 / 직접 등록 (D-029)
 
-// A5 응답. 상태(expiry_level)는 API 가 판정한 값이고 화면은 색만 입힌다 (D-009).
+// A5 응답. 상태(expiry_status)는 API 가 판정한 값이고 화면은 색만 입힌다 (D-009).
 export interface FoodDetail {
   id: string
   name: string
@@ -15,7 +15,7 @@ export interface FoodDetail {
   unit: string
   purchase_date: string // YYYY-MM-DD
   expiry_date: string // YYYY-MM-DD
-  expiry_level: ExpiryLevel
+  expiry_status: ExpiryStatus
   source: FoodSource
   storages: RuleStorageOption[] // 방법별 가능 여부. 직접 등록은 모두 true (D-005)
 }

@@ -26,11 +26,11 @@ export default function FoodSummary({ food }: Props) {
         <dd className="summary__expiry">
           <span
             className="summary__dot"
-            style={{ background: statusColor(food.expiry_level) }}
+            style={{ background: statusColor(food.expiry_status) }}
             aria-hidden="true"
           />
           {formatKoreanDate(food.expiry_date)}
-          <span className="visually-hidden"> {STATUS_LABEL[food.expiry_level]}</span>
+          <span className="visually-hidden"> {STATUS_LABEL[food.expiry_status]}</span>
         </dd>
       </dl>
     </section>

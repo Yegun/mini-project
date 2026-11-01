@@ -3,7 +3,7 @@
 // 화면(pages · components)에는 이런 계산을 넣지 않는다 (D-009, D-016).
 // 새로고침하면 등록·수정·처리·삭제한 내용은 모두 처음으로 돌아간다.
 // 가짜 계산은 실제 규칙(D-006 계산식, D-024 등)을 재현하지 않는다. 화면 확인용 흉내일 뿐이다.
-import type { ExpiryLevel, Food, FoodListResponse, Storage } from '../types/food'
+import type { ExpiryStatus, Food, FoodListResponse, Storage } from '../types/food'
 import type {
   ChangeStorageInput,
   FoodDetail,
@@ -48,12 +48,12 @@ function addDays(date: string, days: number): string {
 }
 
 // 가짜 상태 판정 (D-014 기준을 흉내만 낸다)
-function mockLevel(today: string, expiry: string): ExpiryLevel {
+function mockLevel(today: string, expiry: string): ExpiryStatus {
   const left = dayNumber(expiry) - dayNumber(today)
   if (left < 0) return 'expired'
-  if (left <= 2) return 'urgent'
-  if (left <= 5) return 'caution'
-  return 'relaxed'
+  if (left <= 2) return 'soon'
+  if (left <= 5) return 'warning'
+  return 'fresh'
 }
 
 function ruleByName(name: string): MockRule | undefined {
@@ -81,7 +81,7 @@ export function addMockFood(input: RuleRegisterInput | ManualRegisterInput, toda
     storage: input.storage,
     purchase_date: input.purchase_date,
     expiry_date: expiry,
-    expiry_level: mockLevel(today, expiry),
+    expiry_status: mockLevel(today, expiry),
     show_on_calendar: true,
     quantity: input.quantity,
     unit: input.unit,
@@ -132,7 +132,7 @@ export function getMockFoodDetail(id: string): FoodDetail | null {
     unit: rec.unit,
     purchase_date: rec.purchase_date,
     expiry_date: rec.expiry_date,
-    expiry_level: rec.expiry_level,
+    expiry_status: rec.expiry_status,
     source: rec.source,
     storages: storagesOf(rec),
   }
@@ -141,7 +141,7 @@ export function getMockFoodDetail(id: string): FoodDetail | null {
 function applyPatch(id: string, patch: Partial<MockRecord>, today: string): void {
   const next = { ...patches.get(id), ...patch }
   if (patch.expiry_date) {
-    next.expiry_level = mockLevel(today, patch.expiry_date)
+    next.expiry_status = mockLevel(today, patch.expiry_date)
     next.show_on_calendar = dayNumber(patch.expiry_date) - dayNumber(today) >= -3
   }
   patches.set(id, next)
@@ -168,7 +168,7 @@ export function updateMockFood(id: string, input: UpdateFoodInput, today: string
       expiry = addDays(purchase, maxDays(rule, rec.storage))
       recalculated = true
     } else {
-      if (rec.expiry_level === 'expired') {
+      if (rec.expiry_status === 'expired') {
         return {
           status: 'invalid',
           fieldErrors: { name: '기한이 지난 식품은 목록에 없는 이름으로 바꿀 수 없어요. (가짜 응답)' },
@@ -220,7 +220,7 @@ export function changeMockStorage(id: string, input: ChangeStorageInput, today: 
       return { status: 'invalid', fieldErrors: { storage: '이 보관 방법은 고를 수 없어요. (가짜 응답)' } }
     }
     expiry = addDays(rec.purchase_date, maxDays(ruleByName(rec.name), input.storage)) // 가짜 계산: D-006 식이 아님
-    if (rec.expiry_level === 'expired' && dayNumber(expiry) <= dayNumber(today)) {
+    if (rec.expiry_status === 'expired' && dayNumber(expiry) <= dayNumber(today)) {
       return {
         status: 'invalid',
         fieldErrors: { storage: '이미 기한이 지나서 이 보관 방법으로 바꿀 수 없어요. (가짜 응답)' },

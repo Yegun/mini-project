@@ -18,7 +18,7 @@ export default function FoodBarRow({ food, today, onSelect }: Props) {
 
   const barStyle: CSSProperties = {
     gridColumn: `${span.startCol + 2} / ${span.endCol + 3}`, // 1열은 이름 칸
-    background: statusColor(food.expiry_level),
+    background: statusColor(food.expiry_status),
   }
   const barClass = [
     'food-row__bar',
@@ -27,7 +27,7 @@ export default function FoodBarRow({ food, today, onSelect }: Props) {
   ]
     .filter(Boolean)
     .join(' ')
-  const description = `${food.name}, ${STORAGE_LABEL[food.storage]}, ${STATUS_LABEL[food.expiry_level]}`
+  const description = `${food.name}, ${STORAGE_LABEL[food.storage]}, ${STATUS_LABEL[food.expiry_status]}`
 
   return (
     <div className="week-grid food-row">

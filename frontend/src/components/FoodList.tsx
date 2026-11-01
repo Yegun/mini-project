@@ -16,12 +16,12 @@ export default function FoodList({ foods, onSelect }: Props) {
           <button type="button" className="food-list__item" onClick={() => onSelect?.(food.id)}>
             <span
               className="food-list__strip"
-              style={{ background: statusColor(food.expiry_level) }}
+              style={{ background: statusColor(food.expiry_status) }}
               aria-hidden="true"
             />
             <span className="food-list__name">{food.name}</span>
             <span className="food-list__storage">{STORAGE_LABEL[food.storage]}</span>
-            <span className="visually-hidden">{STATUS_LABEL[food.expiry_level]}</span>
+            <span className="visually-hidden">{STATUS_LABEL[food.expiry_status]}</span>
           </button>
         </li>
       ))}

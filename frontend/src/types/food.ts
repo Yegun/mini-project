@@ -11,7 +11,7 @@ export const STORAGE_LABEL: Record<Storage, string> = {
 }
 
 // 상태 판정은 API 가 한다 (D-009). 값 이름은 제안.
-export type ExpiryLevel = 'relaxed' | 'caution' | 'urgent' | 'expired' // 여유 · 주의 · 임박 · 지남
+export type ExpiryStatus = 'fresh' | 'warning' | 'soon' | 'expired' // 여유 · 주의 · 임박 · 지남
 
 export interface Food {
   id: string // UUID (D-033)
@@ -19,7 +19,7 @@ export interface Food {
   storage: Storage
   purchase_date: string // YYYY-MM-DD (D-031)
   expiry_date: string // YYYY-MM-DD
-  expiry_level: ExpiryLevel // 처리 상태 `status`(D-032)와 겹치지 않게 지은 이름
+  expiry_status: ExpiryStatus // 처리 상태 `status`(D-032)와 겹치지 않게 지은 이름
   show_on_calendar: boolean // 지난 지 4일 이상이면 false (D-014). 목록에는 남는다
 }
 
