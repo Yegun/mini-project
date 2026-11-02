@@ -75,11 +75,8 @@ export default function StorageChangeForm({ food, busy, onSave, onDirtyChange }:
         />
       )}
 
-      <button
-        type="submit"
-        className="button button--primary button--wide"
-        disabled={busy || storage === food.storage}
-      >
+      {/* 지금과 같은 방법을 골라도 저장할 수 있다. API 가 기한 그대로 성공 처리한다 (D-006, SCREEN-SPEC 6.3) */}
+      <button type="submit" className="button button--primary button--wide" disabled={busy}>
         {busy ? '저장하는 중…' : '보관 방법 저장'}
       </button>
     </form>
