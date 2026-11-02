@@ -169,3 +169,9 @@ def test_app_role_can_read_but_not_write_rules(pg_url, pg_schema, pg_rules):
         admin.execute(sql.SQL("DROP OWNED BY {}").format(sql.Identifier(role)))
         admin.execute(sql.SQL("DROP ROLE IF EXISTS {}").format(sql.Identifier(role)))
         admin.close()
+
+
+def test_seed_does_not_commit_by_itself(pg):
+    seed_rules(pg)
+    pg.rollback()
+    assert pg.execute("SELECT count(*) AS n FROM rules").fetchone()["n"] == 0

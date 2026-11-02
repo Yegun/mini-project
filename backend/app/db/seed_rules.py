@@ -11,6 +11,8 @@ import uuid
 
 import psycopg
 
+from app.db.connection import savepoint
+
 # 규칙표 식품 번호를 이름에서 만든다. 다시 채워도 번호가 같고, 컴퓨터가 달라도 같다.
 _NAMESPACE = uuid.UUID("6f1c2b7e-3d5a-4c1e-9a52-0b7d8f4e1a10")
 
@@ -84,7 +86,7 @@ def seed_rules(conn: psycopg.Connection) -> None:
     개발자 계정(DATABASE_ADMIN_URL)으로만 부른다. 앱 계정은 규칙표를 쓸 수 없다 (Q-16).
     """
     check_rules()
-    with conn.transaction():
+    with savepoint(conn):
         conn.execute("DELETE FROM rules")  # 별칭·보관 방법별 정보는 따라 지워진다
         for name, default, room, fridge, freezer, aliases in RULES:
             days = {"room": room, "fridge": fridge, "freezer": freezer}

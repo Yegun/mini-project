@@ -1,43 +1,26 @@
-"""창고(DB)에 연결하는 곳.
+"""DB 연결과 요청 단위 묶음, 오늘 날짜.
 
-식품 DB 와 규칙표 DB 는 다른 분이 만든다. 여기서는 만들어진 파일에 연결만 한다.
-파일 위치와 이름은 app/db/connection.py 가 정한다 (한 곳에서만 정한다). 환경 변수로 바꿀 수 있다.
-  FRIDGE_DB_PATH 식품 DB   (기본 backend/data/fridge.db)
-  RULES_DB_PATH  규칙표 DB (기본 backend/data/rules.db)
+연결 문자열(.env 의 DATABASE_URL)과 연결 방식은 app/db/connection.py 가 정한다 (한 곳에서만 정한다).
+저장소 함수(app/db)는 commit 하지 않으므로, 요청 하나를 한 묶음으로 처리하는 것은 여기 transaction 이다 (OQ-04).
 """
-
-import sqlite3
 from contextlib import contextmanager
-from datetime import date
-from pathlib import Path
+from datetime import date, datetime
+from zoneinfo import ZoneInfo
 
-from app.db.connection import foods_db_path, rules_db_path
+import psycopg
+
+from app.db.connection import DatabaseConfigError, connect_app
 from app.errors import ApiError
 
+KOREA = ZoneInfo("Asia/Seoul")
 
-def _connect(path: Path, mode: str) -> sqlite3.Connection:
-    """mode: "rw" 는 읽기·쓰기, "ro" 는 읽기 전용. 파일이 없으면 새로 만들지 않고 실패한다."""
+
+def get_conn():
+    """요청마다 DB 연결을 새로 열고 끝나면 닫는다. 연결하지 못하면 server_error (US-014)."""
     try:
-        conn = sqlite3.connect(
-            f"{path.resolve().as_uri()}?mode={mode}", uri=True, check_same_thread=False
-        )
-        conn.row_factory = sqlite3.Row  # app/db 의 저장소 함수가 칸 이름으로 읽는다
-        return conn
-    except sqlite3.Error as error:
-        raise ApiError(500, "load_failed") from error
-
-
-def get_foods_conn():
-    conn = _connect(foods_db_path(), "rw")
-    try:
-        yield conn
-    finally:
-        conn.close()
-
-
-def get_rules_conn():
-    """규칙표는 앱이 읽기만 한다 (D-007). 그래서 읽기 전용으로 연다."""
-    conn = _connect(rules_db_path(), "ro")
+        conn = connect_app()
+    except (psycopg.Error, DatabaseConfigError) as error:
+        raise ApiError("server_error") from error
     try:
         yield conn
     finally:
@@ -45,29 +28,29 @@ def get_rules_conn():
 
 
 def get_today() -> date:
-    """오늘 날짜는 이 컴퓨터(API)의 시계 하나만 쓴다 (D-009)."""
-    return date.today()
-
-
-def _rollback(conn: sqlite3.Connection) -> None:
-    try:
-        conn.rollback()
-    except sqlite3.Error:
-        pass
+    """오늘 날짜. 코드에서 오늘은 여기서만 정한다. 서버 시계를 한국 시간으로 바꾼 날짜다 (D-087, D-088)."""
+    return datetime.now(KOREA).date()
 
 
 @contextmanager
-def transaction(conn: sqlite3.Connection, failure: str = "save_failed"):
-    """요청 하나를 한 묶음으로 처리한다. 중간에 실패하면 전부 되돌려 아무것도 바뀌지 않게 한다 (OQ-04).
+def transaction(conn: psycopg.Connection):
+    """요청 하나를 한 묶음으로 처리한다. 중간에 실패하면 전부 되돌려 아무것도 바뀌지 않게 한다.
 
-    창고 쪽 문제는 failure 이유(저장 실패 / 불러오기 실패)의 500 오류로 바꿔 알린다.
+    DB 쪽 문제는 server_error(500)로 바꿔 알린다. 입력 오류 같은 ApiError·ValidationError 는 되돌리고 그대로 낸다.
     """
     try:
         yield
         conn.commit()
-    except sqlite3.Error as error:
+    except psycopg.Error as error:
         _rollback(conn)
-        raise ApiError(500, failure) from error
+        raise ApiError("server_error") from error
     except BaseException:
         _rollback(conn)
         raise
+
+
+def _rollback(conn: psycopg.Connection) -> None:
+    try:
+        conn.rollback()
+    except psycopg.Error:
+        pass
