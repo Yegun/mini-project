@@ -6,6 +6,8 @@
 - commit 은 하지 않는다. 부르는 쪽이 한 묶음으로 처리한다.
 """
 import psycopg
+
+from app.db.connection import savepoint
 from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHashError, VerificationError
 
@@ -35,8 +37,8 @@ def create_user(conn: psycopg.Connection, email: str, password: str) -> dict:
     """계정을 만든다. 이미 있는 이메일이면 EmailTaken. 돌려주는 값은 {"id", "email"} (해시는 내보내지 않는다)."""
     email = normalize_email(email)
     try:
-        # 실패한 문장이 바깥 묶음 전체를 망가뜨리지 않게 savepoint 안에서 한다
-        with conn.transaction():
+        # 실패한 문장이 바깥 묶음 전체를 망가뜨리지 않게 savepoint 안에서 한다 (commit 은 하지 않는다)
+        with savepoint(conn):
             row = conn.execute(
                 "INSERT INTO users (email, password_hash) VALUES (%s, %s) RETURNING id, email",
                 (email, hash_password(password)),

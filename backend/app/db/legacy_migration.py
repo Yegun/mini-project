@@ -16,7 +16,7 @@ from pathlib import Path
 
 import psycopg
 
-from app.db.connection import foods_db_path
+from app.db.connection import foods_db_path, savepoint
 
 _COLUMNS = "id, name, storage, quantity, unit, purchase_date, expiry_date, source, status"
 
@@ -66,7 +66,7 @@ def migrate_legacy_foods(
     """
     today = today if isinstance(today, date) else date.fromisoformat(today)
     rows = _read_legacy_foods(Path(legacy_path) if legacy_path else foods_db_path())
-    with conn.transaction():  # savepoint. 안에서 실패하면 여기까지만 되돌린다
+    with savepoint(conn):  # 안에서 실패하면 여기까지만 되돌린다
         locked = conn.execute(
             "SELECT 1 FROM legacy_migration WHERE id = 1 AND user_id = %s AND NOT migrated FOR UPDATE",
             (user_id,),

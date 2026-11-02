@@ -69,3 +69,10 @@ def test_verify_handles_broken_hash():
 
 def test_normalize_email():
     assert normalize_email("  A@B.C ") == "a@b.c"
+
+
+def test_create_user_does_not_commit_by_itself(pg):
+    """한 요청의 첫 문장이어도 commit 하지 않는다. 부르는 쪽이 rollback 하면 계정이 남지 않는다."""
+    create_user(pg, "kim@example.com", "Passw0rd!")
+    pg.rollback()
+    assert pg.execute("SELECT count(*) AS n FROM users").fetchone()["n"] == 0

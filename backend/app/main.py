@@ -1,22 +1,10 @@
-from contextlib import asynccontextmanager
-
 from fastapi import FastAPI
 
-from app.db.init_db import ensure_db
 from app.errors import register_error_handlers
-from app.routers import foods, rules
 
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    ensure_db()  # DB 파일이 없으면 처음 켤 때 만든다. 있으면 건드리지 않는다.
-    yield
-
-
-app = FastAPI(title="task-flow API", lifespan=lifespan)
+# 표 준비(migrate, init_db)는 개발자가 따로 실행한다. 서버가 켜질 때 표를 만들지 않는다.
+app = FastAPI(title="task-flow API")
 register_error_handlers(app)
-app.include_router(foods.router)
-app.include_router(rules.router)
 
 
 @app.get("/health")

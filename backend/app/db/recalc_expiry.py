@@ -20,7 +20,7 @@ import sys
 import psycopg
 
 from app.calc import expiry_from_days
-from app.db.connection import connect_admin
+from app.db.connection import connect_admin, savepoint
 from app.db.rules_repo import get_rule_by_name
 
 _TARGETS = (
@@ -54,7 +54,7 @@ def recalc_expiry(conn: psycopg.Connection, *, dry_run: bool = False) -> dict:
         )
         updates.append((new_expiry, row["id"]))
     if updates and not dry_run:
-        with conn.transaction():  # 하나라도 실패하면 모두 되돌린다
+        with savepoint(conn):  # 하나라도 실패하면 모두 되돌린다
             for params in updates:
                 conn.execute(_UPDATE, params)
     return {"changed": changed, "same": same, "skipped": skipped}

@@ -11,6 +11,8 @@ commit / rollback 한다 (API-SPEC 0절 "요청 단위").
 옛 SQLite 파일(v0.2.0) 위치는 기존 식품을 옮길 때만 쓴다 (D-038, D-098).
 """
 import os
+import uuid
+from contextlib import contextmanager
 from pathlib import Path
 
 import psycopg
@@ -74,3 +76,22 @@ def foods_db_path() -> Path:
 def rules_db_path() -> Path:
     """옛 SQLite 규칙표 파일. 지금은 쓰지 않는다 (규칙표는 PostgreSQL 에 있다, D-041)."""
     return Path(os.environ.get("RULES_DB_PATH", DATA_DIR / "rules.db"))
+
+
+@contextmanager
+def savepoint(conn: psycopg.Connection):
+    """바깥 묶음 안의 되돌릴 수 있는 한 구간. 안에서 실패하면 이 구간만 취소하고 예외를 그대로 낸다.
+
+    conn.transaction() 은 바깥 묶음이 아직 없으면 스스로 commit 해 버린다. 저장소는 commit 하지 않아야 하므로
+    (부르는 쪽이 요청 하나를 한 묶음으로 commit / rollback 한다) 이 함수를 쓴다.
+    """
+    name = "sp_" + uuid.uuid4().hex[:12]
+    conn.execute(f"SAVEPOINT {name}")
+    try:
+        yield
+    except BaseException:
+        conn.execute(f"ROLLBACK TO SAVEPOINT {name}")
+        conn.execute(f"RELEASE SAVEPOINT {name}")
+        raise
+    else:
+        conn.execute(f"RELEASE SAVEPOINT {name}")
