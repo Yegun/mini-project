@@ -84,12 +84,14 @@ def food_args(**over):
 
 
 @pytest.fixture
-def make_client(pg_rules, today):
+def make_client(pg_rules, today, monkeypatch, tmp_path):
     """API 시험용 클라이언트를 만든다. 서버 코드는 시험 DB(임시 schema)에 연결하고, 오늘은 TODAY 로 고정한다.
 
     클라이언트마다 쿠키 보관함이 따로라서 두 계정(두 기기)을 흉내 낼 수 있다.
     처리 못 한 오류도 500 응답으로 받는다(server_error).
     """
+    # 기존 식품 옮기기가 이 컴퓨터의 진짜 옛 파일(backend/data/fridge.db)을 읽지 않도록, 없는 파일로 돌려 둔다.
+    monkeypatch.setenv("FRIDGE_DB_PATH", str(tmp_path / "no-legacy.db"))
     app.dependency_overrides[get_conn] = lambda: pg_rules
     app.dependency_overrides[get_today] = lambda: today
 
