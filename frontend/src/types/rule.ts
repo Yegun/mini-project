@@ -1,4 +1,4 @@
-// 규칙표 검색(A2) 응답 모양. 백엔드 응답은 ApiRule, 화면이 쓰는 모양은 RuleCandidate 이고 api/rules.ts 가 바꿔 준다.
+// 규칙표 검색(C1) 응답 모양. 백엔드 응답은 ApiRule, 화면이 쓰는 모양은 RuleCandidate 이고 api/rules.ts 가 바꿔 준다.
 // 화면은 기한을 계산하지 않으므로 보관 기간(max_days)은 받지 않는다 (D-016).
 import type { Storage } from './food'
 
@@ -7,11 +7,11 @@ export interface RuleStorageOption {
   allowed: boolean // false 면 "불가". 흐리게 보이고 고를 수 없다 (D-005)
 }
 
-// 백엔드가 주는 규칙표 후보 한 건. "불가"인 보관 방법만 알려 준다.
+// 백엔드가 주는 규칙표 후보 한 건. "불가"인 보관 방법만 알려 준다 (API-SPEC C1).
 export interface ApiRule {
   name: string
   default_storage: Storage
-  not_allowed: Storage[]
+  disallowed_storages: Storage[]
 }
 
 export interface RuleCandidate {
@@ -20,6 +20,7 @@ export interface RuleCandidate {
   storages: RuleStorageOption[]
 }
 
+// 화면이 쓰는 검색 결과 (api/rules.ts 가 백엔드의 items 를 바꿔 담는다)
 export interface RuleSearchResponse {
   rules: RuleCandidate[] // 없으면 빈 목록 (성공)
 }

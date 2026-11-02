@@ -1,8 +1,8 @@
-// [임시 계약] 식품 등록 요청·결과 모양 (A3, A4). 백엔드 담당과 합의 전 제안이다.
+// 식품 등록 요청·결과 모양 (A2 규칙표, A3 직접). 기준은 API-SPEC 2-3.
 // 바뀌면 이 파일과 api/foods.ts, mocks/ 만 고친다.
 import type { Storage } from './food'
 
-// 규칙표에서 골라 등록 (A3). 기한은 API 가 계산한다.
+// 규칙표에서 골라 등록 (A2). 기한은 API 가 계산한다.
 export interface RuleRegisterInput {
   name: string
   storage: Storage
@@ -11,7 +11,7 @@ export interface RuleRegisterInput {
   purchase_date: string // YYYY-MM-DD
 }
 
-// 직접 등록 (A4). 기한은 날짜 또는 며칠 뒤 중 하나만 보낸다. "며칠 뒤"의 계산은 API 가 한다 (D-002, D-016).
+// 직접 등록 (A3). 기한은 날짜 또는 며칠 뒤 중 하나만 보낸다. "며칠 뒤"의 계산은 API 가 한다 (D-002, D-016).
 export interface ManualRegisterInput {
   name: string
   storage: Storage
@@ -29,4 +29,4 @@ export type FieldErrors = Partial<Record<FieldName, string>>
 export type RegisterResult =
   | { status: 'ok' }
   | { status: 'invalid'; fieldErrors: FieldErrors } // API 가 입력 규칙 위반으로 거절 (칸 옆 안내)
-  | { status: 'failed' } // 저장 실패 · API 에 닿지 못함 (화면 위 오류 알림)
+  | { status: 'failed'; message?: string } // 화면 위 오류 알림. message 는 API 문구, 없으면 화면 기본 문구

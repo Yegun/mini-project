@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createManualFood, createRuleFood } from '../api/foods'
 import { searchRules } from '../api/rules'
 import ErrorNotice from '../components/ErrorNotice'
@@ -17,8 +17,9 @@ import '../components/Register.css'
 
 interface Props {
   today: string // 홈이 API 에서 받은 오늘 날짜. 구매일 기본값에만 쓴다 (D-021)
-  onBack: () => void // 저장하지 않고 홈으로
+  onBack: () => void // 저장하지 않고 바로 전에 보던 화면으로 (D-085)
   onDone: () => void // 등록 성공 → 홈으로
+  onDirtyChange?: (dirty: boolean) => void // 입력한 것이 있는지 (탭 이동 확인 창, D-083)
 }
 
 type Step = 'search' | 'rule' | 'manual'
@@ -38,7 +39,7 @@ const FIELD_OF: Record<keyof FormValues, FieldName> = {
 const SAVE_FAILED = '등록하지 못했어요. 잠시 뒤에 다시 시도해 주세요.'
 
 // 식품 등록 화면: 검색 → (규칙표 식품 입력 | 직접 등록 입력). 입력값은 여기서 들고 있어 실패해도 남는다.
-export default function RegisterPage({ today, onBack, onDone }: Props) {
+export default function RegisterPage({ today, onBack, onDone, onDirtyChange }: Props) {
   const [step, setStep] = useState<Step>('search')
   const [query, setQuery] = useState('')
   const [search, setSearch] = useState<SearchState>({ status: 'idle' })
@@ -49,6 +50,16 @@ export default function RegisterPage({ today, onBack, onDone }: Props) {
   const [submitting, setSubmitting] = useState(false)
   const searchSeq = useRef(0) // 늦게 온 옛 검색 결과가 덮어쓰지 않게
   const submitLock = useRef(false) // 연타해도 요청은 한 번
+
+  // 검색어를 적었거나, 식품을 골랐거나(직접 등록으로 갔거나), 값을 처음과 다르게 바꿨으면 "입력한 것이 있다".
+  // 구매일 기본값(오늘)처럼 처음부터 채워진 값만 있으면 입력으로 보지 않는다 (SCREEN-SPEC 11.1-6)
+  const dirty =
+    query.trim() !== '' ||
+    step !== 'search' ||
+    JSON.stringify(values) !== JSON.stringify(emptyValues(today))
+  useEffect(() => {
+    onDirtyChange?.(dirty)
+  }, [dirty, onDirtyChange])
 
   function runSearch() {
     const q = query.trim()
@@ -131,14 +142,14 @@ export default function RegisterPage({ today, onBack, onDone }: Props) {
     if (result.status === 'invalid' && Object.keys(result.fieldErrors).length > 0) {
       setErrors(result.fieldErrors)
     } else {
-      setSaveError(SAVE_FAILED)
+      setSaveError((result.status === 'failed' && result.message) || SAVE_FAILED) // API 문구가 있으면 그것을 보인다
     }
   }
 
   return (
     <main className="register">
       <header className="register__header">
-        <button type="button" className="register__back" aria-label="홈으로 돌아가기" onClick={onBack}>
+        <button type="button" className="register__back" aria-label="뒤로 가기" onClick={onBack}>
           ‹
         </button>
         <h1 className="register__title">식품 등록</h1>

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { Storage } from '../types/food'
 import type { ChangeStorageInput, FoodDetail, SaveResult } from '../types/foodDetail'
 import type { FieldErrors } from '../types/register'
@@ -10,14 +10,21 @@ interface Props {
   food: FoodDetail
   busy: boolean
   onSave: (input: ChangeStorageInput) => Promise<SaveResult> // 성공하면 화면이 홈으로 간다 (D-020)
+  onDirtyChange?: (dirty: boolean) => void // 입력한 것이 있는지 (탭 이동 확인 창, D-083)
 }
 
 // 보관 방법 바꾸기 (5.3). 불가 방법은 흐리게 보인다 (D-005). 새 기한 계산은 API 가 한다 (D-006, D-016).
-export default function StorageChangeForm({ food, busy, onSave }: Props) {
+export default function StorageChangeForm({ food, busy, onSave, onDirtyChange }: Props) {
   const [storage, setStorage] = useState<Storage>(food.storage)
   const [errors, setErrors] = useState<FieldErrors>({})
   const [expiryOpen, setExpiryOpen] = useState(false) // 직접 등록 식품: API 가 "기한 필요"라고 했을 때 (D-023)
   const [expiryDate, setExpiryDate] = useState('')
+
+  // 다른 보관 방법을 골랐거나 기한을 다시 적었으면 "입력한 것이 있다" (SCREEN-SPEC 11.1-6)
+  const dirty = storage !== food.storage || expiryDate !== ''
+  useEffect(() => {
+    onDirtyChange?.(dirty)
+  }, [dirty, onDirtyChange])
 
   function pick(next: Storage) {
     setStorage(next)
