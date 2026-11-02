@@ -33,6 +33,20 @@ class ManualFoodBody(RuleFoodBody):
     expiry_in_days: Any = None
 
 
+class UpdateBody(Body):
+    # 보낸 칸만 바꾼다. expiry_date 는 "기한을 다시 적어 주세요"를 받은 뒤에만 넣는다.
+    name: Any = None
+    quantity: Any = None
+    unit: Any = None
+    purchase_date: Any = None
+    expiry_date: Any = None
+
+
+class StorageBody(Body):
+    storage: Any = None
+    expiry_date: Any = None  # 직접 등록 식품은 "기한을 다시 적어 주세요"를 받은 뒤에 넣는다
+
+
 class ProcessBody(Body):
     status: Any = None
 
@@ -68,6 +82,32 @@ def get_food(food_id: str, conn: Conn, user_id: UserId, today: Today):
         food = foods_repo.get_food(conn, user_id, food_id)
     if food is None:
         raise ApiError("not_found")
+    return food_json(food, today)
+
+
+@router.patch("/foods/{food_id}")
+def update_food(food_id: str, body: UpdateBody, conn: Conn, user_id: UserId, today: Today):
+    """A5 정보 수정 🔒 (이름, 구매일, 수량, 단위). 보낸 칸만 바꾸고 안 보낸 칸은 그대로다.
+
+    기한을 다시 적어야 하면 409 expiry_required 로 알리고, 이때는 아무것도 저장하지 않는다.
+    """
+    fields = {name: getattr(body, name) for name in body.model_fields_set}
+    with transaction(conn):
+        food = foods_repo.get_food(conn, user_id, food_id)
+        if food is None:
+            raise ApiError("not_found")
+        food = services.change_info(conn, user_id, food, fields, today)
+    return food_json(food, today)
+
+
+@router.patch("/foods/{food_id}/storage")
+def change_storage(food_id: str, body: StorageBody, conn: Conn, user_id: UserId, today: Today):
+    """A6 보관 방법 변경 🔒. 규칙표 식품은 새 기한을 계산하고, 직접 등록 식품은 기한을 다시 적어야 한다."""
+    with transaction(conn):
+        food = foods_repo.get_food(conn, user_id, food_id)
+        if food is None:
+            raise ApiError("not_found")
+        food = services.change_storage(conn, user_id, food, body.model_dump(), today)
     return food_json(food, today)
 
 
