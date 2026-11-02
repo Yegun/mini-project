@@ -1,7 +1,10 @@
-"""표 7개 만들기 (DATA-MODEL.md 1절 ~ 5절, 7절)
+"""새 DB 구조 만들기: 계정·로그인 상태·식품·규칙표 (DATA-MODEL.md 1절 ~ 5절)
 
 Revision ID: 0001
 Revises:
+
+단계적 이전의 첫 단계다. 식품의 주인 칸(foods.user_id)은 **비울 수 있게** 만든다.
+기존 식품에 주인을 붙이는 일이 끝난 뒤(0004) 0005 에서 비울 수 없게 하고 외래키를 건다.
 """
 from alembic import op
 
@@ -12,7 +15,6 @@ depends_on = None
 
 # 표 정의는 SQL 로 직접 쓴다. 여기서 % 와 : 를 쓰지 않으므로 그대로 DB 에 보낸다.
 UP = """
--- 표 7개 (DATA-MODEL.md 1절 ~ 5절, 7절). PostgreSQL 16.
 -- 날짜는 DATE(시각 없음, Q-01), 번호는 UUID(Q-04), 허용 값은 글자 + CHECK(Q-07).
 -- 여유·주의·임박·지남, 기록 숫자는 저장하지 않는다 (D-011). 오늘 날짜는 DB 시계가 아니라 API 가 넘긴다 (D-088).
 
@@ -31,10 +33,11 @@ CREATE TABLE sessions (
     last_used_at timestamptz NOT NULL DEFAULT now()
 );
 
--- 2절. 식품. 계정이 지워지면 식품도 지운다 (Q-09). 만든 시각·고친 시각 칸은 없다 (D-028).
+-- 2절. 식품. 만든 시각·고친 시각 칸은 없다 (D-028).
+-- user_id(주인)는 처음에는 비울 수 있다. 0004 에서 모든 식품에 주인을 붙이고, 0005 에서 NOT NULL + 외래키를 건다.
 CREATE TABLE foods (
     id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id        uuid NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    user_id        uuid,
     name           text NOT NULL CHECK (length(btrim(name)) > 0),
     storage        text NOT NULL CHECK (storage IN ('room', 'fridge', 'freezer')),
     quantity       numeric(10, 2) NOT NULL CHECK (quantity > 0),
@@ -79,13 +82,6 @@ CREATE TABLE rule_storage (
     CHECK ((allowed AND max_days IS NOT NULL AND max_days > 0)
         OR (NOT allowed AND max_days IS NULL))
 );
-
--- 7-1. 기존 식품(v0.2.0) 옮김 기록. 한 줄만 있다. 계정이 지워져도 줄은 남는다 (Q-09, Q-18).
-CREATE TABLE legacy_migration (
-    id       integer PRIMARY KEY CHECK (id = 1),
-    user_id  uuid REFERENCES users (id) ON DELETE SET NULL,
-    migrated boolean NOT NULL DEFAULT false
-);
 """
 
 
@@ -94,14 +90,6 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    # 만든 순서의 거꾸로. 식품·로그인 상태·옮김 기록이 계정을, 별칭·보관 방법별 정보가 규칙표 식품을 가리킨다.
-    for table in (
-        "legacy_migration",
-        "rule_storage",
-        "rule_aliases",
-        "rules",
-        "foods",
-        "sessions",
-        "users",
-    ):
+    # 만든 순서의 거꾸로. 별칭·보관 방법별 정보가 규칙표 식품을, 로그인 상태가 계정을 가리킨다.
+    for table in ("rule_storage", "rule_aliases", "rules", "foods", "sessions", "users"):
         op.execute(f"DROP TABLE {table}")

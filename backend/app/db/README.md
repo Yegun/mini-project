@@ -25,12 +25,22 @@ python -m app.db.setup_roles    # 앱 계정 만들기 (규칙표 읽기 전용)
 alembic current                 # 지금 DB 의 버전 / alembic history  # 전체 이력
 ```
 
-- 현재 버전: `0001` 표 7개 만들기 → `0002` 수파베이스 REST API 역할(anon·authenticated)의 표 권한 회수 (그 역할이 없는 DB 에서는 아무것도 안 한다).
+- 현재 버전 (한 버전 = 한 가지 일, 앞 단계가 되어 있어야 다음이 된다):
+
+| 번호 | 하는 일 | 종류 |
+|---|---|---|
+| 0001 | 새 DB 구조 만들기 (`foods.user_id` 는 **비울 수 있게**) | 구조 |
+| 0002 | 옛 식품(SQLite `backend/data/fridge.db`)을 `foods` 로 가져오기, **주인 없이**. 파일이 있는 컴퓨터에서 올릴 때만 가져온다 | 데이터 |
+| 0003 | 이전용 계정(`legacy@fridge.invalid`, 로그인 불가) 만들기 | 데이터 |
+| 0004 | 주인 없는 식품을 모두 이전용 계정에 넘기기 | 데이터 |
+| 0005 | `foods.user_id` 를 비울 수 없게 + 외래키 (주인 없는 식품이 남아 있으면 이 단계가 실패) | 구조 |
+| 0006 | 수파베이스 REST API 역할(anon·authenticated)의 표 권한 회수 (그 역할이 없는 DB 에서는 아무것도 안 한다) | 보안 |
+
+- 첫 가입자가 이전용 계정의 식품을 넘겨받는 마지막 단계는 서버가 한다 (아래 "기존 식품 넘겨받기").
 - 표를 바꿀 때는 `alembic revision -m "설명"` 으로 새 파일을 만들고 `upgrade()` 와 `downgrade()` 에 **SQL 을 직접 쓴다** (`op.execute`). 이미 적용한 파일은 고치지 않는다. 파일 하나가 한 묶음이라 중간에 실패하면 그 파일은 아무것도 바뀌지 않는다.
 - 접속은 `.env` 의 `DATABASE_ADMIN_URL` 을 쓴다. **표는 알렘빅으로만 바꾼다.** 수파베이스 화면에서 표를 직접 고치면 버전 기록과 어긋난다.
 - 수파베이스에서는 표를 바꿀 때 Transaction pooler(6543)가 아니라 **Direct connection 또는 Session pooler(5432)** 주소를 쓴다.
 - 규칙표 값은 [seed_rules.py](seed_rules.py) 에 있고 정식값이다. 고친 뒤 `init_db` 를 다시 돌린다.
-- 이미 표가 만들어진 DB 를 알렘빅으로 옮길 때는 한 번만 `alembic stamp 0001` 로 "0001 까지 적용됨"을 기록한다 (표는 다시 만들지 않는다).
 
 ## 연결
 
@@ -98,16 +108,18 @@ conn = connect_app()   # psycopg 연결. 칸 이름으로 읽는 dict 를 돌려
 `records_summary(conn, user_id, today)` (D1) → `{"eaten": {"year","month"}, "discarded": {...}, "food_kinds", "by_storage": {...}, "expiry_dates": [...]}`.
 식품 상태별 수(여유·주의·임박·지남)는 홈 목록과 같은 판정(`app/status.py`)을 써야 해서, DB 는 처리 전 식품의 **기한 목록(`expiry_dates`)** 만 주고 API 가 `by_status` 로 센다. 지난 지 4일 이상 식품도 포함되어 있다.
 
-## 기존 식품 옮기기 — `legacy_migration`
+## 기존 식품 넘겨받기 — `legacy_migration`
+
+옛 SQLite 식품을 가져오는 일은 서버가 아니라 알렘빅 버전 파일(0002 ~ 0004)이 한다. 가져온 식품은 로그인할 수 없는 **이전용 계정**이 맡고 있다.
 
 | 함수 | 부르는 때 |
 |---|---|
-| `register_first_user(conn, user_id)` | **가입 묶음 안에서**, 계정을 만든 직후. 첫 계정이면 `True` |
-| `migrate_legacy_foods(conn, user_id, today)` | 가입 묶음을 commit **한 뒤**(첫 계정일 때), 그리고 로그인할 때 `needs_migration` 이 `True` 이면. 성공 `True` |
-| `needs_migration(conn, user_id)` | 로그인할 때 |
+| `claim_legacy_foods(conn, user_id)` | **가입 묶음 안에서**, 계정을 만든 직후. 이전용 계정이 맡은 식품을 이 계정으로 넘기고 넘긴 수를 돌려준다 |
 
-- 옮기다 실패하면 옮김 묶음만 취소되고 **예외가 나온다. 가입·로그인은 성공으로 처리하고 예외는 삼킨다** (D-097). 가입 commit 을 먼저 해 두어야 한다.
-- 옛 SQLite 파일(`backend/data/fridge.db`, 환경 변수 `FRIDGE_DB_PATH`)은 읽기 전용으로만 열고 지우지 않는다 (D-098).
+- 처음 가입한 계정만 받는다. 이후 가입하는 계정은 넘겨받을 것이 없어서 빈 상태다 (D-044). 두 사람이 동시에 처음 가입해도 먼저 넘긴 쪽이 행을 잠그므로 한 사람에게만 간다.
+- 넘기기는 가입과 같은 묶음이라 실패하면 가입도 취소된다. 다시 가입하면 된다.
+- 이전용 계정 이메일은 `LEGACY_EMAIL` (알렘빅 0003·0004 와 같은 값, 시험이 확인한다).
+- 옛 SQLite 파일은 읽기 전용으로만 열고 지우지 않는다 (D-098). 위치는 환경 변수 `FRIDGE_DB_PATH` (기본 `backend/data/fridge.db`).
 
 ## 규칙표를 고친 뒤 — 기한 다시 계산 (개발자용)
 

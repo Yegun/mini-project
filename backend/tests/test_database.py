@@ -40,7 +40,7 @@ def test_transaction_commits_on_success(pg):
     with database.transaction(pg):
         create_user(pg, "kim@example.com", "Passw0rd!")
     pg.rollback()  # commit 됐다면 rollback 해도 남아 있다
-    assert pg.execute("SELECT count(*) AS n FROM users").fetchone()["n"] == 1
+    assert pg.execute("SELECT count(*) AS n FROM users WHERE email <> 'legacy@fridge.invalid'").fetchone()["n"] == 1
 
 
 def test_transaction_rolls_back_everything_on_api_error(pg):
@@ -49,7 +49,7 @@ def test_transaction_rolls_back_everything_on_api_error(pg):
             create_user(pg, "kim@example.com", "Passw0rd!")
             raise ApiError("expiry_required", "expiry_date")
     assert info.value.reason == "expiry_required"  # 입력 오류는 그대로 낸다
-    assert pg.execute("SELECT count(*) AS n FROM users").fetchone()["n"] == 0
+    assert pg.execute("SELECT count(*) AS n FROM users WHERE email <> 'legacy@fridge.invalid'").fetchone()["n"] == 0
 
 
 def test_transaction_rolls_back_on_validation_error(pg):
@@ -57,7 +57,7 @@ def test_transaction_rolls_back_on_validation_error(pg):
         with database.transaction(pg):
             create_user(pg, "kim@example.com", "Passw0rd!")
             raise ValidationError("quantity", "invalid_quantity")
-    assert pg.execute("SELECT count(*) AS n FROM users").fetchone()["n"] == 0
+    assert pg.execute("SELECT count(*) AS n FROM users WHERE email <> 'legacy@fridge.invalid'").fetchone()["n"] == 0
 
 
 def test_db_trouble_becomes_server_error_and_changes_nothing(pg):
@@ -68,7 +68,7 @@ def test_db_trouble_becomes_server_error_and_changes_nothing(pg):
             create_user(pg, "second@example.com", "Passw0rd!")
             pg.execute("INSERT INTO foods (user_id, name) VALUES (gen_random_uuid(), 'x')")  # 빠진 칸 → DB 오류
     assert info.value.reason == "server_error" and info.value.status_code == 500
-    assert pg.execute("SELECT count(*) AS n FROM users").fetchone()["n"] == 1
+    assert pg.execute("SELECT count(*) AS n FROM users WHERE email <> 'legacy@fridge.invalid'").fetchone()["n"] == 1
 
 
 def test_cannot_connect_is_server_error(monkeypatch):

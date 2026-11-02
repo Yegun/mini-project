@@ -31,7 +31,7 @@ def test_duplicate_does_not_break_outer_transaction(pg):
     pg.commit()
     with pytest.raises(EmailTaken):
         create_user(pg, "kim@example.com", "Passw0rd!")
-    assert pg.execute("SELECT count(*) AS n FROM users").fetchone()["n"] == 1
+    assert pg.execute("SELECT count(*) AS n FROM users WHERE email <> 'legacy@fridge.invalid'").fetchone()["n"] == 1
 
 
 def test_db_rejects_uppercase_email(pg):
@@ -75,4 +75,4 @@ def test_create_user_does_not_commit_by_itself(pg):
     """한 요청의 첫 문장이어도 commit 하지 않는다. 부르는 쪽이 rollback 하면 계정이 남지 않는다."""
     create_user(pg, "kim@example.com", "Passw0rd!")
     pg.rollback()
-    assert pg.execute("SELECT count(*) AS n FROM users").fetchone()["n"] == 0
+    assert pg.execute("SELECT count(*) AS n FROM users WHERE email <> 'legacy@fridge.invalid'").fetchone()["n"] == 0

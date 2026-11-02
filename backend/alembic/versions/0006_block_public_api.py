@@ -1,7 +1,7 @@
 """수파베이스의 REST API 로 우리 표가 열리지 않게 권한 회수
 
-Revision ID: 0002
-Revises: 0001
+Revision ID: 0006
+Revises: 0005
 
 수파베이스는 public 표를 anon·authenticated 역할로 REST API 에 열 수 있다. 우리 서버는 DB 에 직접 연결하므로
 이 두 역할에는 권한이 필요 없다. 비밀번호 해시가 든 users 표를 포함해 모든 표의 권한을 회수한다.
@@ -9,8 +9,8 @@ Revises: 0001
 """
 from alembic import op
 
-revision = "0002"
-down_revision = "0001"
+revision = "0006"
+down_revision = "0005"
 branch_labels = None
 depends_on = None
 

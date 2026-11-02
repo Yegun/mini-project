@@ -1,10 +1,8 @@
 """가입 · 로그인 · 로그아웃 (API-SPEC B1 ~ B3). PostgreSQL 임시 schema 에서 서버 코드를 그대로 지난다."""
-import sqlite3
-import uuid
-
+import psycopg
 import pytest
 
-from app.db.foods_repo import list_active_foods, list_processed_foods
+from app.db import legacy_migration
 from app.db.sessions_repo import _hash
 from app.db.users_repo import find_user_by_email
 
@@ -13,6 +11,11 @@ CRED = {"email": "kim@example.com", "password": "Passw0rd!"}
 
 def count(pg, table):
     return pg.execute(f"SELECT count(*) AS n FROM {table}").fetchone()["n"]
+
+
+def real_users(pg):
+    """이전용 계정(legacy@fridge.invalid)을 뺀 실제 가입자 수."""
+    return pg.execute("SELECT count(*) AS n FROM users WHERE email <> 'legacy@fridge.invalid'").fetchone()["n"]
 
 
 def shape(response):
@@ -25,7 +28,7 @@ def test_signup_creates_account_and_login_cookie(client, pg):
     response = client.post("/auth/signup", json=CRED)
     assert response.status_code == 201
     assert response.json() == {"email": "kim@example.com"}
-    assert count(pg, "users") == 1 and count(pg, "sessions") == 1
+    assert real_users(pg) == 1 and count(pg, "sessions") == 1
     token = client.cookies.get("session")
     assert token and pg.execute("SELECT 1 FROM sessions WHERE id = %s", (_hash(token),)).fetchone()
 
@@ -68,7 +71,7 @@ def test_signup_input_errors_save_nothing(client, pg, body, expected):
     response = client.post("/auth/signup", json=body)
     assert shape(response) == expected
     assert set(response.json()) == {"field", "reason", "message"}
-    assert count(pg, "users") == 0 and count(pg, "sessions") == 0
+    assert real_users(pg) == 0 and count(pg, "sessions") == 0
     assert "session" not in response.headers.get("set-cookie", "")
 
 
@@ -77,7 +80,7 @@ def test_signup_existing_email_is_409_in_any_case(client, pg):
     other = client.post("/auth/signup", json={"email": "KIM@example.com", "password": "Other1234!"})
     assert shape(other) == (409, "email", "email_taken")
     assert other.json()["message"] == "이미 가입된 이메일이에요."
-    assert count(pg, "users") == 1 and count(pg, "sessions") == 1  # 두 번째 요청은 아무것도 바꾸지 않았다
+    assert real_users(pg) == 1 and count(pg, "sessions") == 1  # 두 번째 요청은 아무것도 바꾸지 않았다
 
 
 # ---- B2 로그인 --------------------------------------------------------------------------------
@@ -155,88 +158,70 @@ def test_logout_after_30_minutes_is_login_required(client, pg):
     assert count(pg, "sessions") == 0
 
 
-# ---- 기존 식품 옮기기 (D-042 ~ D-045, D-097) ----------------------------------------------------
-OLD = [str(uuid.uuid4()) for _ in range(2)]
+# ---- 기존 식품 넘겨받기 (D-042 ~ D-045) -------------------------------------------------------------
+# 옛 식품은 알렘빅 버전(0002~0004)이 이전용 계정 것으로 가져와 둔다. 첫 가입자가 그 식품을 넘겨받는다.
+def legacy_owner(pg):
+    return str(pg.execute("SELECT id FROM users WHERE email = 'legacy@fridge.invalid'").fetchone()["id"])
 
 
-def make_legacy(path, quantity=1):
-    db = sqlite3.connect(path)
-    db.execute(
-        "CREATE TABLE foods (id TEXT, name TEXT, storage TEXT, quantity REAL, unit TEXT,"
-        " purchase_date TEXT, expiry_date TEXT, source TEXT, status TEXT)"
-    )
-    db.executemany(
-        "INSERT INTO foods VALUES (?,?,?,?,?,?,?,?,?)",
-        [
-            (OLD[0], "양파", "room", 2, "개", "2026-10-01", "2026-10-31", "rule", "none"),
-            (OLD[1], "우유", "fridge", quantity, "L", "2026-10-20", "2026-10-27", "rule", "eaten"),
-        ],
-    )
-    db.commit()
-    db.close()
-
-
-@pytest.fixture
-def legacy(tmp_path, monkeypatch, client):
-    path = tmp_path / "old-fridge.db"
-    make_legacy(path)
-    monkeypatch.setenv("FRIDGE_DB_PATH", str(path))
-    return path
+def put_legacy_foods(pg):
+    owner = legacy_owner(pg)
+    ids = []
+    for name, status, processed in [("양파", "none", None), ("우유", "eaten", "2026-10-30")]:
+        row = pg.execute(
+            "INSERT INTO foods (user_id, name, storage, quantity, unit, purchase_date, expiry_date, source, status, processed_date)"
+            " VALUES (%s, %s, 'room', 1, '개', '2026-10-01', '2026-12-01', 'manual', %s, %s) RETURNING id",
+            (owner, name, status, processed),
+        ).fetchone()
+        ids.append(str(row["id"]))
+    pg.commit()
+    return ids
 
 
 def user_id(pg, email):
     return str(pg.execute("SELECT id FROM users WHERE email = %s", (email,)).fetchone()["id"])
 
 
-def test_first_signup_gets_legacy_foods_and_second_does_not(client, make_client, pg, legacy):
+def test_first_signup_gets_legacy_foods_and_second_does_not(client, make_client, pg):
+    active, done = put_legacy_foods(pg)
     assert client.post("/auth/signup", json=CRED).status_code == 201
-    first = user_id(pg, "kim@example.com")
-    assert [f["id"] for f in list_active_foods(pg, first)] == [OLD[0]]
-    done = list_processed_foods(pg, first)["eaten"]
-    assert [(f["id"], f["processed_date"]) for f in done] == [(OLD[1], "2026-10-30")]  # 옮긴 날 = 오늘 (D-045)
+    assert [f["id"] for f in client.get("/foods").json()["items"]] == [active]
+    assert [f["id"] for f in client.get("/records/foods").json()["eaten"]] == [done]  # 처리한 식품도 기록에 보인다
 
     other = make_client()
-    other.post("/auth/signup", json={"email": "lee@example.com", "password": "Passw0rd!"})
-    assert list_active_foods(pg, user_id(pg, "lee@example.com")) == []  # 이후 가입은 빈 상태 (D-044)
+    other.post("/auth/signup", json={"email": "lee@example.com", "password": CRED["password"]})
+    assert other.get("/foods").json()["items"] == []  # 이후 가입은 빈 상태 (D-044)
     assert count(pg, "foods") == 2
+    assert pg.execute("SELECT count(*) AS n FROM foods WHERE user_id = %s", (legacy_owner(pg),)).fetchone()["n"] == 0
 
 
-def test_legacy_failure_keeps_signup_and_retries_on_next_login(client, make_client, pg, legacy):
-    make_legacy_path = legacy
-    db = sqlite3.connect(make_legacy_path)
-    db.execute("UPDATE foods SET quantity = 0 WHERE id = ?", (OLD[1],))  # DB 규칙에 걸려 옮김이 실패한다
-    db.commit()
-    db.close()
+def test_signup_without_legacy_foods_is_fine(client, pg):
+    assert client.post("/auth/signup", json=CRED).status_code == 201
+    assert client.get("/foods").json()["items"] == []
 
+
+def test_failed_signup_leaves_the_legacy_foods_with_the_legacy_account(client, pg, monkeypatch):
+    put_legacy_foods(pg)
+
+    def boom(*args, **kwargs):
+        raise psycopg.OperationalError("db is down")
+
+    monkeypatch.setattr(legacy_migration, "claim_legacy_foods", boom)
     response = client.post("/auth/signup", json=CRED)
-    assert response.status_code == 201 and client.cookies.get("session")  # 가입·로그인은 성공 (D-097)
-    first = user_id(pg, "kim@example.com")
-    assert count(pg, "foods") == 0  # 일부만 옮겨진 채 남지 않는다
-    assert pg.execute("SELECT migrated FROM legacy_migration").fetchone()["migrated"] is False
-
-    db = sqlite3.connect(make_legacy_path)
-    db.execute("UPDATE foods SET quantity = 1 WHERE id = ?", (OLD[1],))
-    db.commit()
-    db.close()
-    # 첫 계정이 아닌 사람의 로그인은 옮기지 않는다
-    other = make_client()
-    other.post("/auth/signup", json={"email": "lee@example.com", "password": "Passw0rd!"})
-    other.post("/auth/login", json={"email": "lee@example.com", "password": "Passw0rd!"})
-    assert count(pg, "foods") == 0
-    # 첫 계정이 다음에 로그인하면 다시 시도해 성공한다
-    assert make_client().post("/auth/login", json=CRED).status_code == 200
-    assert count(pg, "foods") == 2 and len(list_active_foods(pg, first)) == 1
-    assert pg.execute("SELECT migrated FROM legacy_migration").fetchone()["migrated"] is True
+    assert shape(response) == (500, None, "server_error")  # 넘기기는 가입과 같은 묶음이라 가입도 취소된다
+    assert real_users(pg) == 0 and count(pg, "sessions") == 0  # 이전용 계정만 있다
+    assert pg.execute("SELECT count(*) AS n FROM foods WHERE user_id = %s", (legacy_owner(pg),)).fetchone()["n"] == 2
+    monkeypatch.undo()
+    assert client.post("/auth/signup", json=CRED).status_code == 201  # 다시 가입하면 받는다
+    assert len(client.get("/foods").json()["items"]) == 1
 
 
-def test_legacy_file_missing_is_fine(client, pg):
-    assert client.post("/auth/signup", json=CRED).status_code == 201  # make_client 가 없는 파일로 돌려 둔다
-    assert count(pg, "foods") == 0
-    assert pg.execute("SELECT migrated FROM legacy_migration").fetchone()["migrated"] is True
+def test_nobody_can_log_in_as_the_legacy_account(client):
+    for password in ("!", "", "Passw0rd!"):
+        response = client.post("/auth/login", json={"email": "legacy@fridge.invalid", "password": password})
+        assert shape(response) == (401, None, "login_failed")
 
 
-def test_login_does_not_migrate_twice(client, make_client, pg, legacy):
-    client.post("/auth/signup", json=CRED)
-    make_client().post("/auth/login", json=CRED)
-    make_client().post("/auth/login", json=CRED)
-    assert count(pg, "foods") == 2
+def test_legacy_email_cannot_be_signed_up_again(client, pg):
+    response = client.post("/auth/signup", json={"email": "legacy@fridge.invalid", "password": CRED["password"]})
+    assert shape(response) == (409, "email", "email_taken")
