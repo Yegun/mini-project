@@ -1,134 +1,100 @@
-"""기존 식품(v0.2.0 SQLite) 옮기기 (PostgreSQL). 첫 계정만, 한 번만, 실패하면 그 묶음만 취소되는지 본다."""
-import sqlite3
-import uuid
-
+"""첫 가입자가 이전용 계정의 식품을 넘겨받는 일 (PostgreSQL). 한 사람에게만, 한 번만 가는지 본다."""
 import psycopg
 import pytest
+from conftest import food_args
 
-from app.db.foods_repo import get_food, list_active_foods, list_processed_foods
-from app.db.legacy_migration import migrate_legacy_foods, needs_migration, register_first_user
+from app.db.foods_repo import create_food, list_active_foods, list_processed_foods, set_status
+from app.db.legacy_migration import LEGACY_EMAIL, claim_legacy_foods
 from app.db.users_repo import create_user
 
-TODAY = "2026-11-02"
-OLD_ID_1, OLD_ID_2, OLD_ID_3 = (str(uuid.uuid4()) for _ in range(3))
+
+def legacy_id(pg) -> str:
+    return str(pg.execute("SELECT id FROM users WHERE email = %s", (LEGACY_EMAIL,)).fetchone()["id"])
 
 
-@pytest.fixture
-def legacy(tmp_path):
-    """v0.2.0 모양의 옛 SQLite 파일. 식품 3건 (처리 전 1, 다 먹음 1, 버림 1)."""
-    path = tmp_path / "fridge.db"
-    db = sqlite3.connect(path)
-    db.execute(
-        "CREATE TABLE foods (id TEXT, name TEXT, storage TEXT, quantity REAL, unit TEXT,"
-        " purchase_date TEXT, expiry_date TEXT, source TEXT, status TEXT)"
-    )
-    rows = [
-        (OLD_ID_1, "양파", "room", 2, "개", "2026-10-01", "2026-10-31", "rule", "none"),
-        (OLD_ID_2, "우유", "fridge", 1.5, "L", "2026-10-20", "2026-10-27", "rule", "eaten"),
-        (OLD_ID_3, "수제청", "room", 1, "병", "2026-10-02", "2026-12-02", "manual", "discarded"),
-    ]
-    db.executemany("INSERT INTO foods VALUES (?,?,?,?,?,?,?,?,?)", rows)
-    db.commit()
-    db.close()
-    return path
+def add_legacy_foods(pg, names=("양파", "우유", "수제청")):
+    owner = legacy_id(pg)
+    foods = [create_food(pg, owner, **food_args(name=n)) for n in names]
+    if len(foods) > 1:
+        set_status(pg, owner, foods[1]["id"], "eaten", "2026-11-02")  # 처리한 식품도 넘어간다
+    pg.commit()
+    return foods
 
 
-def first_user(pg):
-    user = create_user(pg, "first@example.com", "Passw0rd!")
-    assert register_first_user(pg, user["id"]) is True
-    return user
+def test_legacy_account_exists_after_the_versions(pg):
+    assert legacy_id(pg)
 
 
-def test_first_account_is_decided_only_once(pg):
+def test_first_account_receives_every_legacy_food(pg):
+    foods = add_legacy_foods(pg)
+    first = create_user(pg, "first@example.com", "Passw0rd!")
+    assert claim_legacy_foods(pg, first["id"]) == 3
+    assert {f["id"] for f in list_active_foods(pg, first["id"])} == {foods[0]["id"], foods[2]["id"]}
+    done = list_processed_foods(pg, first["id"])["eaten"]
+    assert [(f["id"], f["processed_date"]) for f in done] == [(foods[1]["id"], "2026-11-02")]
+    assert list_active_foods(pg, legacy_id(pg)) == []  # 이전용 계정에는 남지 않는다
+
+
+def test_second_account_starts_empty(pg):
+    add_legacy_foods(pg)
     first = create_user(pg, "first@example.com", "Passw0rd!")
     second = create_user(pg, "second@example.com", "Passw0rd!")
-    assert register_first_user(pg, first["id"]) is True
-    assert register_first_user(pg, second["id"]) is False  # 이후 가입하는 계정은 빈 상태 (D-044)
-    row = pg.execute("SELECT user_id, migrated FROM legacy_migration").fetchall()
-    assert len(row) == 1 and str(row[0]["user_id"]) == first["id"] and row[0]["migrated"] is False
+    assert claim_legacy_foods(pg, first["id"]) == 3
+    assert claim_legacy_foods(pg, second["id"]) == 0  # 이미 넘어갔다 (D-044)
+    assert list_active_foods(pg, second["id"]) == []
+    assert len(list_active_foods(pg, first["id"])) == 2
 
 
-def test_migrates_foods_to_first_account_keeping_ids(pg, legacy):
-    user = first_user(pg)
-    assert needs_migration(pg, user["id"]) is True
-    assert migrate_legacy_foods(pg, user["id"], TODAY, legacy_path=legacy) is True
-
-    active = list_active_foods(pg, user["id"])
-    assert [f["id"] for f in active] == [OLD_ID_1]  # 기존 번호 그대로 (Q-17)
-    assert active[0]["quantity"] == 2 and active[0]["source"] == "rule"
-    processed = list_processed_foods(pg, user["id"])
-    # 이미 처리한 식품의 처리한 날짜는 옮기는 날이다 (D-045)
-    assert [(f["id"], f["processed_date"]) for f in processed["eaten"]] == [(OLD_ID_2, TODAY)]
-    assert [(f["id"], f["processed_date"]) for f in processed["discarded"]] == [(OLD_ID_3, TODAY)]
-    assert processed["eaten"][0]["quantity"] == 1.5
-    assert get_food(pg, user["id"], OLD_ID_1)["status"] == "none"
-    assert needs_migration(pg, user["id"]) is False
+def test_nothing_to_claim_when_there_were_no_legacy_foods(pg):
+    user = create_user(pg, "first@example.com", "Passw0rd!")
+    assert claim_legacy_foods(pg, user["id"]) == 0
 
 
-def test_migrates_only_once(pg, legacy):
-    user = first_user(pg)
-    assert migrate_legacy_foods(pg, user["id"], TODAY, legacy_path=legacy) is True
-    assert migrate_legacy_foods(pg, user["id"], TODAY, legacy_path=legacy) is False  # 두 번 옮기지 않는다
-    assert pg.execute("SELECT count(*) AS n FROM foods").fetchone()["n"] == 3
-
-
-def test_other_accounts_never_get_legacy_foods(pg, legacy):
-    first_user(pg)
-    other = create_user(pg, "second@example.com", "Passw0rd!")
-    assert register_first_user(pg, other["id"]) is False
-    assert needs_migration(pg, other["id"]) is False
-    assert migrate_legacy_foods(pg, other["id"], TODAY, legacy_path=legacy) is False
-    assert list_active_foods(pg, other["id"]) == []
-
-
-def test_failure_cancels_only_the_migration(pg, legacy):
-    """옮기다 실패하면 복사는 전부 취소되고 가입(계정·옮김 기록)은 그대로다 (D-097)."""
-    db = sqlite3.connect(legacy)
-    db.execute("UPDATE foods SET quantity = 0 WHERE id = ?", (OLD_ID_3,))  # 마지막 줄이 DB 규칙에 걸린다
-    db.commit()
-    db.close()
-    user = first_user(pg)
+def test_other_accounts_foods_are_never_touched(pg):
+    add_legacy_foods(pg, names=("양파",))
+    mine = create_user(pg, "mine@example.com", "Passw0rd!")
+    theirs = create_user(pg, "theirs@example.com", "Passw0rd!")
+    own = create_food(pg, theirs["id"], **food_args(name="남의식품"))
     pg.commit()
-
-    with pytest.raises(psycopg.errors.CheckViolation):
-        migrate_legacy_foods(pg, user["id"], TODAY, legacy_path=legacy)
-
-    assert pg.execute("SELECT count(*) AS n FROM foods").fetchone()["n"] == 0  # 일부만 옮겨지지 않는다
-    assert pg.execute("SELECT count(*) AS n FROM users").fetchone()["n"] == 1  # 계정은 그대로
-    assert needs_migration(pg, user["id"]) is True  # 다음 로그인 때 다시 시도한다
-    pg.commit()  # 같은 묶음(가입)은 계속 commit 할 수 있다
-
-    db = sqlite3.connect(legacy)  # 원인을 고친 뒤 다시 시도하면 성공한다
-    db.execute("UPDATE foods SET quantity = 1 WHERE id = ?", (OLD_ID_3,))
-    db.commit()
-    db.close()
-    assert migrate_legacy_foods(pg, user["id"], TODAY, legacy_path=legacy) is True
-    assert pg.execute("SELECT count(*) AS n FROM foods").fetchone()["n"] == 3
+    claim_legacy_foods(pg, mine["id"])
+    assert [f["id"] for f in list_active_foods(pg, theirs["id"])] == [own["id"]]
 
 
-def test_missing_sqlite_file_finishes_immediately(pg, tmp_path):
-    user = first_user(pg)
-    assert migrate_legacy_foods(pg, user["id"], TODAY, legacy_path=tmp_path / "none.db") is True
-    assert needs_migration(pg, user["id"]) is False
+def test_claim_does_not_commit_by_itself(pg):
+    add_legacy_foods(pg, names=("양파",))
+    user = create_user(pg, "first@example.com", "Passw0rd!")
+    pg.commit()
+    claim_legacy_foods(pg, user["id"])
+    pg.rollback()  # 가입이 취소되면 식품은 이전용 계정에 그대로 남는다
+    assert len(list_active_foods(pg, legacy_id(pg))) == 1
     assert list_active_foods(pg, user["id"]) == []
 
 
-def test_sqlite_file_is_left_untouched(pg, legacy):
-    before = legacy.read_bytes()
-    user = first_user(pg)
-    migrate_legacy_foods(pg, user["id"], TODAY, legacy_path=legacy)
-    assert legacy.read_bytes() == before  # 백업으로 남긴다 (D-098)
+def test_two_first_signups_at_once_give_the_foods_to_only_one(pg, pg_schema):
+    """두 사람이 동시에 처음 가입해도 식품은 한 사람에게만 간다 (먼저 넘긴 쪽이 행을 잠근다)."""
+    from app.db.connection import connect_test
 
-
-def test_record_survives_account_deletion(pg):
-    user = first_user(pg)
-    pg.execute("UPDATE legacy_migration SET migrated = true")
-    pg.execute("DELETE FROM users WHERE id = %s", (user["id"],))
-    row = pg.execute("SELECT user_id, migrated FROM legacy_migration").fetchone()
-    assert row["user_id"] is None and row["migrated"] is True  # 줄은 남아 "옮김이 끝났다"를 유지 (Q-09)
-
-
-def test_only_one_row_allowed(pg):
+    add_legacy_foods(pg)
     a = create_user(pg, "a@example.com", "Passw0rd!")
-    with pytest.raises(psycopg.errors.CheckViolation):
-        pg.execute("INSERT INTO legacy_migration (id, user_id) VALUES (2, %s)", (a["id"],))
+    b = create_user(pg, "b@example.com", "Passw0rd!")
+    pg.commit()
+    other = connect_test(pg_schema)
+    try:
+        assert claim_legacy_foods(pg, a["id"]) == 3  # a 의 가입 묶음이 아직 commit 전
+        other.execute("SET lock_timeout = '300ms'")
+        with pytest.raises(psycopg.errors.LockNotAvailable):  # b 는 a 가 끝날 때까지 기다린다
+            claim_legacy_foods(other, b["id"])
+        other.rollback()
+        pg.commit()  # a 가 끝나면
+        assert claim_legacy_foods(other, b["id"]) == 0  # b 는 이미 넘어간 식품을 찾지 못한다
+        other.commit()
+    finally:
+        other.close()
+    assert len(list_active_foods(pg, a["id"])) == 2 and list_active_foods(pg, b["id"]) == []
+
+
+def test_nobody_can_log_in_as_the_legacy_account(pg):
+    from app.db.users_repo import authenticate
+
+    assert authenticate(pg, LEGACY_EMAIL, "!") is None
+    assert authenticate(pg, LEGACY_EMAIL, "Passw0rd!") is None

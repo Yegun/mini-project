@@ -280,7 +280,7 @@ def test_a1_computed_fields_and_expired_foods_stay_in_the_list(me, pg):
     for name, purchase, expiry in [("old1", "2026-10-01", "2026-10-29"), ("old4", "2026-10-01", "2026-10-26")]:
         pg.execute(  # 과거 기한은 등록으로 만들 수 없어서 시험에서는 표에 직접 넣는다
             "INSERT INTO foods (user_id, name, storage, quantity, unit, purchase_date, expiry_date, source)"
-            " SELECT id, %s, 'room', 1, '개', %s, %s, 'manual' FROM users LIMIT 1",
+            " SELECT id, %s, 'room', 1, '개', %s, %s, 'manual' FROM users WHERE email = 'kim@example.com'",
             (name, purchase, expiry),
         )
     pg.commit()
