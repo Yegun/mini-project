@@ -1,3 +1,17 @@
+"""표 7개 만들기 (DATA-MODEL.md 1절 ~ 5절, 7절)
+
+Revision ID: 0001
+Revises:
+"""
+from alembic import op
+
+revision = "0001"
+down_revision = None
+branch_labels = None
+depends_on = None
+
+# 표 정의는 SQL 로 직접 쓴다. 여기서 % 와 : 를 쓰지 않으므로 그대로 DB 에 보낸다.
+UP = """
 -- 표 7개 (DATA-MODEL.md 1절 ~ 5절, 7절). PostgreSQL 16.
 -- 날짜는 DATE(시각 없음, Q-01), 번호는 UUID(Q-04), 허용 값은 글자 + CHECK(Q-07).
 -- 여유·주의·임박·지남, 기록 숫자는 저장하지 않는다 (D-011). 오늘 날짜는 DB 시계가 아니라 API 가 넘긴다 (D-088).
@@ -72,3 +86,22 @@ CREATE TABLE legacy_migration (
     user_id  uuid REFERENCES users (id) ON DELETE SET NULL,
     migrated boolean NOT NULL DEFAULT false
 );
+"""
+
+
+def upgrade() -> None:
+    op.get_bind().exec_driver_sql(UP)
+
+
+def downgrade() -> None:
+    # 만든 순서의 거꾸로. 식품·로그인 상태·옮김 기록이 계정을, 별칭·보관 방법별 정보가 규칙표 식품을 가리킨다.
+    for table in (
+        "legacy_migration",
+        "rule_storage",
+        "rule_aliases",
+        "rules",
+        "foods",
+        "sessions",
+        "users",
+    ):
+        op.execute(f"DROP TABLE {table}")

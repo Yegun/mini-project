@@ -7,6 +7,7 @@ import uuid
 from datetime import date
 
 import psycopg
+import psycopg.conninfo
 import pytest
 from fastapi.testclient import TestClient
 
@@ -26,9 +27,17 @@ def pg_url():
     from app.db.connection import DatabaseConfigError, env_value
 
     try:
-        return env_value("TEST_DATABASE_URL")
+        url = env_value("TEST_DATABASE_URL")
     except DatabaseConfigError:
         pytest.skip("TEST_DATABASE_URL 이 없어 PostgreSQL 시험을 건너뛴다 (.env 에 적는다)")
+    # 시험은 임시 schema 를 만들고 지운다. 실수로 클라우드 DB 에 붙지 못하게 내 컴퓨터가 아니면 시험 전체를 멈춘다.
+    host = psycopg.conninfo.conninfo_to_dict(url).get("host") or ""
+    if host not in ("", "localhost", "127.0.0.1", "::1"):
+        pytest.exit(
+            f"TEST_DATABASE_URL 의 주소({host})가 내 컴퓨터가 아니다. 시험은 내 컴퓨터 PostgreSQL 에서만 돌린다.",
+            returncode=2,
+        )
+    return url
 
 
 @pytest.fixture
@@ -42,13 +51,16 @@ def pg_schema(pg_url):
 
 
 @pytest.fixture
-def pg(pg_schema):
-    """표 7개가 만들어진 빈 임시 schema 에 연결한 psycopg 연결. 저장소 함수처럼 commit 은 시험이 한다."""
-    from app.db.connection import connect_test
-    from app.db.migrate import apply_migrations
+def pg(pg_url, pg_schema):
+    """표 7개가 만들어진 빈 임시 schema 에 연결한 psycopg 연결. 저장소 함수처럼 commit 은 시험이 한다.
 
+    표는 운영과 같은 방법(알렘빅 버전 파일)으로 만든다.
+    """
+    from app.db.connection import connect_test
+    from app.db.migrate import upgrade
+
+    upgrade(pg_url, pg_schema)
     conn = connect_test(pg_schema)
-    apply_migrations(conn)
     yield conn
     conn.rollback()
     conn.close()

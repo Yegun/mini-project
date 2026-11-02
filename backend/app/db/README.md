@@ -9,20 +9,28 @@ API 를 만드는 분이 가져다 쓰는 용도의 설명서다. 표 구조의 
 | 키 | 용도 |
 |---|---|
 | `DATABASE_URL` | 앱(API)이 쓰는 DB 계정. 규칙표 세 표는 **읽기만** 된다 (Q-16) |
-| `DATABASE_ADMIN_URL` | 개발자 계정. 표 만들기·규칙표 채우기·기한 다시 계산에만 쓴다 |
+| `DATABASE_ADMIN_URL` | 개발자 계정. 표 만들기(알렘빅)·규칙표 채우기·기한 다시 계산에만 쓴다 |
 | `APP_DB_USER`, `APP_DB_PASSWORD` | 앱 계정을 만들 때(`setup_roles`) 쓴다 |
-| `TEST_DATABASE_URL` | 시험용 DB. 시험이 임시 schema 를 만들고 지운다. 운영 DB 를 넣지 않는다 |
+| `TEST_DATABASE_URL` | 시험용 DB. 시험이 임시 schema 를 만들고 지운다. **내 컴퓨터(localhost) 주소가 아니면 시험이 멈춘다** |
 
-## 표 만들기 · 규칙표 채우기 (개발자, backend 폴더에서)
+## 표 만들기 · 버전 관리 · 규칙표 채우기 (개발자, backend 폴더에서)
+
+표는 **알렘빅(Alembic)** 으로 버전을 관리한다. 버전 파일은 `alembic/versions/` 에 있고 번호 순서대로 한 번씩만 적용된다. DB 가 어느 버전까지 적용됐는지는 DB 안의 `alembic_version` 표에 기록된다 (내 컴퓨터 DB 와 클라우드 DB 가 따로 기록을 가진다).
 
 ```
-python -m app.db.migrate       # 표 7개 만들기 (번호 순서대로 한 번씩, 여러 번 실행해도 안전)
-python -m app.db.init_db       # 표 만들기 + 규칙표 30개 채우기 (여러 번 실행해도 같은 결과, 식품·계정은 그대로)
-python -m app.db.setup_roles   # 앱 계정 만들기 (규칙표 읽기 전용)
+python -m app.db.migrate        # 최신 버전까지 올린다 (= alembic upgrade head)
+python -m app.db.migrate down   # 한 단계 되돌린다 (= alembic downgrade -1)
+python -m app.db.init_db        # 최신 버전까지 올리고 규칙표 30개를 채운다 (여러 번 실행해도 같은 결과, 식품·계정은 그대로)
+python -m app.db.setup_roles    # 앱 계정 만들기 (규칙표 읽기 전용)
+alembic current                 # 지금 DB 의 버전 / alembic history  # 전체 이력
 ```
 
-- 표 정의는 `migrations/0001_create_tables.sql`. 나중에 표를 바꿀 때는 `0002_...sql` 처럼 번호를 올려 새 파일을 더한다 (이미 실행한 파일은 고치지 않는다).
+- 현재 버전: `0001` 표 7개 만들기 → `0002` 수파베이스 REST API 역할(anon·authenticated)의 표 권한 회수 (그 역할이 없는 DB 에서는 아무것도 안 한다).
+- 표를 바꿀 때는 `alembic revision -m "설명"` 으로 새 파일을 만들고 `upgrade()` 와 `downgrade()` 에 **SQL 을 직접 쓴다** (`op.execute`). 이미 적용한 파일은 고치지 않는다. 파일 하나가 한 묶음이라 중간에 실패하면 그 파일은 아무것도 바뀌지 않는다.
+- 접속은 `.env` 의 `DATABASE_ADMIN_URL` 을 쓴다. **표는 알렘빅으로만 바꾼다.** 수파베이스 화면에서 표를 직접 고치면 버전 기록과 어긋난다.
+- 수파베이스에서는 표를 바꿀 때 Transaction pooler(6543)가 아니라 **Direct connection 또는 Session pooler(5432)** 주소를 쓴다.
 - 규칙표 값은 [seed_rules.py](seed_rules.py) 에 있고 정식값이다. 고친 뒤 `init_db` 를 다시 돌린다.
+- 이미 표가 만들어진 DB 를 알렘빅으로 옮길 때는 한 번만 `alembic stamp 0001` 로 "0001 까지 적용됨"을 기록한다 (표는 다시 만들지 않는다).
 
 ## 연결
 
