@@ -1,8 +1,9 @@
-// 규칙표 검색(A2). 백엔드 응답: { rules: [{ name, default_storage, not_allowed }] }
+// 규칙표 검색(C1). 백엔드 응답: { items: [{ name, default_storage, disallowed_storages }] } (API-SPEC C1)
 // 개발 중 가짜 데이터: VITE_USE_MOCK 이 켜져 있으면 mocks/rules.json 을 쓴다.
 //   VITE_USE_MOCK=rules-error  규칙표 검색 실패
 import type { Storage } from '../types/food'
 import type { ApiRule, RuleCandidate, RuleSearchResponse, RuleStorageOption } from '../types/rule'
+import { send } from './http'
 import rulesMock from '../mocks/rules.json'
 
 const RULES_PATH = '/api/rules'
@@ -13,15 +14,15 @@ const STORAGE_ORDER: Storage[] = ['room', 'fridge', 'freezer']
 export class SearchRulesError extends Error {}
 
 // "불가" 목록 -> 보관 방법 세 개의 가능 여부. 불가는 흐리게 보이고 고를 수 없다 (D-005).
-export function storagesFromNotAllowed(notAllowed: Storage[]): RuleStorageOption[] {
-  return STORAGE_ORDER.map((storage) => ({ storage, allowed: !notAllowed.includes(storage) }))
+export function storagesFromDisallowed(disallowed: Storage[]): RuleStorageOption[] {
+  return STORAGE_ORDER.map((storage) => ({ storage, allowed: !disallowed.includes(storage) }))
 }
 
 function toCandidate(rule: ApiRule): RuleCandidate {
   return {
     name: rule.name,
     default_storage: rule.default_storage,
-    storages: storagesFromNotAllowed(rule.not_allowed ?? []),
+    storages: storagesFromDisallowed(rule.disallowed_storages ?? []),
   }
 }
 
@@ -32,7 +33,7 @@ interface MockRule {
   storages: { storage: Storage; allowed: boolean }[]
 }
 
-// 가짜 검색: 이름이나 별칭에 글자가 들어 있으면 찾는다. 실제 일치 방식은 백엔드 담당 확인 필요.
+// 가짜 검색: 이름이나 별칭에 글자가 들어 있으면 찾는다 (D-035).
 async function searchMockRules(mode: string, q: string): Promise<RuleSearchResponse> {
   if (mode === 'rules-error') throw new SearchRulesError('mock error')
   const found = (rulesMock.rules as MockRule[]).filter(
@@ -49,12 +50,12 @@ async function searchMockRules(mode: string, q: string): Promise<RuleSearchRespo
 
 export async function searchRules(q: string): Promise<RuleSearchResponse> {
   if (MOCK_MODE) return searchMockRules(MOCK_MODE, q)
+  const res = await send(`${RULES_PATH}?q=${encodeURIComponent(q)}`)
+  if (!res?.ok) throw new SearchRulesError(res ? `status ${res.status}` : 'network')
   try {
-    const res = await fetch(`${RULES_PATH}?q=${encodeURIComponent(q)}`)
-    if (!res.ok) throw new SearchRulesError(`status ${res.status}`)
-    const data = (await res.json()) as { rules: ApiRule[] }
-    return { rules: data.rules.map(toCandidate) }
-  } catch (e) {
-    throw e instanceof SearchRulesError ? e : new SearchRulesError('network')
+    const data = (await res.json()) as { items: ApiRule[] }
+    return { rules: data.items.map(toCandidate) }
+  } catch {
+    throw new SearchRulesError('bad response')
   }
 }

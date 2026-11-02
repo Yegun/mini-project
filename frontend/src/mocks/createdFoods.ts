@@ -7,13 +7,13 @@ import type { ExpiryStatus, Food, FoodListResponse, Storage } from '../types/foo
 import type {
   ChangeStorageInput,
   FoodDetail,
-  FoodSource,
+  ProcessStatus,
   SaveResult,
   UpdateFoodInput,
 } from '../types/foodDetail'
+import type { ProcessedFood, RecordsData } from '../types/records'
 import type { ManualRegisterInput, RuleRegisterInput } from '../types/register'
 import type { RuleStorageOption } from '../types/rule'
-import foodDetailsMock from './foodDetails.json'
 import foodsMock from './foods.json'
 import rulesMock from './rules.json'
 
@@ -23,12 +23,7 @@ interface MockRule {
   storages: { storage: string; allowed: boolean; max_days?: number }[]
 }
 
-interface MockExtra {
-  quantity: number
-  unit: string
-  source: FoodSource
-}
-type MockRecord = Food & MockExtra
+type MockRecord = Food
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const FALLBACK_DAYS = 7 // 규칙표 값을 못 찾을 때
@@ -84,19 +79,22 @@ export function addMockFood(input: RuleRegisterInput | ManualRegisterInput, toda
     id: crypto.randomUUID(),
     name: input.name,
     storage: input.storage,
-    purchase_date: input.purchase_date,
-    expiry_date: expiry,
-    expiry_status: mockLevel(today, expiry),
-    show_on_calendar: true,
     quantity: input.quantity,
     unit: input.unit,
+    purchase_date: input.purchase_date,
+    expiry_date: expiry,
     source: isManual(input) ? 'manual' : 'rule',
+    status: 'none',
+    processed_date: null,
+    expiry_status: mockLevel(today, expiry),
+    days_left: dayNumber(expiry) - dayNumber(today),
+    show_on_calendar: true,
   })
 }
 
 // 기존 mock 목록에 등록한 식품을 합치고, 수정·처리·삭제를 반영해 API 처럼 기한 → 구매일 → 이름 순으로 정렬한다 (D-015)
 export function withCreatedFoods(res: FoodListResponse): FoodListResponse {
-  const foods = [...res.foods, ...created]
+  const items = [...res.items, ...created]
     .filter((f) => !gone.has(f.id))
     .map((f): Food => ({ ...f, ...patches.get(f.id) }))
     .sort(
@@ -105,16 +103,14 @@ export function withCreatedFoods(res: FoodListResponse): FoodListResponse {
         a.purchase_date.localeCompare(b.purchase_date) ||
         a.name.localeCompare(b.name),
     )
-  return { ...res, foods }
+  return { ...res, items }
 }
 
-// ---- 식품 상세 (A5 ~ A9) 가짜 처리 ----
+// ---- 식품 상세 (A4 ~ A8) 가짜 처리 ----
 
 function recordOf(id: string): MockRecord | null {
   if (gone.has(id)) return null
-  const base = (foodsMock.foods as Food[]).find((f) => f.id === id)
-  const extra = (foodDetailsMock as unknown as Record<string, MockExtra | undefined>)[id]
-  const found: MockRecord | undefined = base && extra ? { ...base, ...extra } : created.find((f) => f.id === id)
+  const found = (foodsMock.items as Food[]).find((f) => f.id === id) ?? created.find((f) => f.id === id)
   return found ? { ...found, ...patches.get(id) } : null
 }
 
@@ -129,34 +125,25 @@ function storagesOf(rec: MockRecord): RuleStorageOption[] {
 export function getMockFoodDetail(id: string): FoodDetail | null {
   const rec = recordOf(id)
   if (!rec) return null
-  return {
-    id: rec.id,
-    name: rec.name,
-    storage: rec.storage,
-    quantity: rec.quantity,
-    unit: rec.unit,
-    purchase_date: rec.purchase_date,
-    expiry_date: rec.expiry_date,
-    expiry_status: rec.expiry_status,
-    source: rec.source,
-    storages: storagesOf(rec),
-  }
+  return { ...rec, storages: storagesOf(rec) }
 }
 
 function applyPatch(id: string, patch: Partial<MockRecord>, today: string): void {
   const next = { ...patches.get(id), ...patch }
   if (patch.expiry_date) {
     next.expiry_status = mockLevel(today, patch.expiry_date)
-    next.show_on_calendar = dayNumber(patch.expiry_date) - dayNumber(today) >= -3
+    next.days_left = dayNumber(patch.expiry_date) - dayNumber(today)
+    next.show_on_calendar = next.days_left >= -3
   }
   patches.set(id, next)
 }
 
 const PAST_EXPIRY = { expiry: '기한은 오늘보다 이전 날짜로 적을 수 없어요. (가짜 응답)' }
+const NOT_FOUND = '찾을 수 없는 식품이에요.' // API-SPEC 3절의 not_found 문구
 
 export function updateMockFood(id: string, input: UpdateFoodInput, today: string): SaveResult {
   const rec = recordOf(id)
-  if (!rec) return { status: 'failed' }
+  if (!rec) return { status: 'failed', message: NOT_FOUND }
   if (input.expiry_date && dayNumber(input.expiry_date) < dayNumber(today)) {
     return { status: 'invalid', fieldErrors: PAST_EXPIRY }
   }
@@ -210,7 +197,7 @@ export function updateMockFood(id: string, input: UpdateFoodInput, today: string
 
 export function changeMockStorage(id: string, input: ChangeStorageInput, today: string): SaveResult {
   const rec = recordOf(id)
-  if (!rec) return { status: 'failed' }
+  if (!rec) return { status: 'failed', message: NOT_FOUND }
   let expiry: string
 
   if (rec.source === 'manual') {
@@ -236,9 +223,78 @@ export function changeMockStorage(id: string, input: ChangeStorageInput, today: 
   return { status: 'ok' }
 }
 
-// 다 먹음 · 버림 · 삭제는 모두 목록에서 빠진다. 없는 식품이면 false (D-008)
+// 삭제: 목록에서 빠지고 기록에도 남지 않는다. 없는 식품이면 false (D-008, D-013)
 export function removeMockFood(id: string): boolean {
   if (!recordOf(id)) return false
   gone.add(id)
   return true
+}
+
+// ---- 기록 (D1 ~ D3) 가짜 처리 ----
+
+interface MockProcessed {
+  status: ProcessStatus
+  processed_date: string
+}
+const processed = new Map<string, MockProcessed>() // 다 먹음 · 버림한 식품. 홈에서는 빠지고 기록에 남는다
+
+// 다 먹음 · 버림: 홈에서 빠지고 처리한 날짜(오늘)와 함께 기록에 남는다 (D-064)
+export function processMockFood(id: string, status: ProcessStatus, today: string): boolean {
+  if (!recordOf(id)) return false
+  gone.add(id)
+  processed.set(id, { status, processed_date: today })
+  return true
+}
+
+// 홈으로 되돌리기: 처리 상태와 처리한 날짜만 지우고 나머지는 그대로 (D-075, D-076)
+export function restoreMockFood(id: string): boolean {
+  if (!processed.has(id)) return false // 없는 · 처리되지 않은 식품
+  processed.delete(id)
+  gone.delete(id)
+  return true
+}
+
+function processedList(status: ProcessStatus): ProcessedFood[] {
+  const list: ProcessedFood[] = []
+  for (const [id, p] of processed) {
+    if (p.status !== status) continue
+    const rec = recordOfAny(id)
+    if (!rec) continue
+    list.push({ id, name: rec.name, quantity: rec.quantity, unit: rec.unit, processed_date: p.processed_date })
+  }
+  // 최근 처리한 순 → 이름순 (API-SPEC D2)
+  return list.sort((a, b) => b.processed_date.localeCompare(a.processed_date) || a.name.localeCompare(b.name))
+}
+
+// 처리해서 gone 에 들어간 식품도 찾는다 (기록용)
+function recordOfAny(id: string): MockRecord | null {
+  const found = (foodsMock.items as Food[]).find((f) => f.id === id) ?? created.find((f) => f.id === id)
+  return found ? { ...found, ...patches.get(id) } : null
+}
+
+// 가짜 기록: 지금 mock 상태로 숫자를 센다. base 는 홈 목록 mock (식품 있음 / 없음)
+export function getMockRecords(base: FoodListResponse): RecordsData {
+  const current = withCreatedFoods(base).items
+  const eaten = processedList('eaten')
+  const discarded = processedList('discarded')
+  const year = base.today.slice(0, 4)
+  const month = base.today.slice(0, 7)
+  const count = (list: ProcessedFood[], prefix: string) =>
+    list.filter((f) => f.processed_date.startsWith(prefix)).length
+  const byStorage = { room: 0, fridge: 0, freezer: 0 }
+  const byStatus = { fresh: 0, warning: 0, soon: 0, expired: 0 }
+  for (const f of current) {
+    byStorage[f.storage] += 1
+    byStatus[f.expiry_status] += 1
+  }
+  return {
+    summary: {
+      eaten: { year: count(eaten, year), month: count(eaten, month) },
+      discarded: { year: count(discarded, year), month: count(discarded, month) },
+      food_kinds: new Set(current.map((f) => f.name)).size,
+      by_storage: byStorage,
+      by_status: byStatus,
+    },
+    foods: { eaten, discarded },
+  }
 }
