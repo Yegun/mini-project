@@ -4,7 +4,10 @@ import pytest
 from conftest import food_args
 
 from app.db.foods_repo import create_food, list_active_foods, list_processed_foods, set_status
-from app.db.legacy_migration import LEGACY_EMAIL, claim_legacy_foods
+from app.db import legacy_migration
+from app.db.legacy_migration import (
+    LEGACY_EMAIL, claim_if_first_account, claim_legacy_foods, register_first_account,
+)
 from app.db.users_repo import create_user
 
 
@@ -98,3 +101,58 @@ def test_nobody_can_log_in_as_the_legacy_account(pg):
 
     assert authenticate(pg, LEGACY_EMAIL, "!") is None
     assert authenticate(pg, LEGACY_EMAIL, "Passw0rd!") is None
+
+
+# ---- 첫 계정 기록과 다시 시도 (D-097) ---------------------------------------------------------------
+def two_accounts(pg):
+    first = create_user(pg, "first@example.com", "Passw0rd!")
+    second = create_user(pg, "second@example.com", "Passw0rd!")
+    return first, second
+
+
+def test_only_the_first_account_is_registered(pg):
+    first, second = two_accounts(pg)
+    assert register_first_account(pg, first["id"]) is True
+    assert register_first_account(pg, second["id"]) is False  # 줄은 한 개뿐이다
+    row = pg.execute("SELECT user_id, migrated FROM legacy_migration").fetchone()
+    assert (str(row["user_id"]), row["migrated"]) == (str(first["id"]), False)
+
+
+def test_foods_go_to_the_first_account_once(pg):
+    add_legacy_foods(pg)
+    first, second = two_accounts(pg)
+    register_first_account(pg, first["id"])
+    assert claim_if_first_account(pg, second["id"]) == 0  # 첫 계정이 아니면 받지 못한다
+    assert list_active_foods(pg, second["id"]) == []
+    assert claim_if_first_account(pg, first["id"]) == 3
+    assert claim_if_first_account(pg, first["id"]) == 0  # 이미 끝났다
+    assert pg.execute("SELECT migrated FROM legacy_migration").fetchone()["migrated"] is True
+    assert len(list_active_foods(pg, first["id"])) == 2
+
+
+def test_nothing_to_move_still_marks_it_done(pg):
+    first, _ = two_accounts(pg)
+    register_first_account(pg, first["id"])
+    assert claim_if_first_account(pg, first["id"]) == 0
+    assert pg.execute("SELECT migrated FROM legacy_migration").fetchone()["migrated"] is True
+
+
+def test_a_failed_hand_over_is_cancelled_as_a_whole(pg, monkeypatch):
+    add_legacy_foods(pg)
+    first, _ = two_accounts(pg)
+    register_first_account(pg, first["id"])
+    pg.commit()
+
+    def half_done(conn, user_id):
+        claim_legacy_foods(conn, user_id)  # 식품을 넘긴 뒤에
+        raise psycopg.OperationalError("db is down")  # 실패한다
+
+    monkeypatch.setattr(legacy_migration, "claim_legacy_foods", half_done)
+    with pytest.raises(psycopg.OperationalError):
+        claim_if_first_account(pg, first["id"])
+    pg.rollback()  # 부르는 쪽이 묶음을 취소한다
+    monkeypatch.undo()
+    assert list_active_foods(pg, first["id"]) == []  # 일부만 넘어간 채 남지 않는다
+    assert len(list_active_foods(pg, legacy_id(pg))) == 2
+    assert pg.execute("SELECT migrated FROM legacy_migration").fetchone()["migrated"] is False
+    assert claim_if_first_account(pg, first["id"]) == 3  # 다시 시도하면 받는다

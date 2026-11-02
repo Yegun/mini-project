@@ -1,4 +1,4 @@
-"""알렘빅 버전 파일 6개 (PostgreSQL 임시 schema). 번호 순서, 올리기·되돌리기, 한 단계씩의 결과, 실패하면 그 파일만 취소."""
+"""알렘빅 버전 파일 7개 (PostgreSQL 임시 schema). 번호 순서, 올리기·되돌리기, 한 단계씩의 결과, 실패하면 그 파일만 취소."""
 import sqlite3
 import uuid
 from datetime import date
@@ -15,7 +15,7 @@ from app.db.users_repo import authenticate
 
 TABLES = {"users", "sessions", "foods", "rules", "rule_aliases", "rule_storage"}
 VERSIONS_DIR = BACKEND_DIR / "alembic" / "versions"
-HEAD = "0006"
+HEAD = "0007"
 
 
 def tables(conn):
@@ -81,11 +81,12 @@ def test_version_files_are_numbered_in_order():
     assert names == [
         "0001_create_tables.py", "0002_import_legacy_foods.py", "0003_create_legacy_owner_account.py",
         "0004_assign_ownerless_foods.py", "0005_foods_owner_required.py", "0006_block_public_api.py",
+        "0007_legacy_migration_record.py",
     ]
 
 
 def test_each_version_points_to_the_one_before():
-    for number in range(1, 7):
+    for number in range(1, 8):
         text = next(VERSIONS_DIR.glob(f"000{number}_*.py")).read_text(encoding="utf-8")
         assert f'revision = "000{number}"' in text
         assert ("down_revision = None" if number == 1 else f'down_revision = "000{number - 1}"') in text
@@ -360,6 +361,65 @@ def test_0006_does_nothing_when_the_roles_do_not_exist(pg):
     assert version(pg) == HEAD
 
 
+# ---- 0007 옮김 기록 표 ----------------------------------------------------------------------------
+def test_0007_creates_an_empty_record_table_when_nobody_has_signed_up_yet(db):
+    db.up("0007")
+    conn = db.conn()
+    assert "legacy_migration" in tables(conn)
+    assert count(conn, "SELECT count(*) AS n FROM legacy_migration") == 0  # 줄이 없다 = 아직 아무도 가입하지 않았다
+
+
+def test_0007_allows_only_one_row(db):
+    db.up("0007")
+    conn = db.conn()
+    conn.execute("INSERT INTO legacy_migration (id) VALUES (1)")
+    with pytest.raises(psycopg.errors.UniqueViolation):
+        conn.execute("INSERT INTO legacy_migration (id) VALUES (1)")
+    conn.rollback()
+    with pytest.raises(psycopg.errors.CheckViolation):
+        conn.execute("INSERT INTO legacy_migration (id) VALUES (2)")
+
+
+def test_0007_marks_it_done_when_real_users_already_exist_and_nothing_is_left(db):
+    db.up("0006")
+    conn = db.conn()
+    conn.execute("INSERT INTO users (email, password_hash) VALUES ('old@example.com', 'x')")
+    conn.commit()
+    db.up("0007")
+    row = db.conn().execute("SELECT user_id, migrated FROM legacy_migration").fetchone()
+    assert row == {"user_id": None, "migrated": True}
+
+
+def test_0007_leaves_it_open_when_the_legacy_account_still_holds_foods(db):
+    db.up("0006")
+    conn = db.conn()
+    conn.execute("INSERT INTO users (email, password_hash) VALUES ('old@example.com', 'x')")
+    conn.execute(
+        "INSERT INTO foods (user_id, name, storage, quantity, unit, purchase_date, expiry_date, source, status)"
+        " SELECT id, '양파', 'room', 1, '개', '2026-10-01', '2026-12-01', 'manual', 'none' FROM users WHERE email = %s",
+        (LEGACY_EMAIL,),
+    )
+    conn.commit()
+    db.up("0007")
+    assert count(db.conn(), "SELECT count(*) AS n FROM legacy_migration") == 0
+
+
+def test_0007_record_keeps_the_row_when_the_first_account_is_deleted(db):
+    db.up("0007")
+    conn = db.conn()
+    conn.execute("INSERT INTO users (email, password_hash) VALUES ('first@example.com', 'x')")
+    conn.execute("INSERT INTO legacy_migration (id, user_id) SELECT 1, id FROM users WHERE email = 'first@example.com'")
+    conn.execute("DELETE FROM users WHERE email = 'first@example.com'")
+    row = conn.execute("SELECT user_id, migrated FROM legacy_migration").fetchone()
+    assert row == {"user_id": None, "migrated": False}
+
+
+def test_0007_downgrade_drops_the_table(db):
+    db.up("0007")
+    db.down("0006")
+    assert "legacy_migration" not in tables(db.conn())
+
+
 # ---- 전체 ----------------------------------------------------------------------------------------
 def test_upgrade_to_head_builds_everything(pg):
     assert TABLES <= tables(pg)
@@ -388,12 +448,12 @@ def test_data_survives_running_upgrade_again(pg, pg_url, pg_schema):
 
 
 def test_failed_version_file_changes_nothing(pg, pg_url, pg_schema, tmp_path):
-    """0007 이 중간에 실패하면 그 파일의 일은 전부 취소되고 버전도 0006 에 머문다."""
+    """0008 이 중간에 실패하면 그 파일의 일은 전부 취소되고 버전도 0007 에 머문다."""
     extra = tmp_path / "extra_versions"
     extra.mkdir()
-    (extra / "0007_bad.py").write_text(
+    (extra / "0008_bad.py").write_text(
         'from alembic import op\n'
-        'revision = "0007"\ndown_revision = "0006"\nbranch_labels = None\ndepends_on = None\n'
+        'revision = "0008"\ndown_revision = "0007"\nbranch_labels = None\ndepends_on = None\n'
         'def upgrade():\n'
         '    op.execute("CREATE TABLE should_not_stay (id int)")\n'
         '    op.execute("SELECT 1/0")\n'

@@ -200,20 +200,63 @@ def test_signup_without_legacy_foods_is_fine(client, pg):
     assert client.get("/foods").json()["items"] == []
 
 
-def test_failed_signup_leaves_the_legacy_foods_with_the_legacy_account(client, pg, monkeypatch):
-    put_legacy_foods(pg)
+def legacy_food_count(pg):
+    return pg.execute("SELECT count(*) AS n FROM foods WHERE user_id = %s", (legacy_owner(pg),)).fetchone()["n"]
 
+
+def break_hand_over(monkeypatch):
     def boom(*args, **kwargs):
         raise psycopg.OperationalError("db is down")
 
     monkeypatch.setattr(legacy_migration, "claim_legacy_foods", boom)
-    response = client.post("/auth/signup", json=CRED)
-    assert shape(response) == (500, None, "server_error")  # 넘기기는 가입과 같은 묶음이라 가입도 취소된다
-    assert real_users(pg) == 0 and count(pg, "sessions") == 0  # 이전용 계정만 있다
-    assert pg.execute("SELECT count(*) AS n FROM foods WHERE user_id = %s", (legacy_owner(pg),)).fetchone()["n"] == 2
+
+
+def test_signup_still_succeeds_when_handing_over_the_foods_fails(client, pg, monkeypatch):
+    """D-097: 넘기기가 실패해도 계정은 만들어지고 로그인된다. 식품은 이전용 계정에 그대로 남는다."""
+    put_legacy_foods(pg)
+    break_hand_over(monkeypatch)
+    assert client.post("/auth/signup", json=CRED).status_code == 201
+    assert real_users(pg) == 1 and count(pg, "sessions") == 1
+    assert client.get("/foods").json()["items"] == []  # 아직 못 받았다
+    assert legacy_food_count(pg) == 2  # 일부만 넘어간 채 남지 않는다
+
+
+def test_first_account_gets_the_foods_at_the_next_login(client, make_client, pg, monkeypatch):
+    put_legacy_foods(pg)
+    break_hand_over(monkeypatch)
+    assert client.post("/auth/signup", json=CRED).status_code == 201
+    assert client.post("/auth/login", json=CRED).status_code == 200  # 아직 고장 중이어도 로그인은 된다
+    assert legacy_food_count(pg) == 2
     monkeypatch.undo()
-    assert client.post("/auth/signup", json=CRED).status_code == 201  # 다시 가입하면 받는다
+    other = make_client()
+    assert other.post("/auth/login", json=CRED).status_code == 200  # 다음 로그인 때 다시 시도한다
+    assert len(other.get("/foods").json()["items"]) == 1
+    assert len(other.get("/records/foods").json()["eaten"]) == 1
+    assert legacy_food_count(pg) == 0
+
+
+def test_another_account_does_not_take_the_foods_while_the_first_one_is_pending(client, make_client, pg, monkeypatch):
+    """D-043: 첫 계정의 식품이다. 첫 계정이 못 받은 동안 나중에 가입한 계정이 가져가지 않는다."""
+    put_legacy_foods(pg)
+    break_hand_over(monkeypatch)
+    client.post("/auth/signup", json=CRED)
+    monkeypatch.undo()
+    other = make_client()
+    assert other.post("/auth/signup", json={"email": "lee@example.com", "password": CRED["password"]}).status_code == 201
+    assert other.get("/foods").json()["items"] == []
+    assert legacy_food_count(pg) == 2
+    client.post("/auth/login", json=CRED)
     assert len(client.get("/foods").json()["items"]) == 1
+
+
+def test_foods_are_handed_over_only_once(client, make_client, pg):
+    put_legacy_foods(pg)
+    client.post("/auth/signup", json=CRED)
+    other = make_client()
+    other.post("/auth/login", json=CRED)
+    other.post("/auth/login", json=CRED)
+    assert count(pg, "foods") == 2 and len(other.get("/foods").json()["items"]) == 1
+    assert pg.execute("SELECT migrated FROM legacy_migration").fetchone()["migrated"] is True
 
 
 def test_nobody_can_log_in_as_the_legacy_account(client):
