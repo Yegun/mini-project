@@ -4,6 +4,7 @@ import { searchRules } from '../api/rules'
 import ErrorNotice from '../components/ErrorNotice'
 import ManualRegisterForm from '../components/ManualRegisterForm'
 import RuleRegisterForm from '../components/RuleRegisterForm'
+import RegisterChoice from '../components/RegisterChoice'
 import RuleSearch from '../components/RuleSearch'
 import {
   checkManualForm,
@@ -22,7 +23,8 @@ interface Props {
   onDirtyChange?: (dirty: boolean) => void // 입력한 것이 있는지 (탭 이동 확인 창, D-083)
 }
 
-type Step = 'search' | 'rule' | 'manual'
+// choose: 등록 선택 / photo: 사진으로 등록 (이슈 5 에서 채움) / search · rule · manual: 직접 등록
+type Step = 'choose' | 'photo' | 'search' | 'rule' | 'manual'
 
 // 값이 바뀌면 그 칸의 안내를 지운다 (입력칸 → 안내가 붙은 칸)
 const FIELD_OF: Record<keyof FormValues, FieldName> = {
@@ -40,7 +42,7 @@ const SAVE_FAILED = '등록하지 못했어요. 잠시 뒤에 다시 시도해 �
 
 // 식품 등록 화면: 검색 → (규칙표 식품 입력 | 직접 등록 입력). 입력값은 여기서 들고 있어 실패해도 남는다.
 export default function RegisterPage({ today, onBack, onDone, onDirtyChange }: Props) {
-  const [step, setStep] = useState<Step>('search')
+  const [step, setStep] = useState<Step>('choose')
   const [query, setQuery] = useState('')
   const [search, setSearch] = useState<SearchState>({ status: 'idle' })
   const [rule, setRule] = useState<RuleCandidate | null>(null)
@@ -55,7 +57,8 @@ export default function RegisterPage({ today, onBack, onDone, onDirtyChange }: P
   // 구매일 기본값(오늘)처럼 처음부터 채워진 값만 있으면 입력으로 보지 않는다 (SCREEN-SPEC 11.1-6)
   const dirty =
     query.trim() !== '' ||
-    step !== 'search' ||
+    step === 'rule' ||
+    step === 'manual' ||
     JSON.stringify(values) !== JSON.stringify(emptyValues(today))
   useEffect(() => {
     onDirtyChange?.(dirty)
@@ -157,6 +160,8 @@ export default function RegisterPage({ today, onBack, onDone, onDirtyChange }: P
 
       {saveError && <ErrorNotice message={saveError} />}
 
+      {step === 'choose' && <RegisterChoice onPhoto={() => setStep('photo')} onManual={() => setStep('search')} />}
+      {step === 'photo' && <p className="field__hint">사진으로 등록은 곧 만들어요.</p>}
       {step === 'search' && (
         <RuleSearch
           query={query}

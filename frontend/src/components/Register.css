@@ -35,6 +35,21 @@
   gap: 1rem;
 }
 
+/* 등록 선택 (사진으로 등록 / 직접 등록) */
+.register-choice__item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+/* AI 안내: 작고 연한 글씨 (D-105) */
+.register-choice__hint {
+  margin: 0;
+  color: #8a9691;
+  font-size: 0.8125rem;
+  text-align: center;
+}
+
 /* 검색 */
 .search-form {
   display: flex;
