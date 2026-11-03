@@ -7,21 +7,17 @@ interface Props {
   values: FormValues
   errors: FieldErrors
   disabled?: boolean
-  idPrefix?: string // 같은 화면에 입력칸 묶음이 여러 개일 때(확인 화면의 카드) id 가 겹치지 않게
   onChange: (patch: Partial<FormValues>) => void
 }
 
 // 규칙표 등록과 직접 등록이 같이 쓰는 입력칸: 수량 · 단위 · 구매일
-export default function QuantityUnitDateFields({ values, errors, disabled, idPrefix = '', onChange }: Props) {
-  const quantityId = `${idPrefix}quantity`
-  const unitId = `${idPrefix}unit`
-  const dateId = `${idPrefix}purchase-date`
+export default function QuantityUnitDateFields({ values, errors, disabled, onChange }: Props) {
   return (
     <>
       <div className="field-row">
-        <FormField label="수량" id={quantityId} error={errors.quantity}>
+        <FormField label="수량" id="quantity" error={errors.quantity}>
           <input
-            id={quantityId}
+            id="quantity"
             className="input"
             type="text"
             inputMode="decimal"
@@ -30,13 +26,13 @@ export default function QuantityUnitDateFields({ values, errors, disabled, idPre
             value={values.quantity}
             disabled={disabled}
             aria-invalid={Boolean(errors.quantity)}
-            aria-describedby={errors.quantity ? `${quantityId}-error` : undefined}
+            aria-describedby={errors.quantity ? 'quantity-error' : undefined}
             onChange={(e) => onChange({ quantity: e.target.value })}
           />
         </FormField>
-        <FormField label="단위" id={unitId} error={errors.unit}>
+        <FormField label="단위" id="unit" error={errors.unit}>
           <input
-            id={unitId}
+            id="unit"
             className="input"
             type="text"
             autoComplete="off"
@@ -44,25 +40,25 @@ export default function QuantityUnitDateFields({ values, errors, disabled, idPre
             value={values.unit}
             disabled={disabled}
             aria-invalid={Boolean(errors.unit)}
-            aria-describedby={errors.unit ? `${unitId}-error` : undefined}
+            aria-describedby={errors.unit ? 'unit-error' : undefined}
             onChange={(e) => onChange({ unit: e.target.value })}
           />
         </FormField>
       </div>
       <FormField
         label="구매일"
-        id={dateId}
+        id="purchase-date"
         error={errors.purchase_date}
         hint={formatKoreanDate(values.purchaseDate)}
       >
         <input
-          id={dateId}
+          id="purchase-date"
           className="input"
           type="date"
           value={values.purchaseDate}
           disabled={disabled}
           aria-invalid={Boolean(errors.purchase_date)}
-          aria-describedby={errors.purchase_date ? `${dateId}-error` : undefined}
+          aria-describedby={errors.purchase_date ? 'purchase-date-error' : undefined}
           onChange={(e) => onChange({ purchaseDate: e.target.value })}
         />
       </FormField>

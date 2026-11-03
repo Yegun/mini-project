@@ -58,24 +58,6 @@ def find_user_by_email(conn: psycopg.Connection, email: str) -> dict | None:
     return {"id": str(row["id"]), "email": row["email"], "password_hash": row["password_hash"]}
 
 
-def verify_user_password(conn: psycopg.Connection, user_id: str, password) -> bool:
-    """로그인한 계정의 비밀번호가 맞는지 (탈퇴 확인, D-128). 비었거나 글자가 아닌 값은 틀린 것과 같다."""
-    if not isinstance(password, str) or password == "":
-        return False
-    row = conn.execute("SELECT password_hash FROM users WHERE id = %s", (user_id,)).fetchone()
-    return row is not None and verify_password(row["password_hash"], password)
-
-
-def delete_user(conn: psycopg.Connection, user_id: str) -> bool:
-    """계정 한 줄을 지운다 (탈퇴, D-127). 지웠으면 True.
-
-    그 계정의 식품(처리한 식품 포함)·로그인 상태(모든 기기)·사진 읽기 결과가 DB 가 따라 지운다 (Q-09).
-    옮김 기록(legacy_migration)은 줄을 남기고 user_id 만 비워진다. 규칙표에 더해진 식품은 지우지 않는다 (ARCHITECTURE 4-3).
-    한 문장이라 한 묶음이다. commit 은 부르는 쪽이 한다.
-    """
-    return conn.execute("DELETE FROM users WHERE id = %s", (user_id,)).rowcount > 0
-
-
 def authenticate(conn: psycopg.Connection, email: str, password: str) -> dict | None:
     """이메일·비밀번호가 맞으면 {"id", "email"}, 아니면 None.
 
