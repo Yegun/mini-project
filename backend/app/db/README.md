@@ -8,7 +8,7 @@ API 를 만드는 분이 가져다 쓰는 용도의 설명서다. 표 구조의 
 
 | 키 | 용도 |
 |---|---|
-| `DATABASE_URL` | 앱(API)이 쓰는 DB 계정. 규칙표는 **읽기와 더하기만** 된다 (Q-27). RLS 를 건너뛰는 속성(BYPASSRLS)이 있어야 한다 (Q-33) |
+| `DATABASE_URL` | 앱(API)이 쓰는 DB 계정. 규칙표 세 표는 **읽기만** 된다 (Q-16) |
 | `DATABASE_ADMIN_URL` | 개발자 계정. 표 만들기(알렘빅)·규칙표 채우기·기한 다시 계산에만 쓴다 |
 | `APP_DB_USER`, `APP_DB_PASSWORD` | 앱 계정을 만들 때(`setup_roles`) 쓴다 |
 | `TEST_DATABASE_URL` | 시험용 DB. 시험이 임시 schema 를 만들고 지운다. **내 컴퓨터(localhost) 주소가 아니면 시험이 멈춘다** |
@@ -21,7 +21,7 @@ API 를 만드는 분이 가져다 쓰는 용도의 설명서다. 표 구조의 
 python -m app.db.migrate        # 최신 버전까지 올린다 (= alembic upgrade head)
 python -m app.db.migrate down   # 한 단계 되돌린다 (= alembic downgrade -1)
 python -m app.db.init_db        # 최신 버전까지 올리고 규칙표 30개를 채운다 (여러 번 실행해도 같은 결과, 식품·계정은 그대로)
-python -m app.db.setup_roles    # 앱 계정 만들기 (규칙표 읽기·더하기, RLS 건너뛰기)
+python -m app.db.setup_roles    # 앱 계정 만들기 (규칙표 읽기 전용)
 alembic current                 # 지금 DB 의 버전 / alembic history  # 전체 이력
 ```
 
@@ -36,7 +36,6 @@ alembic current                 # 지금 DB 의 버전 / alembic history  # 전�
 | 0005 | `foods.user_id` 를 비울 수 없게 + 외래키 (주인 없는 식품이 남아 있으면 이 단계가 실패) | 구조 |
 | 0006 | 수파베이스 REST API 역할(anon·authenticated)의 표 권한 회수 (그 역할이 없는 DB 에서는 아무것도 안 한다) | 보안 |
 | 0007 | 옮김 기록 표 `legacy_migration` 만들기(첫 계정과 옮김 여부, 줄 1개). 이미 실제 가입자가 있고 이전용 계정에 식품이 없는 DB 는 "옮김 끝"으로 적는다 | 구조 |
-| 0008 | 사진 읽기 결과 표 `photo_analyses` 만들기(계정마다 한 줄, 30분) + **표 8개에 RLS 켜기**(정책 없음). 앱 계정에 BYPASSRLS 가 없으면 이 단계 뒤 앱이 줄을 하나도 못 본다 | 구조·보안 |
 
 - 첫 가입자가 이전용 계정의 식품을 넘겨받는 마지막 단계는 서버가 한다 (아래 "기존 식품 넘겨받기").
 - 표를 바꿀 때는 `alembic revision -m "설명"` 으로 새 파일을 만들고 `upgrade()` 와 `downgrade()` 에 **SQL 을 직접 쓴다** (`op.execute`). 이미 적용한 파일은 고치지 않는다. 파일 하나가 한 묶음이라 중간에 실패하면 그 파일은 아무것도 바뀌지 않는다.
@@ -62,8 +61,6 @@ conn = connect_app()   # psycopg 연결. 칸 이름으로 읽는 dict 를 돌려
 |---|---|---|
 | `create_user(conn, email, password)` | 계정을 만든다 (이메일은 공백 제거·소문자). 돌려주는 값 `{"id", "email"}`. 이미 있으면 `EmailTaken` (동시 가입도 같다) | B1 |
 | `authenticate(conn, email, password)` | 맞으면 `{"id", "email"}`, 아니면 `None` (이메일 없음과 비밀번호 틀림을 구분하지 않는다) | B2 |
-| `verify_user_password(conn, user_id, password)` | 로그인한 계정의 비밀번호가 맞는지. 비었거나 글자가 아닌 값은 틀린 것과 같다 | H1 |
-| `delete_user(conn, user_id)` | 계정 한 줄을 지운다. 식품(처리한 식품 포함)·로그인 상태(모든 기기)·사진 읽기 결과는 DB 가 따라 지운다. 옮김 기록은 줄이 남고 `user_id` 만 비워진다. 규칙표는 그대로 | H1 |
 | `find_user_by_email`, `hash_password`, `verify_password` | 낱개로 쓸 때 | — |
 
 비밀번호는 argon2 해시 문자열 하나로 저장한다 (솔트는 그 안에 있다). 이메일 모양·비밀번호 규칙(8자·영문·숫자·특수문자) 검사는 API 가 한다.
@@ -96,7 +93,7 @@ conn = connect_app()   # psycopg 연결. 칸 이름으로 읽는 dict 를 돌려
 
 식품 한 건: `{"id", "name", "storage", "quantity", "unit", "purchase_date", "expiry_date", "source", "status", "processed_date"}`. 날짜는 글자, `processed_date` 는 없으면 `None`, `user_id` 는 내보내지 않는다. 여유·주의 같은 계산 칸은 API 가 붙인다.
 
-## 규칙표 — `rules_repo` (읽기와 더하기)
+## 규칙표 — `rules_repo` (읽기 전용)
 
 | 함수 | 하는 일 | API |
 |---|---|---|
@@ -104,25 +101,8 @@ conn = connect_app()   # psycopg 연결. 칸 이름으로 읽는 dict 를 돌려
 | `find_rule(conn, name)` | 이름 **또는 별칭**이 정확히 같은 식품. 별칭이어도 정식 이름의 규칙을 돌려준다 | A2, A3, A5 |
 | `get_rule_by_name(conn, name)` | 정식 이름이 정확히 같은 것 (식품에 저장된 이름으로 규칙을 찾을 때) | A5, A6 |
 | `get_rule(conn, id)`, `list_rules(conn)` | 한 건 / 전체 | — |
-| `add_rule(conn, name, default_storage, storages)` | 규칙표에 새 식품을 **더한다**(별칭 없음). 번호는 이름에서 계산. 이미 있는 이름이거나 다른 식품의 별칭이면 아무것도 안 하고 `False` | F2 |
 
 규칙표 한 건: `{"id", "name", "default_storage", "storages": [{"storage", "allowed", "max_days"}, ...]}` (상온·냉장·냉동 순). `allowed` 가 `False` 면 "불가"이고 `max_days` 는 `None`. 규칙표의 "불가" 보관 방법을 거절하는 것은 API 가 한다.
-
-앱 계정은 규칙표에 **읽기와 더하기만** 한다(`add_rule` 뿐). 이미 있는 줄을 고치거나 지우는 것과 별칭을 더하는 것은 개발자 계정만 한다 (Q-27). 같은 이름을 두 요청이 동시에 더해도 한 줄만 만들어지고 먼저 저장된 값이 남는다 (Q-30).
-
-## 사진 읽기 결과 — `photo_analyses_repo`
-
-사진 한 장을 읽은 결과(글만)를 계정마다 한 줄, 30분 동안 잠깐 보관한다. 사진은 저장하지 않는다 (D-102).
-
-| 함수 | 하는 일 | API |
-|---|---|---|
-| `save_analysis(conn, user_id, items)` | 이 계정의 이전 결과를 지우고 새로 보관한다. 새 번호(`analysis_id`)를 돌려준다 | F1 |
-| `get_valid_analysis(conn, user_id, analysis_id)` | 내 결과이고 30분 안이면 `{"id", "items", "created_at"}`, 아니면 `None` (`analysis_expired`). **만료된 줄이면 그 줄을 지우고 `None`** — 그래서 `None` 이어도 commit 해야 지운 것이 남는다 | F2 |
-| `delete_analysis(conn, user_id, analysis_id)` | 쓴 결과를 지운다. 지웠으면 `True` | F2 |
-| `delete_expired(conn, user_id)` | 그 계정의 만료된 결과를 지운다. 로그인할 때 `create_session` 이 부른다 | B1, B2 |
-
-- 남의 번호·없는 번호·UUID 모양이 아닌 번호는 모두 똑같이 `None` 이다 (D-063).
-- 시각은 DB 시계다 (Q-13). 새 사진을 올리면 이전 번호는 쓸 수 없게 된다 (Q-29). 계정을 지우면 따라 지워진다 (Q-09).
 
 ## 기록 — `records_repo`
 
@@ -161,13 +141,8 @@ python -m app.db.recalc_expiry             # 저장한다
 - `tests/conftest.py` 의 SQLite 시험용 창고와 `test_api_*`, `test_ensure_db.py`, `test_real_files.py` 는 새 저장소에 맞춰 고쳐야 한다.
 - 옛 `app/db/schema.py`(SQLite 표 정의)는 더 쓰이지 않는다.
 
-## AI 연동 (`app/ai.py`, 저장소 아님)
-
-API 가 AI(Claude)를 부르는 곳은 `app/ai.py` 한 곳뿐이다 (D-132). 키는 `.env` 의 `ANTHROPIC_API_KEY` 에서만 읽고, 모델은 `AI_MODEL`(없으면 `claude-haiku-5-5`)로 바꾼다. 음식 추천은 30초까지 기다리고 자동으로 다시 부르지 않는다. 시험은 가짜 클라이언트를 쓰므로 키가 없어도 돈다.
-
 ## 알아 둘 것
 
-- 표 8개에 RLS 가 켜져 있고 정책은 없다 (0008, Q-33). 앱 계정은 `setup_roles` 가 주는 BYPASSRLS 로 건너뛰고, "내 식품만"은 API 가 `user_id` 조건으로 지킨다. 수파베이스에서 BYPASSRLS 를 줄 수 있는지는 클라우드 DB 에 적용할 때 확인한다.
 - **DB 는 저장만 한다.** 기한 계산, 상태 판정, 오늘 날짜, 입력 검사 메시지, 규칙표의 "불가" 보관 방법 거절은 API 가 한다.
 - 수량의 "소수 둘째 자리까지"와 "정수 8자리"(D-027, Q-05)는 API 가 먼저 검사해야 한다. 소수 셋째 자리는 DB 가 조용히 반올림하고, 8자리를 넘으면 오류를 낸다.
 - 처리된(다 먹음·버림) 식품은 `get_food`·`update_food`·`delete_food` 에서 없는 식품과 같다. 보려면 `include_processed=True`, 되돌리려면 `restore_food`.
