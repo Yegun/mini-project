@@ -6,11 +6,14 @@ import { setLoginRequiredListener } from './api/session'
 import BottomTabs, { type Tab } from './components/BottomTabs'
 import ConfirmDialog from './components/ConfirmDialog'
 import ErrorNotice from './components/ErrorNotice'
+import LogoutBar from './components/LogoutBar'
 import FoodDetailPage from './pages/FoodDetailPage'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
+import RecommendPage from './pages/RecommendPage'
 import RecordsPage from './pages/RecordsPage'
 import RegisterPage from './pages/RegisterPage'
+import SettingsPage from './pages/SettingsPage'
 import type { FoodListResponse } from './types/food'
 import type { RecordsData } from './types/records'
 
@@ -20,11 +23,16 @@ type Screen =
   | { name: 'login' }
   | { name: 'home'; initial?: FoodListResponse }
   | { name: 'records'; initial?: RecordsData }
+  | { name: 'recommend' }
+  | { name: 'settings' }
   | { name: 'register'; today: string; from: Tab }
   | { name: 'detail'; id: string; from: Tab }
 
 function screenOf(tab: Tab): Screen {
-  return tab === 'records' ? { name: 'records' } : { name: 'home' }
+  if (tab === 'records') return { name: 'records' }
+  if (tab === 'recommend') return { name: 'recommend' }
+  if (tab === 'settings') return { name: 'settings' }
+  return { name: 'home' }
 }
 
 // 사용자 확정 문구 (OQ-03)
@@ -65,8 +73,11 @@ function App() {
     return () => setLoginRequiredListener(null)
   }, [])
 
-  // 홈 · 기록 화면에서만 그 탭을 강조한다. 등록 · 상세에서는 강조하지 않는다 (사용자 결정)
-  const activeTab: Tab | null = screen.name === 'home' ? 'home' : screen.name === 'records' ? 'records' : null
+  // 탭 화면(홈 · 기록 · 음식추천 · 설정)에서만 그 탭을 강조한다. 등록 · 상세에서는 강조하지 않는다 (사용자 결정)
+  const activeTab: Tab | null =
+    screen.name === 'home' || screen.name === 'records' || screen.name === 'recommend' || screen.name === 'settings'
+      ? screen.name
+      : null
 
   // 탭을 눌렀을 때. 식품 등록 · 수정 화면에 입력한 것이 있으면 먼저 확인 창을 띄운다.
   // 확인하면 이동하고 입력은 사라지며, 취소하면 그 화면에 남는다. 입력한 것이 없으면 바로 이동한다 (D-083, D-084)
@@ -102,6 +113,11 @@ function App() {
   }
 
   function selectTab(tab: Tab) {
+    // 음식추천 · 설정은 처음 열 때 서버에 요청하지 않는다 (USER-WORKFLOW 7-9)
+    if (tab === 'recommend' || tab === 'settings') {
+      go(screenOf(tab))
+      return Promise.resolve()
+    }
     if (tab === 'records') {
       return loadThenGo(async () => ({ name: 'records', initial: await getRecords() }), RECORDS_LOAD_FAILED)
     }
@@ -138,19 +154,23 @@ function App() {
     )
   } else if (screen.name === 'records') {
     page = <RecordsPage initial={screen.initial} onAddFood={addFoodFromRecords} />
+  } else if (screen.name === 'recommend') {
+    page = <RecommendPage />
+  } else if (screen.name === 'settings') {
+    page = <SettingsPage />
   } else {
     page = (
       <HomePage
         initial={screen.initial}
         onAddFood={(today) => go({ name: 'register', today, from: 'home' })}
         onSelectFood={(id) => go({ name: 'detail', id, from: 'home' })}
-        onLoggedOut={() => go({ name: 'login' })}
       />
     )
   }
 
   return (
     <div className="app--tabs">
+      <LogoutBar onLoggedOut={() => go({ name: 'login' })} />
       {tabError && (
         <div className="app__notice">
           <ErrorNotice message={tabError.message} />
