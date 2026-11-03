@@ -13,7 +13,7 @@ from app.validation import ValidationError
 
 logger = logging.getLogger(__name__)
 
-# 이유 23개와 상태 번호 (API-SPEC 3절). 입력 오류 422, 없는 식품 404, 기한 다시 적기·중복 가입 409, 로그인 401, 실패 500.
+# 이유 27개와 상태 번호 (API-SPEC 3절). 입력 오류 422, 없는 식품 404, 기한 다시 적기·중복 가입 409, 로그인 401, 실패 500.
 STATUS = {
     "login_failed": 401,
     "login_required": 401,
@@ -37,6 +37,10 @@ STATUS = {
     "rename_expired_not_allowed": 422,
     "storage_change_not_allowed": 422,
     "password_mismatch": 422,
+    "invalid_meal": 422,
+    "invalid_cuisine": 422,
+    "invalid_cuisine_text": 422,
+    "ai_failed": 502,
     "server_error": 500,
 }
 
@@ -52,6 +56,9 @@ LABELS = {
     "email": "이메일",
     "password": "비밀번호",
     "q": "검색어",
+    "meal": "끼니",
+    "cuisine": "음식 종류",
+    "cuisine_text": "음식 종류",
 }
 
 # 이유별 문구. {label} 은 문제가 된 칸의 한글 이름으로 바뀐다.
@@ -78,6 +85,10 @@ MESSAGES = {
     "rename_expired_not_allowed": "기한이 지난 식품은 목록에 없는 이름으로 바꿀 수 없어요.",
     "storage_change_not_allowed": "이 보관 방법으로 바꾸면 기한이 지나 버려서 바꿀 수 없어요.",
     "password_mismatch": "비밀번호가 맞지 않아요.",
+    "invalid_meal": "끼니를 아침·점심·저녁 중에서 골라 주세요.",
+    "invalid_cuisine": "음식 종류를 골라 주세요.",
+    "invalid_cuisine_text": "음식 종류를 30자 이내로 적어 주세요.",
+    "ai_failed": "AI 가 응답하지 못했어요. 다시 시도해 주세요.",
     "server_error": "처리하지 못했어요. 잠시 뒤에 다시 해 주세요.",
 }
 

@@ -1,4 +1,4 @@
-"""오류 모양 (API-SPEC 0-2절, 3절). 이유 23개의 상태 번호·문구, 같은 세 칸, 예상 못 한 오류."""
+"""오류 모양 (API-SPEC 0-2절, 3절). 이유 27개의 상태 번호·문구, 같은 세 칸, 예상 못 한 오류."""
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -15,12 +15,13 @@ SPEC = {
     "rule_not_found": 422, "rule_name_exists": 422, "storage_not_allowed": 422,
     "expiry_input_invalid": 422, "invalid_expiry_in_days": 422, "expiry_in_past": 422,
     "purchase_after_expiry": 422, "rename_expired_not_allowed": 422,
-    "storage_change_not_allowed": 422, "password_mismatch": 422, "server_error": 500,
+    "storage_change_not_allowed": 422, "password_mismatch": 422, "invalid_meal": 422, "invalid_cuisine": 422,
+    "invalid_cuisine_text": 422, "ai_failed": 502, "server_error": 500,
 }
 
 
 def test_status_table_matches_the_spec():
-    assert STATUS == SPEC and len(SPEC) == 23
+    assert STATUS == SPEC and len(SPEC) == 27
 
 
 def test_every_reason_has_a_message():
@@ -36,6 +37,7 @@ def test_fixed_messages_from_the_documents():
     assert message_for("email_taken") == "이미 가입된 이메일이에요."
     assert message_for("weak_password") == "비밀번호는 8자 이상이고 영문·숫자·특수문자를 모두 넣어 주세요."
     assert message_for("not_found") == "찾을 수 없는 식품이에요."
+    assert message_for("ai_failed") == "AI 가 응답하지 못했어요. 다시 시도해 주세요."
 
 
 def test_label_follows_the_field():

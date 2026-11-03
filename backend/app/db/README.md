@@ -161,6 +161,10 @@ python -m app.db.recalc_expiry             # 저장한다
 - `tests/conftest.py` 의 SQLite 시험용 창고와 `test_api_*`, `test_ensure_db.py`, `test_real_files.py` 는 새 저장소에 맞춰 고쳐야 한다.
 - 옛 `app/db/schema.py`(SQLite 표 정의)는 더 쓰이지 않는다.
 
+## AI 연동 (`app/ai.py`, 저장소 아님)
+
+API 가 AI(Claude)를 부르는 곳은 `app/ai.py` 한 곳뿐이다 (D-132). 키는 `.env` 의 `ANTHROPIC_API_KEY` 에서만 읽고, 모델은 `AI_MODEL`(없으면 `claude-haiku-5-5`)로 바꾼다. 음식 추천은 30초까지 기다리고 자동으로 다시 부르지 않는다. 시험은 가짜 클라이언트를 쓰므로 키가 없어도 돈다.
+
 ## 알아 둘 것
 
 - 표 8개에 RLS 가 켜져 있고 정책은 없다 (0008, Q-33). 앱 계정은 `setup_roles` 가 주는 BYPASSRLS 로 건너뛰고, "내 식품만"은 API 가 `user_id` 조건으로 지킨다. 수파베이스에서 BYPASSRLS 를 줄 수 있는지는 클라우드 DB 에 적용할 때 확인한다.
