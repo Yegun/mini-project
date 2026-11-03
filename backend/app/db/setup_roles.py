@@ -1,6 +1,6 @@
 """앱(API)이 쓰는 DB 계정을 만든다. 이 계정은 규칙표 세 표를 읽기만 할 수 있다 (D-007, Q-16).
 
-- 식품·계정·로그인 상태 표: 읽기·쓰기 (SELECT, INSERT, UPDATE, DELETE)
+- 식품·계정·로그인 상태·옮김 기록 표: 읽기·쓰기 (SELECT, INSERT, UPDATE, DELETE)
 - 규칙표 세 표(rules, rule_aliases, rule_storage): 읽기만 (SELECT)
 - 표 만들기·규칙표 채우기·기한 다시 계산은 이 계정으로 못 한다. 개발자 계정(DATABASE_ADMIN_URL)을 쓴다.
 
@@ -17,7 +17,7 @@ from psycopg import sql
 
 from app.db.connection import connect_admin, env_value
 
-READ_WRITE = ("users", "sessions", "foods")
+READ_WRITE = ("users", "sessions", "foods", "legacy_migration")
 READ_ONLY = ("rules", "rule_aliases", "rule_storage")
 
 

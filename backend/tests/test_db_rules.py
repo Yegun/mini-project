@@ -160,6 +160,9 @@ def test_app_role_can_read_but_not_write_rules(pg_url, pg_schema, pg_rules):
                     app.execute(statement)
             # 식품·계정·로그인 상태 표는 쓸 수 있다
             app.execute("INSERT INTO users (email, password_hash) VALUES ('r@example.com', 'x')")
+            # 가입·로그인이 첫 계정 기록(legacy_migration)을 읽고 고친다 (D-097)
+            app.execute("SELECT migrated FROM legacy_migration").fetchall()
+            app.execute("UPDATE legacy_migration SET migrated = migrated")
             # 표를 만들거나 지울 수는 없다
             with pytest.raises(psycopg.errors.InsufficientPrivilege):
                 app.execute("DROP TABLE foods")
