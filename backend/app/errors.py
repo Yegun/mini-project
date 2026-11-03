@@ -13,7 +13,7 @@ from app.validation import ValidationError
 
 logger = logging.getLogger(__name__)
 
-# 이유 28개와 상태 번호 (API-SPEC 3절). 입력 오류 422, 없는 식품 404, 기한 다시 적기·중복 가입 409, 로그인 401, 실패 500.
+# 이유 30개와 상태 번호 (API-SPEC 3절). 입력 오류 422, 없는 식품 404, 기한 다시 적기·중복 가입 409, 로그인 401, 실패 500.
 STATUS = {
     "login_failed": 401,
     "login_required": 401,
@@ -41,6 +41,8 @@ STATUS = {
     "invalid_cuisine": 422,
     "invalid_cuisine_text": 422,
     "photo_invalid": 422,
+    "analysis_expired": 422,
+    "invalid_item": 422,
     "ai_failed": 502,
     "server_error": 500,
 }
@@ -58,6 +60,8 @@ LABELS = {
     "password": "비밀번호",
     "q": "검색어",
     "image": "사진",
+    "items": "식품 목록",
+    "item_no": "줄 번호",
     "meal": "끼니",
     "cuisine": "음식 종류",
     "cuisine_text": "음식 종류",
@@ -91,6 +95,8 @@ MESSAGES = {
     "invalid_cuisine": "음식 종류를 골라 주세요.",
     "invalid_cuisine_text": "음식 종류를 30자 이내로 적어 주세요.",
     "photo_invalid": "사진은 jpg · png · webp 형식이고 5MB 이하여야 해요.",
+    "analysis_expired": "사진을 다시 올려 주세요.",
+    "invalid_item": "읽은 식품의 줄 번호가 올바르지 않아요. 사진을 다시 올려 주세요.",
     "ai_failed": "AI 가 응답하지 못했어요. 다시 시도해 주세요.",
     "server_error": "처리하지 못했어요. 잠시 뒤에 다시 해 주세요.",
 }
@@ -101,7 +107,15 @@ FIELD_MESSAGES = {
 }
 
 
+def _base_field(field: str | None) -> str | None:
+    """한꺼번에 등록의 줄 오류 칸 이름(items.2.quantity)에서 칸 이름(quantity)만 꺼낸다 (API-SPEC 0-2절)."""
+    if field and field.startswith("items.") and field.count(".") == 2:
+        return field.rsplit(".", 1)[-1]
+    return field
+
+
 def message_for(reason: str, field: str | None = None) -> str:
+    field = _base_field(field)
     if (reason, field) in FIELD_MESSAGES:
         return FIELD_MESSAGES[(reason, field)]
     label = LABELS.get(field, "입력한")
