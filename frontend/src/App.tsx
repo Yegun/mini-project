@@ -124,9 +124,10 @@ function App() {
     return loadThenGo(async () => ({ name: 'home', initial: await getFoods() }))
   }
 
-  // 기록이 모두 비었을 때의 식품 등록 버튼 (D-071). 구매일 기본값(오늘)은 홈 목록이 주는 today 를 쓰므로 먼저 불러온다
-  function addFoodFromRecords() {
-    void loadThenGo(async () => ({ name: 'register', today: (await getFoods()).today, from: 'records' }))
+  // 기록이 모두 비었을 때(D-071)와 추천할 식품이 없을 때(OQ-05)의 식품 등록 버튼.
+  // 구매일 기본값(오늘)은 홈 목록이 주는 today 를 쓰므로 먼저 불러온다
+  function addFoodFrom(from: Tab) {
+    void loadThenGo(async () => ({ name: 'register', today: (await getFoods()).today, from }))
   }
 
   if (screen.name === 'login') {
@@ -153,9 +154,9 @@ function App() {
       />
     )
   } else if (screen.name === 'records') {
-    page = <RecordsPage initial={screen.initial} onAddFood={addFoodFromRecords} />
+    page = <RecordsPage initial={screen.initial} onAddFood={() => addFoodFrom('records')} />
   } else if (screen.name === 'recommend') {
-    page = <RecommendPage />
+    page = <RecommendPage onAddFood={() => addFoodFrom('recommend')} />
   } else if (screen.name === 'settings') {
     page = <SettingsPage onWithdrawn={() => go({ name: 'login' })} />
   } else {
