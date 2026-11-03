@@ -157,7 +157,7 @@ function App() {
   } else if (screen.name === 'recommend') {
     page = <RecommendPage />
   } else if (screen.name === 'settings') {
-    page = <SettingsPage />
+    page = <SettingsPage onWithdrawn={() => go({ name: 'login' })} />
   } else {
     page = (
       <HomePage
