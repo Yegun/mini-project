@@ -50,6 +50,54 @@
   text-align: center;
 }
 
+/* 확인 화면: 읽은 식품마다 카드 한 장 (SCREEN-SPEC 13.1 의 11번) */
+.review__notice {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.review__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.review-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem 1rem;
+  border: 1px solid #d9e3df;
+  border-radius: 0.75rem;
+  background: #fff;
+}
+
+/* 뺀 줄은 흐리게 (다시 넣을 수 있다) */
+.review-card--off {
+  opacity: 0.55;
+  background: #f4faf7;
+}
+
+.review-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.review-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
 /* 사진 올리기: 파일 입력은 숨기고 버튼 모양의 이름표로 고른다 */
 .photo-upload__pick {
   display: inline-flex;
@@ -226,6 +274,13 @@
   font: inherit;
   font-weight: 700;
   cursor: pointer;
+}
+
+/* 보관 방법 버튼 안의 최대 보관기간 (확인 화면) */
+.choice__sub {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 400;
 }
 
 .choice--selected {

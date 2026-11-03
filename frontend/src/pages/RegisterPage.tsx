@@ -4,6 +4,7 @@ import { analyzePhoto } from '../api/photos'
 import { searchRules } from '../api/rules'
 import ErrorNotice from '../components/ErrorNotice'
 import ManualRegisterForm from '../components/ManualRegisterForm'
+import PhotoReview from '../components/PhotoReview'
 import PhotoUpload from '../components/PhotoUpload'
 import RuleRegisterForm from '../components/RuleRegisterForm'
 import RegisterChoice from '../components/RegisterChoice'
@@ -62,6 +63,7 @@ export default function RegisterPage({ today, onBack, onDone, onDirtyChange }: P
   const [photoError, setPhotoError] = useState<string | null>(null)
   const [analyzing, setAnalyzing] = useState(false)
   const [analysis, setAnalysis] = useState<AnalyzeData | null>(null) // 읽은 결과 (확인 화면용)
+  const [reviewDirty, setReviewDirty] = useState(false) // 확인 화면에서 고치거나 뺀 것이 있는지
   const [notice, setNotice] = useState<string | null>(null) // 등록 선택 화면의 안내 (식품을 못 읽었을 때)
   const searchSeq = useRef(0) // 늦게 온 옛 검색 결과가 덮어쓰지 않게
   const submitLock = useRef(false) // 연타해도 요청은 한 번
@@ -74,6 +76,7 @@ export default function RegisterPage({ today, onBack, onDone, onDirtyChange }: P
     step === 'rule' ||
     step === 'manual' ||
     (step === 'photo' && photo !== null) || // 사진을 고른 상태 (SCREEN-SPEC 5.3)
+    (step === 'review' && reviewDirty) || // 확인 화면에서 줄을 고치거나 뺀 상태 (SCREEN-SPEC 5.4)
     JSON.stringify(values) !== JSON.stringify(emptyValues(today))
   useEffect(() => {
     onDirtyChange?.(dirty)
@@ -237,7 +240,18 @@ export default function RegisterPage({ today, onBack, onDone, onDirtyChange }: P
         />
       )}
       {step === 'review' && analysis && (
-        <p className="field__hint">읽은 식품 {analysis.items.length}개의 확인 화면은 곧 만들어요.</p>
+        <PhotoReview
+          analysis={analysis}
+          onDone={onDone} // 등록 성공 → 홈. 홈이 목록을 새로 불러온다
+          onReupload={() => {
+            // 읽기 결과가 만료됨: 사진을 다시 올려야 한다
+            setAnalysis(null)
+            setReviewDirty(false)
+            setPhoto(null)
+            setStep('photo')
+          }}
+          onDirtyChange={setReviewDirty}
+        />
       )}
       {step === 'search' && (
         <RuleSearch
