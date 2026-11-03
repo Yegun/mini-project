@@ -1,4 +1,4 @@
-"""오류 모양 (API-SPEC 0-2절, 3절). 이유 27개의 상태 번호·문구, 같은 세 칸, 예상 못 한 오류."""
+"""오류 모양 (API-SPEC 0-2절, 3절). 이유 28개의 상태 번호·문구, 같은 세 칸, 예상 못 한 오류."""
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -16,12 +16,12 @@ SPEC = {
     "expiry_input_invalid": 422, "invalid_expiry_in_days": 422, "expiry_in_past": 422,
     "purchase_after_expiry": 422, "rename_expired_not_allowed": 422,
     "storage_change_not_allowed": 422, "password_mismatch": 422, "invalid_meal": 422, "invalid_cuisine": 422,
-    "invalid_cuisine_text": 422, "ai_failed": 502, "server_error": 500,
+    "invalid_cuisine_text": 422, "photo_invalid": 422, "ai_failed": 502, "server_error": 500,
 }
 
 
 def test_status_table_matches_the_spec():
-    assert STATUS == SPEC and len(SPEC) == 27
+    assert STATUS == SPEC and len(SPEC) == 28
 
 
 def test_every_reason_has_a_message():

@@ -13,7 +13,7 @@ from app.validation import ValidationError
 
 logger = logging.getLogger(__name__)
 
-# 이유 27개와 상태 번호 (API-SPEC 3절). 입력 오류 422, 없는 식품 404, 기한 다시 적기·중복 가입 409, 로그인 401, 실패 500.
+# 이유 28개와 상태 번호 (API-SPEC 3절). 입력 오류 422, 없는 식품 404, 기한 다시 적기·중복 가입 409, 로그인 401, 실패 500.
 STATUS = {
     "login_failed": 401,
     "login_required": 401,
@@ -40,6 +40,7 @@ STATUS = {
     "invalid_meal": 422,
     "invalid_cuisine": 422,
     "invalid_cuisine_text": 422,
+    "photo_invalid": 422,
     "ai_failed": 502,
     "server_error": 500,
 }
@@ -56,6 +57,7 @@ LABELS = {
     "email": "이메일",
     "password": "비밀번호",
     "q": "검색어",
+    "image": "사진",
     "meal": "끼니",
     "cuisine": "음식 종류",
     "cuisine_text": "음식 종류",
@@ -88,6 +90,7 @@ MESSAGES = {
     "invalid_meal": "끼니를 아침·점심·저녁 중에서 골라 주세요.",
     "invalid_cuisine": "음식 종류를 골라 주세요.",
     "invalid_cuisine_text": "음식 종류를 30자 이내로 적어 주세요.",
+    "photo_invalid": "사진은 jpg · png · webp 형식이고 5MB 이하여야 해요.",
     "ai_failed": "AI 가 응답하지 못했어요. 다시 시도해 주세요.",
     "server_error": "처리하지 못했어요. 잠시 뒤에 다시 해 주세요.",
 }

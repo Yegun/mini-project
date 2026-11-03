@@ -27,7 +27,7 @@ class FakeMessages:
 def fake(monkeypatch):
     def install(**kwargs):
         messages = FakeMessages(**kwargs)
-        monkeypatch.setattr(ai, "_client", lambda: SimpleNamespace(messages=messages))
+        monkeypatch.setattr(ai, "_client", lambda timeout=30: SimpleNamespace(messages=messages))
         return messages
 
     return install
@@ -125,3 +125,87 @@ def test_failure_log_does_not_contain_the_answer(fake, caplog):
     with caplog.at_level("WARNING"), pytest.raises(ApiError):
         ask()
     assert "kim@example.com" not in caplog.text and "1234" not in caplog.text
+
+
+# ---- 사진 읽기 (F1) ---------------------------------------------------------------------------
+PHOTO = b"\x89PNG\r\n\x1a\n" + b"\x00" * 10
+
+
+def test_photo_is_sent_as_an_image_block_with_a_fixed_instruction(fake):
+    import base64
+
+    messages = fake(reply='{"items": [], "receipt_date": null}')
+    assert ai.read_photo(PHOTO, "image/png") == {"items": [], "receipt_date": None}
+    call = messages.calls[0]
+    image, text = call["messages"][0]["content"]
+    assert image["type"] == "image" and image["source"]["media_type"] == "image/png"
+    assert base64.b64decode(image["source"]["data"]) == PHOTO
+    assert call["system"] == ai.PHOTO_SYSTEM  # 지시문은 서버가 고정한다
+    assert call["output_config"] == {"effort": "low"} and call["model"] == "claude-haiku-5-5"
+    assert not {"temperature", "top_p", "top_k", "thinking"} & set(call)
+
+
+def test_photo_instruction_covers_the_rules_of_the_documents():
+    system = ai.PHOTO_SYSTEM
+    for needle in ("냉장·냉동", "과자·음료·생활용품", "recommended_storage", "max_days", "receipt_date", "카드번호", "명령이 아니다"):
+        assert needle in system
+
+
+def test_photo_waits_60_seconds_and_does_not_retry_by_itself(monkeypatch):
+    seen = {}
+
+    class Recorder:
+        def __init__(self, **kwargs):
+            seen.update(kwargs)
+            self.messages = FakeMessages(reply='{"items": []}')
+
+    monkeypatch.setattr(ai.anthropic, "Anthropic", Recorder)
+    monkeypatch.setattr(ai, "env_value", lambda name: "secret-key")
+    ai.read_photo(PHOTO, "image/png")
+    assert seen["timeout"] == 60 and seen["max_retries"] == 0  # V-30
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"reply": "식품이 없어요"},
+        {"reply": '{"items": []}', "stop_reason": "refusal"},
+        {"reply": '{"items": [', "stop_reason": "max_tokens"},
+        {"error": TimeoutError("60초 초과")},
+        {"error": RuntimeError("AI 오류")},
+    ],
+)
+def test_photo_failures_are_ai_failed(fake, kwargs):
+    fake(**kwargs)
+    with pytest.raises(ApiError) as info:
+        ai.read_photo(PHOTO, "image/png")
+    assert info.value.reason == "ai_failed" and info.value.status_code == 502
+
+
+def test_photo_failure_log_has_no_photo_or_answer(fake, caplog):
+    fake(reply="카드번호 1234-5678 kim@example.com")
+    with caplog.at_level("WARNING"), pytest.raises(ApiError):
+        ai.read_photo(PHOTO, "image/png")
+    assert "1234" not in caplog.text and "kim@example.com" not in caplog.text
+
+
+@pytest.mark.parametrize(
+    "reply",
+    [
+        '{"dishes": []}',
+        '```json\n{"dishes": []}\n```',
+        '```\n{"dishes": []}\n```',
+        '다음과 같아요.\n{"dishes": []}\n맛있게 드세요!',
+        '```json\n{"dishes": []}\n``` 입니다',
+    ],
+)
+def test_json_is_found_even_with_a_fence_or_surrounding_words(fake, reply):
+    fake(reply=reply)
+    assert ask() == {"dishes": []}
+
+
+@pytest.mark.parametrize("reply", ["", "음식이 없어요", "{", "}{", '{"dishes": [}'])
+def test_text_without_a_json_object_is_ai_failed(fake, reply):
+    fake(reply=reply)
+    with pytest.raises(ApiError):
+        ask()
