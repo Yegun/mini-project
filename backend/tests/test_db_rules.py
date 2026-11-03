@@ -7,7 +7,7 @@ from psycopg import sql
 
 from app import db  # noqa: F401  (패키지 확인)
 from app.db import seed_rules as seed_module
-from app.db.rules_repo import add_rule, find_rule, get_rule, get_rule_by_name, list_rules, search_rules
+from app.db.rules_repo import find_rule, get_rule, get_rule_by_name, list_rules, search_rules
 from app.db.seed_rules import RULES, check_rules, rule_id_for, seed_rules
 from app.db.setup_roles import setup_app_role
 
@@ -134,8 +134,8 @@ def test_bad_seed_changes_nothing(pg_rules, monkeypatch):
     assert list_rules(pg_rules) == before
 
 
-# ---- 앱 계정은 규칙표에 읽기와 '더하기'만 한다 (Q-27) -------------------------------------------
-def test_app_role_can_read_and_add_but_not_change_rules(pg_url, pg_schema, pg_rules):
+# ---- 앱 계정은 규칙표를 읽기만 한다 (Q-16) ---------------------------------------------------
+def test_app_role_can_read_but_not_write_rules(pg_url, pg_schema, pg_rules):
     role = "app_t_" + uuid.uuid4().hex[:8]
     password = uuid.uuid4().hex
     admin = psycopg.connect(pg_url, autocommit=True)
@@ -149,31 +149,17 @@ def test_app_role_can_read_and_add_but_not_change_rules(pg_url, pg_schema, pg_ru
         info.update(user=role, password=password, options=f"-c search_path={pg_schema}")
         app = psycopg.connect(**info, autocommit=True)
         try:
-            # 표 8개에 RLS 가 켜져 있어도(정책 없음) 앱 계정은 RLS 를 건너뛰어 줄을 읽는다 (Q-33)
             assert app.execute("SELECT count(*) FROM rules").fetchone()[0] == 30
-            # 규칙표 식품·보관 방법별 정보는 더할 수 있다 (사진으로 한꺼번에 등록, D-136)
-            app.execute("INSERT INTO rules (id, name, default_storage) VALUES (gen_random_uuid(), 'x', 'room')")
-            app.execute(
-                "INSERT INTO rule_storage (rule_id, storage, allowed, max_days)"
-                " SELECT id, 'room', true, 3 FROM rules WHERE name = 'x'"
-            )
-            # 이미 있는 줄을 고치거나 지우는 것, 별칭을 더하거나 고치거나 지우는 것은 못 한다
             for statement in (
+                "INSERT INTO rules (id, name, default_storage) VALUES (gen_random_uuid(), 'x', 'room')",
                 "UPDATE rules SET default_storage = 'room'",
-                "DELETE FROM rules",
-                "UPDATE rule_storage SET max_days = 1",
-                "DELETE FROM rule_storage",
-                "INSERT INTO rule_aliases (rule_id, alias) SELECT id, 'xx' FROM rules WHERE name = 'x'",
-                "UPDATE rule_aliases SET alias = 'y'",
                 "DELETE FROM rule_aliases",
+                "DELETE FROM rule_storage",
             ):
                 with pytest.raises(psycopg.errors.InsufficientPrivilege):
                     app.execute(statement)
             # 식품·계정·로그인 상태 표는 쓸 수 있다
             app.execute("INSERT INTO users (email, password_hash) VALUES ('r@example.com', 'x')")
-            # 사진 읽기 결과 표도 쓸 수 있다
-            app.execute("INSERT INTO photo_analyses (user_id, items) SELECT id, '[]'::jsonb FROM users")
-            app.execute("DELETE FROM photo_analyses")
             # 가입·로그인이 첫 계정 기록(legacy_migration)을 읽고 고친다 (D-097)
             app.execute("SELECT migrated FROM legacy_migration").fetchall()
             app.execute("UPDATE legacy_migration SET migrated = migrated")
@@ -186,64 +172,6 @@ def test_app_role_can_read_and_add_but_not_change_rules(pg_url, pg_schema, pg_ru
         admin.execute(sql.SQL("DROP OWNED BY {}").format(sql.Identifier(role)))
         admin.execute(sql.SQL("DROP ROLE IF EXISTS {}").format(sql.Identifier(role)))
         admin.close()
-
-
-# ---- 규칙표에 더하기 (D-136, Q-27, Q-30) -----------------------------------------------------
-def storages(room=None, fridge=5, freezer=None):
-    days = {"room": room, "fridge": fridge, "freezer": freezer}
-    return [{"storage": s, "allowed": d is not None, "max_days": d} for s, d in days.items()]
-
-
-def test_add_rule_creates_rule_and_three_storage_rows_without_alias(pg_rules):
-    assert add_rule(pg_rules, "닭가슴살", "fridge", storages(fridge=3, freezer=90)) is True
-    rule = get_rule_by_name(pg_rules, "닭가슴살")
-    assert rule["default_storage"] == "fridge"
-    assert [s["storage"] for s in rule["storages"]] == ["room", "fridge", "freezer"]
-    assert [(s["allowed"], s["max_days"]) for s in rule["storages"]] == [(False, None), (True, 3), (True, 90)]
-    assert pg_rules.execute("SELECT count(*) AS n FROM rule_aliases WHERE rule_id = %s", (rule["id"],)).fetchone()["n"] == 0
-    assert len(list_rules(pg_rules)) == 31
-
-
-def test_added_rule_id_comes_from_the_name(pg_rules):
-    add_rule(pg_rules, "닭가슴살", "fridge", storages())
-    assert get_rule_by_name(pg_rules, "닭가슴살")["id"] == rule_id_for("닭가슴살")  # 처음 30개와 같은 방식 (Q-30)
-
-
-def test_added_rule_can_be_found_by_name_only(pg_rules):
-    add_rule(pg_rules, "닭가슴살", "fridge", storages())
-    assert [r["name"] for r in search_rules(pg_rules, "닭가")] == ["닭가슴살"]
-    assert find_rule(pg_rules, "닭가슴살")["name"] == "닭가슴살"
-
-
-def test_add_rule_does_not_touch_an_existing_name(pg_rules):
-    before = get_rule_by_name(pg_rules, "양파")
-    assert add_rule(pg_rules, "양파", "fridge", storages(fridge=1)) is False  # 이미 있으면 덮어쓰지 않는다 (D-135)
-    assert get_rule_by_name(pg_rules, "양파") == before
-
-
-def test_add_rule_ignores_a_name_that_is_another_rules_alias(pg_rules):
-    assert add_rule(pg_rules, "계란", "fridge", storages()) is False  # 달걀의 별칭
-    assert get_rule_by_name(pg_rules, "계란") is None and len(list_rules(pg_rules)) == 30
-
-
-def test_add_same_name_twice_keeps_the_first(pg_rules):
-    assert add_rule(pg_rules, "닭가슴살", "fridge", storages(fridge=3)) is True
-    assert add_rule(pg_rules, "닭가슴살", "fridge", storages(fridge=9)) is False  # 먼저 저장된 값이 남는다
-    assert get_rule_by_name(pg_rules, "닭가슴살")["storages"][1]["max_days"] == 3
-
-
-def test_add_rule_rejects_bad_values_and_changes_nothing(pg_rules):
-    bad = [{"storage": "room", "allowed": True, "max_days": None}] + storages()[1:]  # 가능인데 일수가 없다
-    with pytest.raises(psycopg.errors.CheckViolation):
-        add_rule(pg_rules, "닭가슴살", "fridge", bad)
-    pg_rules.rollback()
-    assert get_rule_by_name(pg_rules, "닭가슴살") is None
-
-
-def test_add_rule_does_not_commit_by_itself(pg_rules):
-    add_rule(pg_rules, "닭가슴살", "fridge", storages())
-    pg_rules.rollback()
-    assert get_rule_by_name(pg_rules, "닭가슴살") is None
 
 
 def test_seed_does_not_commit_by_itself(pg):

@@ -2,8 +2,8 @@
 
 # BUSINESS-RULE-REVIEW: 냉장고 관리 웹 앱
 
-[DECISIONS.md](../기초문서/v0.3.0_DECISIONS.md)의 유효한 결정마다 한 줄씩, [SCENARIO-REVIEW.md](v0.3.0_SCENARIO-REVIEW.md)와 같은 열로 정리한 검수 표다. 이 문서를 쓰면서 코드는 읽지 않았다.
-참고: [USER-WORKFLOW.md](../기초문서/v0.3.0_USER-WORKFLOW.md), [API-SPEC.md](../설계_문서/v0.3.0_API-SPEC.md), [DATA-MODEL.md](../설계_문서/v0.3.0_DATA-MODEL.md), [SCREEN-SPEC.md](../설계_문서/v0.3.0_SCREEN-SPEC.md), [prd.md](../기초문서/v0.3.0_PRD.md) (모두 v0.3.0). 이전 버전의 같은 문서는 `docs/version/0.2.0/product-review/` 에 있다.
+[DECISIONS.md](DECISIONS.md)의 유효한 결정마다 한 줄씩, [SCENARIO-REVIEW.md](SCENARIO-REVIEW.md)와 같은 열로 정리한 검수 표다. 이 문서를 쓰면서 코드는 읽지 않았다.
+참고: [USER-WORKFLOW.md](USER-WORKFLOW.md), [API-SPEC.md](API-SPEC.md), [DATA-MODEL.md](DATA-MODEL.md), [SCREEN-SPEC.md](SCREEN-SPEC.md), [prd.md](prd.md) (모두 v0.3.0). 이전 버전의 같은 문서는 `docs/version/0.2.0/product-review/` 에 있다.
 
 ## 읽는 법
 

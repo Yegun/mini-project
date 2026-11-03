@@ -12,8 +12,6 @@ import secrets
 
 import psycopg
 
-from app.db import photo_analyses_repo
-
 SESSION_MINUTES = 30
 
 
@@ -22,15 +20,11 @@ def _hash(token: str) -> str:
 
 
 def create_session(conn: psycopg.Connection, user_id: str) -> str:
-    """이 기기의 로그인 상태를 새로 만들고 쿠키에 담을 값(원문)을 돌려준다.
-
-    그 계정의 만료된 로그인 상태와 만료된 사진 읽기 결과도 같이 지운다 (Q-14, Q-31).
-    """
+    """이 기기의 로그인 상태를 새로 만들고 쿠키에 담을 값(원문)을 돌려준다. 그 계정의 만료된 줄도 지운다."""
     conn.execute(
         "DELETE FROM sessions WHERE user_id = %s AND last_used_at < clock_timestamp() - make_interval(mins => %s)",
         (user_id, SESSION_MINUTES),
     )
-    photo_analyses_repo.delete_expired(conn, user_id)
     token = secrets.token_urlsafe(32)
     conn.execute("INSERT INTO sessions (id, user_id) VALUES (%s, %s)", (_hash(token), user_id))
     return token

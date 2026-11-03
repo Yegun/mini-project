@@ -1,7 +1,4 @@
-"""규칙표 읽기와 '더하기' (D-007, D-133, D-136). 고치거나 지우는 함수는 없다.
-
-앱 DB 계정은 규칙표 세 표에 읽기와 '더하기'만 할 수 있다 (Q-27). 이미 있는 줄을 고치거나 지우는 것과 별칭을 더하는 것은
-개발자 계정만 한다. 더하는 일은 add_rule 하나뿐이고, 사진으로 한꺼번에 등록할 때만 부른다.
+"""규칙표 읽기 전용 (D-007). 쓰는 함수는 없다. 앱 DB 계정은 규칙표를 쓸 수 없다 (Q-16).
 
 규칙표 한 건의 모양:
   {"id", "name", "default_storage",
@@ -12,8 +9,6 @@
 import uuid
 
 import psycopg
-
-from app.db.seed_rules import rule_id_for
 
 _STORAGE_ORDER = "CASE storage WHEN 'room' THEN 0 WHEN 'fridge' THEN 1 ELSE 2 END"
 
@@ -81,31 +76,6 @@ def get_rule(conn: psycopg.Connection, rule_id: str) -> dict | None:
         "SELECT id, name, default_storage FROM rules WHERE id = %s", (rule_id,)
     ).fetchone()
     return _with_storages(conn, row) if row else None
-
-
-def add_rule(conn: psycopg.Connection, name: str, default_storage: str, storages: list[dict]) -> bool:
-    """규칙표에 새 식품을 더한다 (한꺼번에 등록 때 규칙표에 같은 이름이 없는 식품, D-136). 더했으면 True.
-
-    storages 는 보관 방법 세 개 [{"storage", "allowed", "max_days"}, ...] 이다. 별칭은 만들지 않는다 (ARCHITECTURE 4-3).
-    번호는 이름에서 계산한다 (Q-30). 이미 있는 이름이거나 다른 식품의 별칭이면 아무것도 하지 않고 False 다.
-    같은 이름을 두 요청이 동시에 더하려 해도 한 줄만 만들어지고 나중 요청은 영향을 받지 않는다 (먼저 저장된 값이 남는다).
-    값 규칙(기본 보관 방법은 "가능", 가능이면 일수가 양수)은 API 가 먼저 검사하고, DB 가 한 번 더 막는다.
-    commit 은 하지 않는다.
-    """
-    if conn.execute("SELECT 1 FROM rule_aliases WHERE alias = %s", (name,)).fetchone():
-        return False
-    created = conn.execute(
-        "INSERT INTO rules (id, name, default_storage) VALUES (%s, %s, %s) ON CONFLICT DO NOTHING RETURNING id",
-        (rule_id_for(name), name, default_storage),
-    ).fetchone()
-    if created is None:
-        return False
-    for info in storages:
-        conn.execute(
-            "INSERT INTO rule_storage (rule_id, storage, allowed, max_days) VALUES (%s, %s, %s, %s)",
-            (rule_id_for(name), info["storage"], info["allowed"], info["max_days"]),
-        )
-    return True
 
 
 def list_rules(conn: psycopg.Connection) -> list[dict]:
