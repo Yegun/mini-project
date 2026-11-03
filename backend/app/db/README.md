@@ -62,6 +62,8 @@ conn = connect_app()   # psycopg 연결. 칸 이름으로 읽는 dict 를 돌려
 |---|---|---|
 | `create_user(conn, email, password)` | 계정을 만든다 (이메일은 공백 제거·소문자). 돌려주는 값 `{"id", "email"}`. 이미 있으면 `EmailTaken` (동시 가입도 같다) | B1 |
 | `authenticate(conn, email, password)` | 맞으면 `{"id", "email"}`, 아니면 `None` (이메일 없음과 비밀번호 틀림을 구분하지 않는다) | B2 |
+| `verify_user_password(conn, user_id, password)` | 로그인한 계정의 비밀번호가 맞는지. 비었거나 글자가 아닌 값은 틀린 것과 같다 | H1 |
+| `delete_user(conn, user_id)` | 계정 한 줄을 지운다. 식품(처리한 식품 포함)·로그인 상태(모든 기기)·사진 읽기 결과는 DB 가 따라 지운다. 옮김 기록은 줄이 남고 `user_id` 만 비워진다. 규칙표는 그대로 | H1 |
 | `find_user_by_email`, `hash_password`, `verify_password` | 낱개로 쓸 때 | — |
 
 비밀번호는 argon2 해시 문자열 하나로 저장한다 (솔트는 그 안에 있다). 이메일 모양·비밀번호 규칙(8자·영문·숫자·특수문자) 검사는 API 가 한다.
