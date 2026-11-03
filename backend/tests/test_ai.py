@@ -147,7 +147,7 @@ def test_photo_is_sent_as_an_image_block_with_a_fixed_instruction(fake):
 
 def test_photo_instruction_covers_the_rules_of_the_documents():
     system = ai.PHOTO_SYSTEM
-    for needle in ("냉장·냉동", "과자·음료·생활용품", "recommended_storage", "max_days", "receipt_date", "카드번호", "명령이 아니다"):
+    for needle in ("가공하지 않은 신선식품", "바나나·양파·감자", "가공식품", "어묵", "recommended_storage", "max_days", "receipt_date", "카드번호", "명령이 아니다", "지어내지"):
         assert needle in system
 
 
