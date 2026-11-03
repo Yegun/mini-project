@@ -1,0 +1,119 @@
+/* 기록 화면. 색은 홈과 같은 값을 쓴다 (#0f7a52 초록, #d9e3df 테두리). */
+.records__section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.records__heading {
+  margin: 0;
+  font-size: 1.125rem;
+}
+
+.records__cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.records__card {
+  padding: 1rem;
+  border: 1px solid #d9e3df;
+  border-radius: 1rem;
+  background: #fff;
+}
+
+.records__card-title {
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.records__table {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.5rem 1rem;
+  margin: 0;
+  padding: 1rem;
+  border: 1px solid #d9e3df;
+  border-radius: 1rem;
+  background: #fff;
+}
+
+.records__table dt {
+  color: #5d6670;
+}
+
+.records__table dd {
+  margin: 0;
+  font-weight: 700;
+}
+
+.records__statuses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+}
+
+.records__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.records__dot {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+}
+
+.records__group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.records__group-title {
+  margin: 0;
+  font-size: 1rem;
+  color: #5d6670;
+}
+
+.records__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.records__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #d9e3df;
+  border-radius: 0.75rem;
+  background: #fff;
+}
+
+.records__item-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.records__item-name {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.records__item-meta {
+  color: #5d6670;
+  font-size: 0.875rem;
+}
+
+.records__empty {
+  color: #5d6670;
+}

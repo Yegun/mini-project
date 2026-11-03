@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { buildInfoPatch, checkInfoForm, isInfoChanged, valuesFromDetail } from '../lib/editForm'
 import type { FormValues } from '../lib/registerForm'
 import type { FoodDetail, SaveResult, UpdateFoodInput } from '../types/foodDetail'
@@ -11,6 +11,7 @@ interface Props {
   food: FoodDetail
   busy: boolean // 화면 전체에서 요청 중이면 잠근다
   onSave: (patch: UpdateFoodInput) => Promise<SaveResult> // 성공하면 화면이 홈으로 간다
+  onDirtyChange?: (dirty: boolean) => void // 입력한 것이 있는지 (탭 이동 확인 창, D-083)
 }
 
 const FIELD_OF: Record<string, FieldName | undefined> = {
@@ -21,11 +22,17 @@ const FIELD_OF: Record<string, FieldName | undefined> = {
 }
 
 // 정보 고치기: 이름 · 수량 · 단위 · 구매일 (5.2). 기한을 다시 계산하는 일은 API 가 한다 (D-016).
-export default function InfoEditForm({ food, busy, onSave }: Props) {
+export default function InfoEditForm({ food, busy, onSave, onDirtyChange }: Props) {
   const [values, setValues] = useState<FormValues>(() => valuesFromDetail(food))
   const [errors, setErrors] = useState<FieldErrors>({})
   const [expiryOpen, setExpiryOpen] = useState(false) // API 가 "기한 필요"라고 했을 때만 연다
   const [expiryDate, setExpiryDate] = useState('')
+
+  // 처음 값과 다르게 적었거나 기한을 다시 적었으면 "입력한 것이 있다" (SCREEN-SPEC 11.1-6)
+  const dirty = isInfoChanged(food, values) || expiryDate !== ''
+  useEffect(() => {
+    onDirtyChange?.(dirty)
+  }, [dirty, onDirtyChange])
 
   function change(patch: Partial<FormValues>) {
     setValues((v) => ({ ...v, ...patch }))

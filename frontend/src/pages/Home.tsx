@@ -25,12 +25,12 @@ export default function Home({ result, onRetry, onSelectFood, onAddFood }: Props
   if (result.status === 'error') {
     return (
       <main className="home">
-        <ErrorNotice onRetry={onRetry} />
+        <ErrorNotice message={result.message} onRetry={onRetry} />
       </main>
     )
   }
 
-  const { today, foods } = result.data
+  const { today, items: foods } = result.data
   if (foods.length === 0) {
     return (
       <main className="home">
