@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { createManualFood, createRuleFood } from '../api/foods'
+import { analyzePhoto } from '../api/photos'
 import { searchRules } from '../api/rules'
 import ErrorNotice from '../components/ErrorNotice'
 import ManualRegisterForm from '../components/ManualRegisterForm'
+import PhotoUpload from '../components/PhotoUpload'
 import RuleRegisterForm from '../components/RuleRegisterForm'
 import RegisterChoice from '../components/RegisterChoice'
 import RuleSearch from '../components/RuleSearch'
@@ -12,6 +14,8 @@ import {
   emptyValues,
   type FormValues,
 } from '../lib/registerForm'
+import { checkPhoto, PHOTO_INVALID } from '../lib/photoFile'
+import type { AnalyzeData } from '../types/photo'
 import type { FieldErrors, FieldName } from '../types/register'
 import type { RuleCandidate, SearchState } from '../types/rule'
 import '../components/Register.css'
@@ -23,8 +27,8 @@ interface Props {
   onDirtyChange?: (dirty: boolean) => void // 입력한 것이 있는지 (탭 이동 확인 창, D-083)
 }
 
-// choose: 등록 선택 / photo: 사진으로 등록 (이슈 5 에서 채움) / search · rule · manual: 직접 등록
-type Step = 'choose' | 'photo' | 'search' | 'rule' | 'manual'
+// choose: 등록 선택 / photo: 사진 올리기 / review: 읽은 식품 확인 (이슈 6 에서 채움) / search · rule · manual: 직접 등록
+type Step = 'choose' | 'photo' | 'review' | 'search' | 'rule' | 'manual'
 
 // 값이 바뀌면 그 칸의 안내를 지운다 (입력칸 → 안내가 붙은 칸)
 const FIELD_OF: Record<keyof FormValues, FieldName> = {
@@ -39,6 +43,10 @@ const FIELD_OF: Record<keyof FormValues, FieldName> = {
 }
 
 const SAVE_FAILED = '등록하지 못했어요. 잠시 뒤에 다시 시도해 주세요.'
+// 사용자 확정 문구 (ARCH 3절)
+const AI_FAILED = 'AI 가 응답하지 못했어요. 다시 시도해 주세요.'
+// 사용자 확정 문구 (SCREEN-SPEC 13.1 의 9번)
+const NO_FOOD_READ = '사진에서 식품을 읽지 못했어요. 직접 등록해 보세요.'
 
 // 식품 등록 화면: 검색 → (규칙표 식품 입력 | 직접 등록 입력). 입력값은 여기서 들고 있어 실패해도 남는다.
 export default function RegisterPage({ today, onBack, onDone, onDirtyChange }: Props) {
@@ -50,8 +58,14 @@ export default function RegisterPage({ today, onBack, onDone, onDirtyChange }: P
   const [errors, setErrors] = useState<FieldErrors>({})
   const [saveError, setSaveError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [photo, setPhoto] = useState<File | null>(null)
+  const [photoError, setPhotoError] = useState<string | null>(null)
+  const [analyzing, setAnalyzing] = useState(false)
+  const [analysis, setAnalysis] = useState<AnalyzeData | null>(null) // 읽은 결과 (확인 화면용)
+  const [notice, setNotice] = useState<string | null>(null) // 등록 선택 화면의 안내 (식품을 못 읽었을 때)
   const searchSeq = useRef(0) // 늦게 온 옛 검색 결과가 덮어쓰지 않게
   const submitLock = useRef(false) // 연타해도 요청은 한 번
+  const photoLock = useRef(false) // 사진 올리기도 연타해도 요청은 한 번 (D-112)
 
   // 검색어를 적었거나, 식품을 골랐거나(직접 등록으로 갔거나), 값을 처음과 다르게 바꿨으면 "입력한 것이 있다".
   // 구매일 기본값(오늘)처럼 처음부터 채워진 값만 있으면 입력으로 보지 않는다 (SCREEN-SPEC 11.1-6)
@@ -59,6 +73,7 @@ export default function RegisterPage({ today, onBack, onDone, onDirtyChange }: P
     query.trim() !== '' ||
     step === 'rule' ||
     step === 'manual' ||
+    (step === 'photo' && photo !== null) || // 사진을 고른 상태 (SCREEN-SPEC 5.3)
     JSON.stringify(values) !== JSON.stringify(emptyValues(today))
   useEffect(() => {
     onDirtyChange?.(dirty)
@@ -76,6 +91,39 @@ export default function RegisterPage({ today, onBack, onDone, onDirtyChange }: P
       .catch(() => {
         if (seq === searchSeq.current) setSearch({ status: 'error' })
       })
+  }
+
+  function pickPhoto(file: File) {
+    const problem = checkPhoto(file) // 형식 · 크기를 미리 검사. 맞지 않으면 올라가지 않고 안내만 보인다 (D-101)
+    if (problem) {
+      setPhotoError(problem) // 이미 고른 사진이 있으면 그대로 남긴다
+      return
+    }
+    setPhoto(file)
+    setPhotoError(null)
+  }
+
+  async function uploadPhoto() {
+    if (photoLock.current || !photo) return
+    photoLock.current = true
+    setAnalyzing(true)
+    setPhotoError(null)
+    const res = await analyzePhoto(photo)
+    photoLock.current = false
+    setAnalyzing(false)
+    if (res.status === 'ok') {
+      if (res.data.items.length === 0) {
+        // 식품을 하나도 못 읽음: 실패가 아니다. 안내와 함께 등록 선택으로 돌아가 직접 등록으로 갈 수 있다
+        setPhoto(null)
+        setNotice(NO_FOOD_READ)
+        setStep('choose')
+        return
+      }
+      setAnalysis(res.data)
+      setStep('review')
+      return
+    }
+    setPhotoError(res.message ?? (res.status === 'invalid' ? PHOTO_INVALID : AI_FAILED)) // 사진은 그대로 남는다
   }
 
   function pickRule(picked: RuleCandidate) {
@@ -160,8 +208,37 @@ export default function RegisterPage({ today, onBack, onDone, onDirtyChange }: P
 
       {saveError && <ErrorNotice message={saveError} />}
 
-      {step === 'choose' && <RegisterChoice onPhoto={() => setStep('photo')} onManual={() => setStep('search')} />}
-      {step === 'photo' && <p className="field__hint">사진으로 등록은 곧 만들어요.</p>}
+      {step === 'choose' && (
+        <>
+          {notice && (
+            <div className="notice notice--empty" role="status">
+              <p className="notice__text">{notice}</p>
+            </div>
+          )}
+          <RegisterChoice
+            onPhoto={() => {
+              setNotice(null)
+              setStep('photo')
+            }}
+            onManual={() => {
+              setNotice(null)
+              setStep('search')
+            }}
+          />
+        </>
+      )}
+      {step === 'photo' && (
+        <PhotoUpload
+          photo={photo}
+          error={photoError}
+          busy={analyzing}
+          onPick={pickPhoto}
+          onUpload={() => void uploadPhoto()}
+        />
+      )}
+      {step === 'review' && analysis && (
+        <p className="field__hint">읽은 식품 {analysis.items.length}개의 확인 화면은 곧 만들어요.</p>
+      )}
       {step === 'search' && (
         <RuleSearch
           query={query}

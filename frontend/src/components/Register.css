@@ -50,6 +50,32 @@
   text-align: center;
 }
 
+/* 사진 올리기: 파일 입력은 숨기고 버튼 모양의 이름표로 고른다 */
+.photo-upload__pick {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.photo-upload__pick:has(.photo-upload__input:focus-visible) {
+  outline: 3px solid #0f7a52;
+  outline-offset: 2px;
+}
+
+.photo-upload__pick[aria-disabled='true'] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.photo-upload__input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
 /* 설정 */
 .settings__privacy {
   border: 1px solid #d9e3df;
