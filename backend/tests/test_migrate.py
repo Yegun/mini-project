@@ -1,4 +1,4 @@
-"""알렘빅 버전 파일 7개 (PostgreSQL 임시 schema). 번호 순서, 올리기·되돌리기, 한 단계씩의 결과, 실패하면 그 파일만 취소."""
+"""알렘빅 버전 파일 8개 (PostgreSQL 임시 schema). 번호 순서, 올리기·되돌리기, 한 단계씩의 결과, 실패하면 그 파일만 취소."""
 import sqlite3
 import uuid
 from datetime import date
@@ -15,7 +15,7 @@ from app.db.users_repo import authenticate
 
 TABLES = {"users", "sessions", "foods", "rules", "rule_aliases", "rule_storage"}
 VERSIONS_DIR = BACKEND_DIR / "alembic" / "versions"
-HEAD = "0007"
+HEAD = "0008"
 
 
 def tables(conn):
@@ -81,12 +81,12 @@ def test_version_files_are_numbered_in_order():
     assert names == [
         "0001_create_tables.py", "0002_import_legacy_foods.py", "0003_create_legacy_owner_account.py",
         "0004_assign_ownerless_foods.py", "0005_foods_owner_required.py", "0006_block_public_api.py",
-        "0007_legacy_migration_record.py",
+        "0007_legacy_migration_record.py", "0008_photo_analyses_and_rls.py",
     ]
 
 
 def test_each_version_points_to_the_one_before():
-    for number in range(1, 8):
+    for number in range(1, 9):
         text = next(VERSIONS_DIR.glob(f"000{number}_*.py")).read_text(encoding="utf-8")
         assert f'revision = "000{number}"' in text
         assert ("down_revision = None" if number == 1 else f'down_revision = "000{number - 1}"') in text
@@ -420,6 +420,75 @@ def test_0007_downgrade_drops_the_table(db):
     assert "legacy_migration" not in tables(db.conn())
 
 
+# ---- 0008 사진 읽기 결과 표 + RLS ----------------------------------------------------------------
+RLS_TABLES = {"users", "sessions", "foods", "rules", "rule_aliases", "rule_storage", "legacy_migration", "photo_analyses"}
+
+
+def rls_on(conn):
+    rows = conn.execute(
+        "SELECT c.relname, c.relrowsecurity FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace"
+        " WHERE n.nspname = current_schema() AND c.relkind = 'r'"
+    )
+    return {r["relname"]: r["relrowsecurity"] for r in rows}
+
+
+def test_0008_creates_the_photo_analyses_table(db):
+    db.up("0008")
+    conn = db.conn()
+    cols = {
+        r["column_name"]: (r["data_type"], r["is_nullable"])
+        for r in conn.execute(
+            "SELECT column_name, data_type, is_nullable FROM information_schema.columns"
+            " WHERE table_schema = current_schema() AND table_name = 'photo_analyses'"
+        )
+    }
+    assert cols == {
+        "id": ("uuid", "NO"),
+        "user_id": ("uuid", "NO"),
+        "items": ("jsonb", "NO"),
+        "created_at": ("timestamp with time zone", "NO"),
+    }
+    assert version(conn) == "0008"
+    conn.close()
+
+
+def test_0008_turns_row_level_security_on_for_all_eight_tables_without_policies(db):
+    db.up("0008")
+    conn = db.conn()
+    flags = rls_on(conn)
+    assert {t: flags[t] for t in RLS_TABLES} == {t: True for t in RLS_TABLES}  # 표 8개 모두 (Q-33)
+    assert conn.execute("SELECT count(*) AS n FROM pg_policies WHERE schemaname = current_schema()").fetchone()["n"] == 0
+    conn.close()
+
+
+def test_0008_keeps_existing_data(db):
+    db.up("0007")
+    conn = db.conn()
+    conn.execute("INSERT INTO users (email, password_hash) VALUES ('keep@example.com', 'x')")
+    conn.commit()
+    db.up("0008")
+    assert count(db.conn(), "SELECT count(*) AS n FROM users WHERE email = 'keep@example.com'") == 1
+
+
+def test_0008_revokes_api_role_access_to_the_new_table(db, api_roles):
+    admin = api_roles
+    admin.row_factory = psycopg.rows.dict_row
+    db.up("0007")
+    db.up()  # 0008
+    for role in ("anon", "authenticated"):
+        assert not can_read(admin, role, db.schema, "photo_analyses"), role
+
+
+def test_0008_downgrade_drops_the_table_and_turns_rls_off(db):
+    db.up("0008")
+    db.down("0007")
+    conn = db.conn()
+    assert "photo_analyses" not in tables(conn) and version(conn) == "0007"
+    flags = rls_on(conn)
+    assert not any(flags[t] for t in RLS_TABLES - {"photo_analyses"})
+    conn.close()
+
+
 # ---- 전체 ----------------------------------------------------------------------------------------
 def test_upgrade_to_head_builds_everything(pg):
     assert TABLES <= tables(pg)
@@ -448,12 +517,12 @@ def test_data_survives_running_upgrade_again(pg, pg_url, pg_schema):
 
 
 def test_failed_version_file_changes_nothing(pg, pg_url, pg_schema, tmp_path):
-    """0008 이 중간에 실패하면 그 파일의 일은 전부 취소되고 버전도 0007 에 머문다."""
+    """0009 가 중간에 실패하면 그 파일의 일은 전부 취소되고 버전도 0008 에 머문다."""
     extra = tmp_path / "extra_versions"
     extra.mkdir()
-    (extra / "0008_bad.py").write_text(
+    (extra / "0009_bad.py").write_text(
         'from alembic import op\n'
-        'revision = "0008"\ndown_revision = "0007"\nbranch_labels = None\ndepends_on = None\n'
+        'revision = "0009"\ndown_revision = "0008"\nbranch_labels = None\ndepends_on = None\n'
         'def upgrade():\n'
         '    op.execute("CREATE TABLE should_not_stay (id int)")\n'
         '    op.execute("SELECT 1/0")\n'

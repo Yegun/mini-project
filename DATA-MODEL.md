@@ -269,7 +269,7 @@
 |---|---|---|---|---|---|---|---|
 | 분석 번호 | `id` | UUID (DB 가 자동 생성, ✅ Q-04) | 사진 한 장을 읽은 결과를 구분하는 번호. 사진 읽기 응답의 `analysis_id` 다 | 시스템 | 필수. 기본키 | 바뀌지 않는다 | ✅ API-SPEC F1 · 🟡 칸 이름 |
 | 주인(계정) | `user_id` | UUID (`users.id` 와 같은 자료형) | 이 결과를 만든 계정. **계정마다 한 줄**이라 중복 불가다 | 시스템. 로그인한 내 계정 | 필수. **중복 불가** | 바뀌지 않는다. 계정이 지워지면 이 줄도 따라 지워진다 (✅ Q-09, D-127) | ✅ ARCHITECTURE 4-4, 사용자 선택 (Q-29) |
-| 식품 목록 | `items` | JSONB (글로 된 목록) | 사진에서 읽은 냉장·냉동 식품의 목록. 줄마다 `item_no`, `name`, `recommended_storage`, `storages`(방법마다 `storage`, `allowed`, `max_days`), `purchase_date`, `from_rule` | 시스템. 사진 읽기(F1)가 끝날 때 AI 응답을 검사한 뒤 넣는다 | 필수 | 바뀌지 않는다. 새 사진을 올리면 줄째로 바뀐다 (아래). **사진도 영수증에 적힌 글 전체도 담지 않는다** | ✅ ARCHITECTURE 4-4, D-102, API-SPEC F1 · ✅ 사용자 선택 (Q-28) |
+| 식품 목록 | `items` | JSONB (글로 된 목록) | 사진에서 읽은 가공하지 않은 신선식품의 목록. 줄마다 `item_no`, `name`, `recommended_storage`, `storages`(방법마다 `storage`, `allowed`, `max_days`), `purchase_date`, `from_rule` | 시스템. 사진 읽기(F1)가 끝날 때 AI 응답을 검사한 뒤 넣는다 | 필수 | 바뀌지 않는다. 새 사진을 올리면 줄째로 바뀐다 (아래). **사진도 영수증에 적힌 글 전체도 담지 않는다** | ✅ ARCHITECTURE 4-4, D-102, API-SPEC F1 · ✅ 사용자 선택 (Q-28) |
 | 만든 시각 | `created_at` | TIMESTAMPTZ (시간대 포함 시각, DB 시계 기준) | 이 결과를 만든 시각. **30분**이 지나면 쓸 수 없다 | 시스템 | 필수 | 새 사진을 올려 줄이 바뀌면 새 시각으로 바뀐다 | ✅ ARCHITECTURE 4-4 · ✅ 사용자 선택 (Q-31) |
 
 - **계정마다 한 줄이다.** 새 사진을 올리면 그 계정의 이전 결과를 지우고 새 결과로 바꾼다. 확인 화면은 지금 올린 사진의 것만 쓰고, 이전 사진의 번호로 등록하면 `analysis_expired` 다. (✅ 사용자 선택, Q-29, API-SPEC F2)
