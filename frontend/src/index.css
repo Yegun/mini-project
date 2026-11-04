@@ -1,3 +1,6 @@
+/* 글꼴: Pretendard (SIL OFL 1.1). 화면에 나오는 글자 조각만 내려받는 방식이라 처음 불러오는 양이 적다. 못 불러오면 아래 font-family 의 다음 글꼴을 쓴다. */
+@import 'pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css';
+
 /* 휴대폰 화면 우선. 넓은 화면에서는 같은 폭의 한 열을 가운데에 둔다 (SCREEN-SPEC 0절). */
 
 /* ───────── 색 변수 (SCREEN-SPEC 0절, 9.5) ─────────
@@ -30,7 +33,8 @@
 
   --tabs-h: 3.75rem; /* 아래 탭 높이 (components/BottomTabs.css) */
 
-  font-family: system-ui, 'Segoe UI', 'Malgun Gothic', Roboto, sans-serif;
+  font-family: 'Pretendard Variable', Pretendard, system-ui, 'Segoe UI', 'Malgun Gothic', Roboto, sans-serif;
+  font-weight: 500; /* 굵기를 따로 정하지 않은 모든 글씨의 기본 굵기 (예전 400). 라벨 · 알약 · 제목은 700 이상이라 구분이 남는다 */
   font-size: 16px; /* 글자 크기 5단계가 이 값을 바꾼다. 화면 글자는 모두 rem 이라 같은 비율로 커지고 작아진다 (9.6) */
   line-height: 1.5;
   color-scheme: light;

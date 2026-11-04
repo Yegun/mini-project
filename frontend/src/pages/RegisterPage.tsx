@@ -224,7 +224,7 @@ export default function RegisterPage({ today, onBack, onDone, onDirtyChange }: P
         <button type="button" className="register__back" aria-label="뒤로 가기" onClick={onBack}>
           ‹
         </button>
-        <h1 className="register__title">식품 등록</h1>
+        <h1 className="register__title">냉장고에 넣기</h1>
       </header>
 
       {saveError && <ErrorNotice message={saveError} />}

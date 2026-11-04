@@ -1,9 +1,11 @@
 import { categoryTintClass } from '../lib/categoryTint'
 import { STATUS_LABEL, statusColor } from '../lib/statusColor'
 import type { Food } from '../types/food'
+import CategoryIcon from './CategoryIcon'
 import DangerMark from './DangerMark'
 import DaysLeftBubble from './DaysLeftBubble'
 import { CategoryCapsule, StorageCapsule } from './FoodCapsules'
+import { CuisineIcon } from './RecommendIcons'
 import './FoodList.css'
 
 interface Props {
@@ -18,8 +20,8 @@ interface Props {
 export default function FoodList({ foods, onSelect, onTrash }: Props) {
   return (
     <ul className="food-list" aria-label="식품 목록">
-      {foods.map((food) => (
-        <li key={food.id}>
+      {foods.map((food, index) => (
+        <li key={food.id} className="food-list__row" style={{ ['--i' as string]: Math.min(index, 8) }}>
           <div className={['food-list__item', categoryTintClass(food.category)].filter(Boolean).join(' ')}>
             <button
               type="button"
@@ -34,11 +36,21 @@ export default function FoodList({ foods, onSelect, onTrash }: Props) {
                 style={{ background: statusColor(food.expiry_status) }}
                 aria-hidden="true"
               />
+              {/* 식품 그림: 종류를 알면 종류 그림, 서버가 아직 종류를 안 주면 중립적인 접시 그림(보관 방법은 옆 캡슐이 이미 보여 준다) */}
+              {food.category ? (
+                <span className={`food-list__art cap--${food.category}`} aria-hidden="true">
+                  <CategoryIcon category={food.category} className="food-list__art-icon" />
+                </span>
+              ) : (
+                <span className="food-list__art food-list__art--plain" aria-hidden="true">
+                  <CuisineIcon cuisine="western" className="food-list__art-icon" />
+                </span>
+              )}
               <span className="food-list__main">
                 <span className="food-list__name">{food.name}</span>
                 {food.is_danger && <DangerMark note={food.danger_note} />}
                 <span className="caps">
-                  <StorageCapsule storage={food.storage} />
+                  <StorageCapsule storage={food.storage} withIcon />
                   <CategoryCapsule category={food.category} />
                 </span>
               </span>

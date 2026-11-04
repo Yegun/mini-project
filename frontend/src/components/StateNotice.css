@@ -20,8 +20,17 @@
 }
 
 .notice--empty {
+  gap: 0.875rem;
+  padding: 1.75rem 1rem;
+  border-radius: 1.25rem;
   background: var(--surface);
   border: 1px solid var(--line);
+}
+
+/* 빈 홈 그림: 빈 냉장고 */
+.notice__art {
+  width: 4.5rem;
+  height: auto;
 }
 
 .notice__button {

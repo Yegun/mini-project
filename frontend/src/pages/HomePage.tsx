@@ -25,7 +25,7 @@ function confirmMessage(name: string, choice: TrashChoice): string {
   return `${withEulReul(name)} 삭제할까요? 기록에서도 지워지고 되돌릴 수 없어요.`
 }
 
-const CONFIRM_LABEL: Record<TrashChoice, string> = { eaten: '다 먹음', discarded: '버림', delete: '삭제' }
+const CONFIRM_LABEL: Record<TrashChoice, string> = { eaten: '다 먹었어요', discarded: '버렸어요', delete: '지우기' }
 
 // 홈 화면: 목록을 불러와 Home 에 넘긴다. 로그아웃 버튼은 모든 화면 공통이라 App 에 있다 (D-130).
 // 휴지통 흐름 (SCREEN-SPEC 4.8): 줄의 휴지통 → 아래에서 선택창 → 하나를 고르면 확인 창 → 확인하면 요청.
@@ -80,7 +80,13 @@ export default function HomePage({ initial, onAddFood, onSelectFood, onOpenCalen
           if (result.status === 'ready') onAddFood(result.data.today) // 등록 버튼은 목록을 불러온 뒤에만 보인다
         }}
       />
-      <TrashSheet open={target !== null} name={target?.name ?? ''} onChoose={choose} onCancel={() => setTarget(null)} />
+      <TrashSheet
+        open={target !== null}
+        name={target?.name ?? ''}
+        category={target?.category ?? null}
+        onChoose={choose}
+        onCancel={() => setTarget(null)}
+      />
       <ConfirmDialog
         open={pending !== null}
         message={pending ? confirmMessage(pending.food.name, pending.choice) : ''}

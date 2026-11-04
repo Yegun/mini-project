@@ -3,6 +3,7 @@ import { clipBar } from '../lib/week'
 import { STATUS_LABEL, statusColor } from '../lib/statusColor'
 import { STORAGE_LABEL, type Food } from '../types/food'
 import DaysLeftBubble from './DaysLeftBubble'
+import StorageIcon from './StorageIcon'
 import './FoodBarRow.css'
 
 interface Props {
@@ -45,7 +46,9 @@ export default function FoodBarRow({ food, weekDate, onSelect, index = 0 }: Prop
         aria-label={description}
         onClick={() => onSelect?.(food.id)}
       />
-      <span className={`food-row__storage-box cap--${food.storage}`}>{STORAGE_LABEL[food.storage]}</span>
+      <span className={`food-row__storage-box cap--${food.storage}`} role="img" aria-label={STORAGE_LABEL[food.storage]}>
+        <StorageIcon storage={food.storage} className="food-row__storage-icon" />
+      </span>
       <span className="food-row__bubble">
         <DaysLeftBubble status={food.expiry_status} daysLeft={food.days_left} signed />
       </span>

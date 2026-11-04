@@ -1,37 +1,115 @@
-/* 위험 식품 표시. ⚠ 는 밝은색 · 어두운색, 어느 포인트 색에서도 항상 빨강이다 (SCREEN-SPEC 16.2, 13.1 의 35번). */
+/* 위험 식품 표시 (components/DangerMark.tsx). ⚠ 는 밝은색 · 어두운색, 어느 포인트 색에서도 항상 빨강이다 (SCREEN-SPEC 16.2, 13.1 의 35번). */
 .danger {
   position: relative;
   display: inline-flex;
 }
 
+/* "⚠ 위험" 알약: 옅은 빨강 바탕에 빨간 테두리. 색만이 아니라 ⚠ 모양과 "위험" 글자로 보인다 */
 .danger__mark {
-  padding: 0.125rem 0.375rem;
-  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0.5rem;
+  border: 1.5px solid #e0212a;
   border-radius: 999px;
-  background: transparent;
+  background: rgba(224, 33, 42, 0.1);
   color: #e0212a; /* 늘 빨강 */
   font: inherit;
   font-size: 0.8125rem;
   font-weight: 900;
+  line-height: 1.4;
   cursor: pointer;
   pointer-events: auto; /* 줄 전체를 덮는 버튼 위에서도 눌린다 */
 }
 
+.danger__mark:focus-visible {
+  outline: 3px solid var(--btn);
+  outline-offset: 2px;
+}
+
+/* 말풍선: 화면 맨 위 층(body)에 fixed 로 뜬다. 위치(top · left)와 꼬리 자리(--arrow)는 DangerMark.tsx 가 정한다.
+   z-index 는 식품 줄 · 달력 · 아래 탭보다 위다. 붉은 계열 카드: ⚠ 위험 식품 + 이유 한 줄 */
 .danger__tip {
-  position: absolute;
-  top: calc(100% + 0.25rem);
-  left: 0;
-  z-index: 20;
+  position: fixed;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
   width: max-content;
-  max-width: min(16rem, 70vw);
-  padding: 0.5rem 0.75rem;
-  border: 1px solid var(--line-strong);
-  border-radius: 0.75rem;
-  background: var(--surface);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
-  color: var(--text);
-  font-size: 0.8125rem;
+  max-width: min(17rem, calc(100vw - 1rem));
+  padding: 0.625rem 0.875rem;
+  border: 1.5px solid var(--danger);
+  border-radius: 1rem;
+  background: var(--danger-bg);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+  color: var(--danger-ink);
   font-weight: 400;
-  line-height: 1.4;
+  line-height: 1.45;
+  pointer-events: none; /* 말풍선은 읽기만 한다. 뒤의 것을 누르거나 닫는 동작을 막지 않는다 */
+  animation: danger-pop 0.15s ease-out;
+}
+
+/* 꼬리: 눌린 버튼 가운데를 가리키는 작은 마름모 (아래에 뜨면 위쪽, 위에 뜨면 아래쪽) */
+.danger__tip::before {
+  content: '';
+  position: absolute;
+  top: -0.4rem;
+  left: calc(var(--arrow, 1rem) - 0.375rem);
+  width: 0.75rem;
+  height: 0.75rem;
+  border-top: 1.5px solid var(--danger);
+  border-left: 1.5px solid var(--danger);
+  background: var(--danger-bg);
+  transform: rotate(45deg);
+}
+
+.danger__tip--above::before {
+  top: auto;
+  bottom: -0.4rem;
+  border: 0;
+  border-right: 1.5px solid var(--danger);
+  border-bottom: 1.5px solid var(--danger);
+}
+
+.danger__tip-head {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  color: #e0212a;
+  font-size: 0.875rem;
+}
+
+.danger__tip-icon {
+  flex: none;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+/* "(!) 위험" 알약 안의 빨간 느낌표 */
+.danger__mark-icon {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+}
+
+.danger__tip-text {
+  font-size: 0.875rem;
   word-break: keep-all;
+}
+
+@keyframes danger-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .danger__tip {
+    animation: none;
+  }
 }

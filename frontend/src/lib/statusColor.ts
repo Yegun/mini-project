@@ -16,7 +16,7 @@ export const STATUS_LABEL: Record<ExpiryStatus, string> = {
   fresh: '여유',
   warning: '주의',
   soon: '임박',
-  expired: '지남',
+  expired: '상함',
 }
 
 // 서버가 모르는 값을 보내도 화면이 깨지지 않게 하는 대비색(회색)

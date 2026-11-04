@@ -2,8 +2,11 @@ import type { FormValues } from '../lib/registerForm'
 import type { FieldErrors } from '../types/register'
 import type { RuleCandidate } from '../types/rule'
 import FormField from './FormField'
+import { StorageCapsule } from './FoodCapsules'
 import QuantityUnitDateFields from './QuantityUnitDateFields'
+import { CuisineIcon } from './RecommendIcons'
 import StoragePicker from './StoragePicker'
+import './RegisterForm.css'
 
 interface Props {
   rule: RuleCandidate
@@ -16,6 +19,8 @@ interface Props {
 }
 
 // 규칙표에서 고른 식품의 등록 입력 (4.1). 기한은 API 가 계산하므로 입력칸이 없다.
+// 모양: 위에 고른 식품 카드(그림 · 이름 · 규칙표의 기본 보관 방법), 아래에 번호가 붙은 입력 카드 둘(얼마나 샀나요 · 보관 방법).
+// 입력 규칙 · 안내 · 저장은 예전과 같고 겉모양만 다르다.
 export default function RuleRegisterForm({
   rule,
   values,
@@ -27,31 +32,57 @@ export default function RuleRegisterForm({
 }: Props) {
   return (
     <form
-      className="register__form"
+      className="register__form register-form--fancy"
       noValidate
       onSubmit={(e) => {
         e.preventDefault()
         onSubmit()
       }}
     >
-      <div className="picked-food">
-        <strong className="picked-food__name">{rule.name}</strong>
-        <button type="button" className="button button--link" disabled={submitting} onClick={onChangeFood}>
+      <div className="picked-card">
+        <span className="picked-card__art" aria-hidden="true">
+          <CuisineIcon cuisine="western" className="picked-card__art-icon" />
+        </span>
+        <div className="picked-card__text">
+          <strong className="picked-card__name">{rule.name}</strong>
+          <span className="picked-card__sub">
+            기본 보관
+            <StorageCapsule storage={rule.default_storage} withIcon />
+          </span>
+        </div>
+        <button type="button" className="picked-card__change" disabled={submitting} onClick={onChangeFood}>
           다른 식품 고르기
         </button>
       </div>
 
-      <QuantityUnitDateFields values={values} errors={errors} disabled={submitting} onChange={onChange} />
+      <section className="form-card" aria-label="얼마나 샀나요">
+        <h3 className="form-card__title">
+          <span className="form-card__num" aria-hidden="true">
+            1
+          </span>
+          얼마나 샀나요?
+        </h3>
+        <QuantityUnitDateFields values={values} errors={errors} disabled={submitting} unitChips onChange={onChange} />
+      </section>
 
-      <FormField label="보관 방법" id="storage" error={errors.storage}>
-        <StoragePicker
-          id="storage"
-          value={values.storage}
-          options={rule.storages}
-          disabled={submitting}
-          onChange={(storage) => onChange({ storage })}
-        />
-      </FormField>
+      <section className="form-card" aria-label="보관 방법 고르기">
+        <h3 className="form-card__title">
+          <span className="form-card__num" aria-hidden="true">
+            2
+          </span>
+          어디에 둘까요?
+        </h3>
+        <FormField label="보관" id="storage" error={errors.storage}>
+          <StoragePicker
+            id="storage"
+            value={values.storage}
+            options={rule.storages}
+            disabled={submitting}
+            variant="tiles"
+            onChange={(storage) => onChange({ storage })}
+          />
+        </FormField>
+      </section>
 
       {/* 등록 버튼은 화면 아래(아래 탭 바로 위)에 고정되어 스크롤해도 제자리에 있다 (D-151) */}
       <div className="sticky-action">

@@ -135,10 +135,19 @@
 
 /* 위험 식품 표시: 항상 빨강 (SCREEN-SPEC 16.2) */
 .ds__danger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
   color: #e0212a;
   font-size: 0.8125rem;
   font-weight: 900;
   white-space: nowrap;
+}
+
+.ds__danger-icon {
+  flex: none;
+  width: 0.9rem;
+  height: 0.9rem;
 }
 
 .ds__empty,

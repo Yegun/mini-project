@@ -31,12 +31,143 @@
   color: var(--danger);
 }
 
-/* 요약 */
+.detail__edit,
+.detail__delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.detail__btn-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+/* 삭제는 되돌릴 수 없어 조용한 붉은 글자로 맨 아래에 둔다 */
+.detail__delete {
+  border-color: transparent;
+  background: none;
+  font-weight: 700;
+}
+
+/* 다 먹음 · 버림 카드: 그림 위에 이름. 다 먹음 초록 · 버림 붉은색 (기록 화면 · 휴지통 선택창과 같은 색) */
+.detail-act {
+  --a-tint: rgba(47, 182, 122, 0.14);
+  --a-strong: #2fb67a;
+  --a-ink: #1c6b45;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  min-height: 5.5rem;
+  padding: 0.75rem 0.5rem;
+  border: 1.5px solid color-mix(in srgb, var(--a-strong) 45%, var(--line));
+  border-radius: 1.25rem;
+  background: linear-gradient(var(--a-tint), var(--a-tint)), var(--surface);
+  color: var(--a-ink);
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 900;
+  cursor: pointer;
+  transition: transform 0.12s;
+}
+
+.detail-act--discarded {
+  --a-tint: rgba(224, 69, 74, 0.1);
+  --a-strong: #e0454a;
+  --a-ink: #a93036;
+}
+
+:root[data-tone='dark'] .detail-act {
+  --a-tint: rgba(47, 182, 122, 0.2);
+  --a-ink: #7ee09a;
+}
+
+:root[data-tone='dark'] .detail-act--discarded {
+  --a-tint: rgba(224, 69, 74, 0.2);
+  --a-ink: #ff9aa0;
+}
+
+.detail-act:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.detail-act:focus-visible {
+  outline: 3px solid var(--btn);
+  outline-offset: 2px;
+}
+
+.detail-act:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.detail-act__icon {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+/* 버튼 안 그림은 움직이지 않게 한다 */
+.detail-act .record-icon__sparkle {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .detail-act {
+    transition: none;
+  }
+}
+
+/* 요약: 그림 + 이름 + 캡슐 / 남은 날(상태 색) / 수량 · 구매일 · 기한 타일.
+   상태 색(--sc)은 홈과 같은 값이고 API 가 판정한 상태에서 온다 (D-009). */
 .summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
   padding: 1rem;
   border: 1px solid var(--line);
-  border-radius: 1rem;
-  background: var(--surface);
+  border-radius: 1.5rem;
+  background:
+    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--sc) 16%, transparent), transparent 55%),
+    var(--surface);
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--sc) 10%, transparent);
+}
+
+.summary__top {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+}
+
+/* 식품 그림 칸: 종류 색이 깔린 둥근 네모 안에 큰 그림 (종류를 모르면 옅은 접시 그림) */
+.summary__art {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: 1.4rem;
+  background: linear-gradient(var(--cap-bg), var(--cap-bg)), var(--surface);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cap-fg) 25%, transparent);
+}
+
+.summary__art--plain {
+  background: var(--soft);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.summary__art-icon {
+  width: 3rem;
+  height: 3rem;
+}
+
+.summary__who {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
 }
 
 .summary__name {
@@ -44,40 +175,103 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 0.25rem 0.5rem;
-  margin: 0 0 0.5rem;
-  font-size: 1.5rem;
+  margin: 0;
+  font-size: 1.625rem;
+  font-weight: 900;
+  line-height: 1.2;
   overflow-wrap: anywhere;
 }
 
+.summary__caps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
 .summary > .danger-box {
-  margin-bottom: 0.75rem;
-}
-
-.summary__list {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 0.25rem 1rem;
   margin: 0;
 }
 
-.summary__list dt {
-  color: var(--muted);
-}
-
-.summary__list dd {
-  margin: 0;
-}
-
-.summary__expiry {
+/* 남은 날: 큰 글씨 + 상태 이름 알약 */
+.summary__hero {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  border-radius: 1.1rem;
+  background: color-mix(in srgb, var(--sc) 14%, var(--surface));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sc) 35%, transparent);
+}
+
+.summary__days {
+  color: var(--sc);
+  font-weight: 900;
+  line-height: 1.1;
+  white-space: nowrap;
+  font-size: clamp(1.2rem, 6.4vw, 2rem);
+}
+
+/* 지남의 상태 색은 검정이라 어두운색에서 묻히므로 글자색을 쓴다 */
+.summary[data-status='expired'] .summary__days {
+  color: var(--text);
+}
+
+.summary__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  background: var(--surface);
+  font-size: 0.9375rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-weight: 800;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sc) 40%, transparent);
 }
 
 .summary__dot {
   width: 0.75rem;
   height: 0.75rem;
   border-radius: 50%;
+  background: var(--sc);
+  box-shadow: inset 0 0 0 1px var(--status-ring); /* 어두운색에서 지남(검정)이 묻히지 않게 (D-180) */
+}
+
+/* 수량 · 구매일 · 기한 타일 */
+.summary__tiles {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); /* 수량은 좁게, 긴 날짜가 들어가는 구매일은 넓게 */
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.summary__tile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  padding: 0.625rem 0.875rem;
+  border-radius: 1rem;
+  background: var(--soft);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.summary__tile--wide {
+  grid-column: 1 / -1;
+}
+
+.summary__tile dt {
+  color: var(--muted);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.summary__tile dd {
+  margin: 0;
+  font-size: 1.0625rem;
+  font-weight: 800;
+  word-break: keep-all; /* 날짜 "2026년 11월 1일"이 중간에서 줄바꿈되지 않게 */
 }
 
 /* 확인 창 */

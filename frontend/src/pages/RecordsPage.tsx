@@ -3,12 +3,16 @@ import { restoreFood } from '../api/records'
 import AdviceCard from '../components/AdviceCard'
 import EmptyHome from '../components/EmptyHome'
 import ErrorNotice from '../components/ErrorNotice'
-import { formatKoreanDate } from '../lib/dateText'
+import RecordIcon from '../components/RecordIcon'
+import RecordSheet, { type RecordKind } from '../components/RecordSheet'
+import StorageIcon from '../components/StorageIcon'
 import { STATUS_LABEL, statusColor } from '../lib/statusColor'
 import { useRecords } from '../hooks/useRecords'
-import { STORAGE_LABEL, type ExpiryStatus, type Storage } from '../types/food'
-import type { ProcessedFood, RecordsData } from '../types/records'
+import CategoryIcon from '../components/CategoryIcon'
+import { CATEGORIES, CATEGORY_LABEL, STORAGE_LABEL, type ExpiryStatus, type Storage } from '../types/food'
+import type { RecordsData } from '../types/records'
 import '../components/Register.css'
+import '../components/FoodCapsules.css' // 식품 종류 캡슐 색(cap--vegetable 등)
 import '../components/Records.css'
 
 interface Props {
@@ -19,7 +23,6 @@ interface Props {
 // 사용자 확정 문구 (OQ-03)
 const LOAD_FAILED = '기록을 불러오지 못했어요. 잠시 뒤에 다시 시도해 주세요.'
 const RESTORE_FAILED = '홈으로 되돌리지 못했어요. 잠시 뒤에 다시 시도해 주세요.'
-const NOTHING_TO_RESTORE = '되돌릴 식품이 없어요.'
 
 const STORAGES: Storage[] = ['room', 'fridge', 'freezer']
 const STATUSES: ExpiryStatus[] = ['fresh', 'warning', 'soon', 'expired']
@@ -60,6 +63,7 @@ export default function RecordsPage({ initial, onAddFood }: Props) {
           <RecordsView
             data={result.data}
             restoringId={restoringId}
+            error={error}
             onRestore={(id) => void restore(id)}
             onAddFood={onAddFood}
           />
@@ -72,130 +76,166 @@ export default function RecordsPage({ initial, onAddFood }: Props) {
 interface ViewProps {
   data: RecordsData
   restoringId: string | null
+  error: string | null // 되돌리기 실패 안내. 팝업 안에서 보인다
   onRestore: (id: string) => void
   onAddFood: () => void
 }
 
-function RecordsView({ data, restoringId, onRestore, onAddFood }: ViewProps) {
+function RecordsView({ data, restoringId, error, onRestore, onAddFood }: ViewProps) {
   const { summary, foods } = data
+  const byCategory = summary.by_category // 서버에 아직 없을 수 있다
   const noProcessed = foods.eaten.length === 0 && foods.discarded.length === 0
   // 다 먹음 · 버림 · 현재 식품이 모두 없으면 0 과 함께 안내 문구 + 등록 버튼 (D-071)
   const allEmpty = noProcessed && summary.food_kinds === 0
+  // 카드를 누르면 그 종류의 처리한 식품이 아래에서 올라오는 팝업으로 열린다. null 이면 닫혀 있다.
+  // 팝업을 연 채로 되돌려도(refresh) 이 화면은 그대로라서 팝업이 닫히지 않는다.
+  const [sheet, setSheet] = useState<RecordKind | null>(null)
 
   return (
     <>
-      <section className="records__section" aria-labelledby="records-done">
-        <h2 className="records__heading" id="records-done">
-          다 먹음 · 버림
-        </h2>
-        <div className="records__cards">
-          <CountCard title="다 먹음" year={summary.eaten.year} month={summary.eaten.month} />
-          <CountCard title="버림" year={summary.discarded.year} month={summary.discarded.month} />
-        </div>
-      </section>
-
       <section className="records__section" aria-labelledby="records-now">
         <h2 className="records__heading" id="records-now">
           지금 냉장고
         </h2>
-        <dl className="records__table">
-          <dt>현재 총 식품 종류</dt>
-          <dd>{summary.food_kinds}종류</dd>
-          <dt>보관 상태별</dt>
-          <dd>{STORAGES.map((s) => `${STORAGE_LABEL[s]} ${summary.by_storage[s]}`).join(' · ')}</dd>
-          <dt>식품 상태별</dt>
-          <dd className="records__statuses">
-            {STATUSES.map((s) => (
-              <span key={s} className="records__status">
-                <span className="records__dot" data-status={s} style={{ background: statusColor(s) }} aria-hidden="true" />
-                {STATUS_LABEL[s]} {summary.by_status[s]}
+        <div className="rn">
+          {/* 현재 총 식품 종류: 큰 숫자 */}
+          <div className="rn__total">
+            <StorageIcon storage="fridge" className="rn__total-icon" />
+            <div className="rn__total-text">
+              <span className="rn__total-label">현재 총 식품 종류</span>
+              <span className="rn__total-num">
+                <strong>{summary.food_kinds}</strong>종류
               </span>
-            ))}
-          </dd>
-        </dl>
+            </div>
+          </div>
+
+          {/* 보관 상태별: 상온 · 냉장 · 냉동 타일 (그림 + 이름 + 수) */}
+          <div className="rn__block">
+            <h3 className="rn__sub">보관 상태별</h3>
+            <ul className="rn__tiles">
+              {STORAGES.map((s) => (
+                <li key={s} className={`rn__tile cap--${s}`}>
+                  <StorageIcon storage={s} className="rn__tile-icon" />
+                  <span className="rn__tile-label">{STORAGE_LABEL[s]}</span>
+                  <span className="rn__tile-num">
+                    <strong>{summary.by_storage[s]}</strong>개
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* 서버가 종류별 수(by_category)를 주기 전에는 이 칸이 보이지 않는다 (types/records.ts) */}
+          {byCategory && (
+            <div className="rn__block">
+              <h3 className="rn__sub">식품 종류별</h3>
+              <div className="records__kinds">
+                {CATEGORIES.map((c) => (
+                  <span key={c} className={byCategory[c] === 0 ? `cap cap--${c} records__kind--zero` : `cap cap--${c}`}>
+                    <CategoryIcon category={c} className="cap__icon" />
+                    {CATEGORY_LABEL[c]} {byCategory[c]}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 식품 상태별: 상태 색 알약 (여유 · 주의 · 임박 · 지남). 색은 홈과 같다 */}
+          <div className="rn__block">
+            <h3 className="rn__sub">식품 상태별</h3>
+            <ul className="rn__stats">
+              {STATUSES.map((s) => (
+                <li
+                  key={s}
+                  className="rn__stat"
+                  data-status={s}
+                  style={{ ['--sc' as string]: statusColor(s) }}
+                >
+                  <span className="rn__stat-dot" aria-hidden="true" />
+                  <span className="rn__stat-label">{STATUS_LABEL[s]}</span>
+                  <strong className="rn__stat-num">{summary.by_status[s]}</strong>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section className="records__section" aria-labelledby="records-done">
+        <h2 className="records__heading" id="records-done">
+          정리한 것
+        </h2>
+        <div className="records__cards">
+          <CountCard
+            kind="eaten"
+            title="먹은 것"
+            year={summary.eaten.year}
+            month={summary.eaten.month}
+            onOpen={() => setSheet('eaten')}
+          />
+          <CountCard
+            kind="discarded"
+            title="버린 것"
+            year={summary.discarded.year}
+            month={summary.discarded.month}
+            onOpen={() => setSheet('discarded')}
+          />
+        </div>
       </section>
 
       {allEmpty && <EmptyHome onAdd={onAddFood} />}
 
-      <section className="records__section" aria-labelledby="records-list">
-        <h2 className="records__heading" id="records-list">
-          처리한 식품
-        </h2>
-        {noProcessed ? (
-          !allEmpty && <p className="records__empty">{NOTHING_TO_RESTORE}</p>
-        ) : (
-          <>
-            <ProcessedGroup
-              title="다 먹음"
-              foods={foods.eaten}
-              restoringId={restoringId}
-              onRestore={onRestore}
-            />
-            <ProcessedGroup
-              title="버림"
-              foods={foods.discarded}
-              restoringId={restoringId}
-              onRestore={onRestore}
-            />
-          </>
-        )}
-      </section>
+      {/* 카드를 누르면 아래에서 올라오는 팝업: 누른 종류의 처리한 식품과 되돌리기 버튼 */}
+      <RecordSheet
+        kind={sheet}
+        foods={sheet ? foods[sheet] : []}
+        restoringId={restoringId}
+        error={error}
+        onRestore={onRestore}
+        onClose={() => setSheet(null)}
+      />
     </>
   )
 }
 
-function CountCard({ title, year, month }: { title: string; year: number; month: number }) {
-  return (
-    <div className="records__card">
-      <p className="records__card-title">{title}</p>
-      <p>
-        올해 <strong>{year}</strong>개
-      </p>
-      <p>
-        이번 달 <strong>{month}</strong>개
-      </p>
-    </div>
-  )
-}
-
-interface GroupProps {
+// 누르면 처리한 식품 팝업이 올라오는 카드(버튼). 오른쪽 위에 그림이 붙는다.
+// 버린 식품 카드는 이번 달에 버린 식품이 있을 때만 쓰레기통 주위에 파리가 난다.
+function CountCard({
+  kind,
+  title,
+  year,
+  month,
+  onOpen,
+}: {
+  kind: RecordKind
   title: string
-  foods: ProcessedFood[]
-  restoringId: string | null
-  onRestore: (id: string) => void
-}
-
-// 다 먹음 / 버림을 나눠서, API 가 준 순서(최근 처리한 순) 그대로 보인다 (D-073, D-074)
-function ProcessedGroup({ title, foods, restoringId, onRestore }: GroupProps) {
+  year: number
+  month: number
+  onOpen: () => void
+}) {
   return (
-    <div className="records__group">
-      <h3 className="records__group-title">{title}</h3>
-      {foods.length === 0 ? (
-        <p className="records__empty">없어요.</p>
-      ) : (
-        <ul className="records__list">
-          {foods.map((food) => (
-            <li key={food.id} className="records__item">
-              {/* 한 줄에 이름 · 수량 · 처리한 날짜 (SCREEN-SPEC 11.1-5) */}
-              <div className="records__item-text">
-                <span className="records__item-name">{food.name}</span>
-                <span className="records__item-meta">
-                  {food.quantity}
-                  {food.unit} · {formatKoreanDate(food.processed_date)}
-                </span>
-              </div>
-              <button
-                type="button"
-                className="button"
-                disabled={restoringId !== null}
-                onClick={() => onRestore(food.id)}
-              >
-                {restoringId === food.id ? '되돌리는 중…' : '홈으로 되돌리기'}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+    <button type="button" className="records__card" data-kind={kind} aria-haspopup="dialog" onClick={onOpen}>
+      <span className="records__card-top">
+        <span className="records__card-title">{title}</span>
+        <RecordIcon kind={kind} flies={kind === 'discarded' && month > 0} className="records__card-icon" />
+      </span>
+      {/* 이번 달 수를 크게, 올해 수는 아래에 작게 */}
+      <span className="records__card-hero">
+        <span className="records__card-period">이번 달</span>
+        <span className="records__card-big">
+          <strong className="records__card-num">{month}</strong>
+          <span className="records__card-unit">개</span>
+        </span>
+      </span>
+      <span className="records__card-foot">
+        <span className="records__card-year">
+          올해 <strong>{year}</strong>개
+        </span>
+        <span className="records__card-more">
+          목록
+          <span className="records__card-chev" aria-hidden="true" />
+        </span>
+      </span>
+    </button>
   )
 }

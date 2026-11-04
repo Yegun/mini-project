@@ -3,6 +3,7 @@ import { categoryTintClass } from '../lib/categoryTint'
 import { formatMonthDay } from '../lib/calendar'
 import type { Food } from '../types/food'
 import type { CalendarBasis } from '../types/calendar'
+import DangerIcon from './DangerIcon'
 import DaysLeftBubble from './DaysLeftBubble'
 import { StorageCapsule } from './FoodCapsules'
 import './DateSheet.css'
@@ -99,7 +100,12 @@ function List({ foods, emptyText, onSelectFood }: { foods: Food[]; emptyText: st
           >
             <span className="ds__name">
               {food.name}
-              {food.is_danger && <span className="ds__danger"> ⚠ 위험</span>}
+              {food.is_danger && (
+                <span className="ds__danger">
+                  {' '}
+                  <DangerIcon className="ds__danger-icon" /> 위험
+                </span>
+              )}
             </span>
             <StorageCapsule storage={food.storage} />
             <DaysLeftBubble status={food.expiry_status} daysLeft={food.days_left} />

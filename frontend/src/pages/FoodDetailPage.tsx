@@ -4,6 +4,8 @@ import ConfirmDialog from '../components/ConfirmDialog'
 import ErrorNotice from '../components/ErrorNotice'
 import FoodSummary from '../components/FoodSummary'
 import InfoEditSheet from '../components/InfoEditSheet'
+import RecordIcon from '../components/RecordIcon'
+import { EditIcon, TrashLineIcon } from '../components/RegisterIcons'
 import { useFoodDetail } from '../hooks/useFoodDetail'
 import type { ActionResult, SaveResult, UpdateFoodInput } from '../types/foodDetail'
 import '../components/Register.css'
@@ -25,13 +27,13 @@ const CONFIRM: Record<Pending, { message: string; label: string }> = {
   // 처리는 기록 화면에서 홈으로 되돌릴 수 있다. "되돌릴 수 없어요"를 쓰지 않는다 (D-072, SCREEN-SPEC 11.1-9). 사용자 확정 문구
   eaten: {
     message: "'다 먹음'으로 정리할까요? 잘못 눌렀다면 기록 화면에서 홈으로 되돌릴 수 있어요.",
-    label: '다 먹음',
+    label: '다 먹었어요',
   },
   discarded: {
     message: "'버림'으로 정리할까요? 잘못 눌렀다면 기록 화면에서 홈으로 되돌릴 수 있어요.",
-    label: '버림',
+    label: '버렸어요',
   },
-  delete: { message: '정말 삭제할까요? 기록에서도 지워지고 되돌릴 수 없어요.', label: '삭제' },
+  delete: { message: '정말 삭제할까요? 기록에서도 지워지고 되돌릴 수 없어요.', label: '지우기' },
   // 고친 값이 있는데 창 밖을 눌렀을 때 (D-175)
   'close-edit': { message: '입력한 내용이 사라져요. 닫을까요?', label: '닫기' },
 }
@@ -151,23 +153,33 @@ export default function FoodDetailPage({ id, onBack, onDone, onDirtyChange }: Pr
           )}
           <FoodSummary food={result.food} />
 
+          {/* 아래 버튼: 정보 고치기(주) / 다 먹음 · 버림 카드 / 삭제(조용한 붉은 글자). 누르면 확인 창이 뜨는 흐름은 그대로다 */}
           <div className="detail__actions">
             <button type="button" className="button button--primary detail__edit" disabled={busy} onClick={openEdit}>
-              정보 고치기
+              <EditIcon className="detail__btn-icon" />
+              고치기
             </button>
-            <button type="button" className="button" disabled={busy} onClick={() => setPending('eaten')}>
-              다 먹음
-            </button>
-            <button type="button" className="button" disabled={busy} onClick={() => setPending('discarded')}>
-              버림
+            <button type="button" className="detail-act detail-act--eaten" disabled={busy} onClick={() => setPending('eaten')}>
+              <RecordIcon kind="eaten" className="detail-act__icon" />
+              다 먹었어요
             </button>
             <button
               type="button"
-              className="button button--danger"
+              className="detail-act detail-act--discarded"
+              disabled={busy}
+              onClick={() => setPending('discarded')}
+            >
+              <RecordIcon kind="discarded" className="detail-act__icon" />
+              버렸어요
+            </button>
+            <button
+              type="button"
+              className="button button--danger detail__delete"
               disabled={busy}
               onClick={() => setPending('delete')}
             >
-              삭제
+              <TrashLineIcon className="detail__btn-icon" />
+              지우기
             </button>
           </div>
 

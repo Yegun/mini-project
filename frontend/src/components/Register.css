@@ -26,6 +26,7 @@
 .register__title {
   margin: 0;
   font-size: 1.5rem;
+  font-weight: 900; /* 제목은 본문보다 확실히 굵게 (예전 기본 700) */
 }
 
 .register__section,
@@ -124,32 +125,6 @@
   cursor: pointer;
 }
 
-/* 설정 */
-.settings__privacy {
-  border: 1px solid var(--line);
-  border-radius: 0.75rem;
-  background: var(--surface);
-}
-
-.settings__summary {
-  min-height: 3rem;
-  padding: 0.75rem 1rem;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.settings__list {
-  margin: 0;
-  padding: 0 1rem 1rem 2.25rem;
-  line-height: 1.6;
-  word-break: keep-all;
-}
-
-.settings__withdraw {
-  border-color: var(--danger);
-  color: var(--danger);
-}
-
 /* 검색 */
 .search-form {
   display: flex;
@@ -181,22 +156,6 @@
   font-weight: 700;
   text-align: left;
   cursor: pointer;
-}
-
-.picked-food {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  border: 1px solid var(--line);
-  border-radius: 0.75rem;
-  background: var(--surface);
-}
-
-.picked-food__name {
-  font-size: 1.125rem;
-  overflow-wrap: anywhere;
 }
 
 /* 입력칸 */
@@ -262,6 +221,15 @@
 .choice-group {
   display: flex;
   gap: 0.5rem;
+}
+
+/* 고를 것이 많으면 줄을 바꿔 이어 간다 (설정의 글자 크기 · 포인트 색). 예전에는 Recommend.css 에 있었다 */
+.choice-group--wrap {
+  flex-wrap: wrap;
+}
+
+.choice-group--wrap .choice {
+  flex: 1 1 28%;
 }
 
 .choice {

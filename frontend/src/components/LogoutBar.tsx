@@ -35,7 +35,7 @@ export default function LogoutBar({ onLoggedOut }: Props) {
     <>
       <div className="logout-bar">
         <button type="button" className="logout-bar__button" disabled={loggingOut} onClick={() => void run()}>
-          {loggingOut ? '로그아웃하는 중…' : '로그아웃'}
+          {loggingOut ? '나가는 중…' : '나가기'}
         </button>
       </div>
       {error && (

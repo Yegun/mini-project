@@ -11,7 +11,13 @@ interface Props {
 
 // 탭 그림: 가는 선으로 그린 작은 그림. 색은 글자 색(currentColor)을 따라가서 밝은색 · 어두운색 · 포인트 색에 맞게 바뀐다.
 const ICONS: Record<Tab, ReactNode> = {
-  home: <path d="M4 11 12 4l8 7v8.5a.5.5 0 0 1-.5.5H15v-5.5H9V20H4.5a.5.5 0 0 1-.5-.5Z" />, // 집
+  home: (
+    <>
+      <rect x="5.5" y="2.8" width="13" height="18.4" rx="2.4" />
+      <path d="M5.5 9.5h13" />
+      <path d="M9 5.8v1.4M9 12.2v2.8" />
+    </>
+  ), // 냉장고 (위 냉동칸 · 아래 냉장칸, 손잡이 둘)
   records: (
     <>
       <path d="M4 12a8 8 0 1 0 2.4-5.7" />
@@ -36,9 +42,9 @@ const ICONS: Record<Tab, ReactNode> = {
 }
 
 const TABS: { tab: Tab; label: string }[] = [
-  { tab: 'home', label: '홈' },
+  { tab: 'home', label: '내 냉장고' },
   { tab: 'records', label: '기록' },
-  { tab: 'recommend', label: '음식추천' },
+  { tab: 'recommend', label: '뭐 먹지?' },
   { tab: 'settings', label: '설정' },
 ]
 

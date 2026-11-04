@@ -1,4 +1,7 @@
+import { useEffect, useMemo } from 'react'
 import ErrorNotice from './ErrorNotice'
+import { PhotoArt } from './RegisterIcons'
+import './RegisterFlow.css'
 
 interface Props {
   photo: File | null // 고른 사진. 실패해도 그대로 남아 다시 시도할 수 있다
@@ -8,12 +11,26 @@ interface Props {
   onUpload: () => void
 }
 
-// 사진 올리기: 사진을 고르는 곳과 올리기 버튼. 사진은 한 번에 한 장이다 (D-101, SCREEN-SPEC 5.3).
+// 사진 올리기: 사진을 고르는 칸(고르면 미리보기)과 올리기 버튼. 사진은 한 번에 한 장이다 (D-101, SCREEN-SPEC 5.3).
+// 미리보기는 이 기기의 화면에만 잠깐 보이고, 올리기 전에는 어디로도 보내지 않는다.
 export default function PhotoUpload({ photo, error, busy, onPick, onUpload }: Props) {
+  // 고른 사진의 미리보기 주소. 사진이 바뀌거나 화면을 나가면 지운다
+  const previewUrl = useMemo(() => (photo ? URL.createObjectURL(photo) : null), [photo])
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl)
+    }
+  }, [previewUrl])
+
   return (
     <section className="register__section" aria-label="사진 올리기">
-      <label className="button button--wide photo-upload__pick" aria-disabled={busy}>
-        {photo ? '다른 사진 고르기' : '사진 고르기'}
+      <label className="photo-drop" aria-disabled={busy}>
+        {previewUrl ? (
+          <img className="photo-drop__img" src={previewUrl} alt="고른 사진 미리보기" />
+        ) : (
+          <PhotoArt className="photo-drop__art" />
+        )}
+        <span className="photo-drop__label">{photo ? '다른 사진 고르기' : '사진 고르기'}</span>
         <input
           className="photo-upload__input"
           type="file"

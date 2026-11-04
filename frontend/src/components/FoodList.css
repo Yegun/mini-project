@@ -7,14 +7,101 @@
   gap: 0.5rem;
 }
 
+/* 줄이 위에서부터 차례로 올라온다 (처음 9줄까지만 시차를 둔다).
+   backwards: 끝난 뒤에는 변형(transform)을 남기지 않는다. 남기면 줄마다 독립된 겹침 층이 생겨
+   위험 말풍선 같은 겹쳐 뜨는 것이 아래 줄에 가려진다. */
+.food-list__row {
+  animation: food-rise 0.35s ease backwards;
+  animation-delay: calc(var(--i, 0) * 40ms);
+}
+
+@keyframes food-rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* 줄. 줄 전체를 덮는 .food-list__open 버튼이 뒤에 있고, 그 위의 내용은 마우스 · 손가락이 통과한다.
    ⚠ 와 휴지통만 따로 눌린다. (버튼 안에 버튼을 넣을 수 없어서 이렇게 겹친다) */
 .food-list__item {
   position: relative;
-  border: 1px solid var(--line);
-  border-radius: 0.75rem;
+  border: none; /* 테두리 선 없음. 줄은 옅은 그림자로만 바탕과 구분한다 */
+  border-radius: 1rem;
   background-color: var(--surface);
   background-image: linear-gradient(var(--tc, transparent), var(--tc, transparent)); /* 종류 색 배경 (FoodCapsules.css) */
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.08);
+  transition: transform 0.12s;
+}
+
+/* 목록 안의 알약(종류 · 보관 방법 캡슐)에는 윤곽선을 두지 않는다 */
+.food-list .cap {
+  box-shadow: none;
+}
+
+.food-list__item:has(.food-list__open:active) {
+  transform: scale(0.985);
+}
+
+/* 식품 그림 칸: 종류(또는 보관 방법) 색이 깔린 둥근 네모 안에 그림 */
+.food-list__art {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.9rem;
+  background: linear-gradient(var(--cap-bg), var(--cap-bg)), var(--surface);
+}
+
+/* 종류를 모를 때: 종류 색 없이 옅은 바탕의 접시 그림 */
+.food-list__art--plain {
+  background: var(--soft);
+}
+
+.food-list__art-icon {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+
+/* 칸 제목: "내 식품 8개" */
+.home__heading {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin: 0 0 0.5rem;
+  font-size: 1.125rem;
+  font-weight: 900;
+}
+
+/* 내 식품 칸: 제목은 그대로 두고 식품 목록만 이 칸 안에서 따로 스크롤된다.
+   높이는 화면에 맞춰 제한한다(위의 띠 · 필터 · 달력은 화면 스크롤로 보인다).
+   칸 끝까지 가면 바깥 화면 스크롤이 이어진다(overscroll-behavior 기본값). 줄의 그림자가 잘리지 않게 목록에 여백을 둔다. */
+.home__foods {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-height: min(34rem, 68vh);
+  max-height: min(34rem, 68dvh);
+}
+
+.home__foods .food-list {
+  flex: 1;
+  min-height: 0;
+  margin: 0 -0.5rem;
+  padding: 0.25rem 0.5rem 0.75rem;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.home__count {
+  color: var(--muted);
+  font-size: 0.875rem;
+  font-weight: 700;
 }
 
 .food-list__open {
@@ -54,7 +141,8 @@
 }
 
 .food-list__name {
-  font-weight: 700;
+  font-size: 1.0625rem;
+  font-weight: 800;
   overflow-wrap: anywhere;
 }
 
@@ -80,4 +168,13 @@
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .food-list__row {
+    animation: none;
+  }
+  .food-list__item {
+    transition: none;
+  }
 }

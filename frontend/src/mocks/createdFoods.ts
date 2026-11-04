@@ -299,7 +299,14 @@ function processedList(status: ProcessStatus): ProcessedFood[] {
     if (p.status !== status) continue
     const rec = recordOfAny(id)
     if (!rec) continue
-    list.push({ id, name: rec.name, quantity: rec.quantity, unit: rec.unit, processed_date: p.processed_date })
+    list.push({
+      id,
+      name: rec.name,
+      quantity: rec.quantity,
+      unit: rec.unit,
+      processed_date: p.processed_date,
+      category: rec.category ?? null, // 서버에 아직 없는 칸이라 가짜 데이터에서만 준다
+    })
   }
   // 최근 처리한 순 → 이름순 (API-SPEC D2)
   return list.sort((a, b) => b.processed_date.localeCompare(a.processed_date) || a.name.localeCompare(b.name))
@@ -322,9 +329,12 @@ export function getMockRecords(base: FoodListResponse): RecordsData {
     list.filter((f) => f.processed_date.startsWith(prefix)).length
   const byStorage = { room: 0, fridge: 0, freezer: 0 }
   const byStatus = { fresh: 0, warning: 0, soon: 0, expired: 0 }
+  // 식품 종류별: 서버에 아직 없는 칸이라 가짜 데이터에서만 센다. 종류를 모르는(null) 식품은 세지 않는다.
+  const byCategory = { vegetable: 0, fruit: 0, meat: 0, seafood: 0, other: 0 }
   for (const f of current) {
     byStorage[f.storage] += 1
     byStatus[f.expiry_status] += 1
+    if (f.category) byCategory[f.category] += 1
   }
   return {
     summary: {
@@ -332,6 +342,7 @@ export function getMockRecords(base: FoodListResponse): RecordsData {
       discarded: { year: count(discarded, year), month: count(discarded, month) },
       food_kinds: new Set(current.map((f) => f.name)).size,
       by_storage: byStorage,
+      by_category: byCategory,
       by_status: byStatus,
     },
     foods: { eaten, discarded },
