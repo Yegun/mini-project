@@ -12,6 +12,7 @@ import type { BulkItemInput } from '../types/bulk'
 import type { Storage } from '../types/food'
 import type { AnalyzeData } from '../types/photo'
 import type { FieldName } from '../types/register'
+import DangerBox from './DangerBox'
 import DangerMark from './DangerMark'
 import ErrorNotice from './ErrorNotice'
 import ExpiryRewriteField from './ExpiryRewriteField'
@@ -32,10 +33,6 @@ const EXPIRED = '사진을 다시 올려 주세요.'
 const SAVE_FAILED = '등록하지 못했어요. 아무것도 등록되지 않았어요. 잠시 뒤에 다시 시도해 주세요.'
 const NAME_CHECKING = '이름을 확인하는 중이에요. 잠시 뒤에 다시 눌러 주세요.'
 const NAME_CHECK_FAILED = '이름을 확인하지 못했어요. 이름 칸을 다시 눌러 주세요.'
-
-// 위험 식품의 안내 상자 (SCREEN-SPEC 16.3, D-170). 모든 위험 식품에 같은 공통 문구. 정확한 문구는 구현 단계에서 정하는 임시 문구다
-const DANGER_BOX_TITLE = '이 식품은 이렇게 드세요'
-const DANGER_BOX_TEXT = '날것이나 덜 익힌 채로 먹으면 탈이 날 수 있어요. 신선할 때 충분히 익혀서 드세요.'
 
 const NAME_CHECK_DELAY = 400 // 이름을 고친 뒤 규칙표에서 찾기까지 기다리는 시간(ms)
 
@@ -288,12 +285,7 @@ function ReviewCard({ index, line, disabled, onToggle, onName, onNameBlur, onVal
         </button>
       </div>
 
-      {danger && (
-        <div className="danger-box" role="note">
-          <strong className="danger-box__title">{DANGER_BOX_TITLE}</strong>
-          <p className="danger-box__text">{DANGER_BOX_TEXT}</p>
-        </div>
-      )}
+      {danger && <DangerBox />}
 
       <fieldset className="review-card__body" disabled={off || disabled}>
         <FormField label="이름" id={`${p}name`} error={line.errors.name}>

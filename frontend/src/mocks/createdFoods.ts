@@ -178,6 +178,33 @@ export function updateMockFood(id: string, input: UpdateFoodInput, today: string
     }
   }
 
+  // 보관 방법 (이름 다음, 구매일 앞). 가짜 계산이라 D-006 식을 재현하지 않는다 (API-SPEC A5)
+  let storage = rec.storage
+  if (input.storage !== undefined && input.storage !== rec.storage) {
+    if (source === 'manual') {
+      if (!recalculated) {
+        if (!input.expiry_date) return { status: 'need_expiry' } // 직접 등록 식품은 기한을 다시 적어야 한다 (D-023)
+        expiry = input.expiry_date
+        recalculated = true
+      }
+    } else {
+      const rule = ruleByName(input.name ?? rec.name)
+      const allowed = rule ? (rule.storages.find((s) => s.storage === input.storage)?.allowed ?? false) : true
+      if (!allowed) {
+        return { status: 'invalid', fieldErrors: { storage: '이 보관 방법은 고를 수 없어요. (가짜 응답)' } }
+      }
+      expiry = addDays(purchase, maxDays(rule, input.storage))
+      if (rec.expiry_status === 'expired' && dayNumber(expiry) <= dayNumber(today)) {
+        return {
+          status: 'invalid',
+          fieldErrors: { storage: '이미 기한이 지나서 이 보관 방법으로 바꿀 수 없어요. (가짜 응답)' },
+        }
+      }
+      recalculated = true
+    }
+    storage = input.storage
+  }
+
   if (input.purchase_date !== undefined && input.purchase_date !== rec.purchase_date) {
     if (source === 'manual') {
       if (dayNumber(purchase) > dayNumber(expiry)) {
@@ -191,7 +218,7 @@ export function updateMockFood(id: string, input: UpdateFoodInput, today: string
     }
   }
 
-  const patch: Partial<MockRecord> = { source, purchase_date: purchase }
+  const patch: Partial<MockRecord> = { source, purchase_date: purchase, storage }
   if (input.name !== undefined) patch.name = input.name
   // 이름 · 등록 방식이 바뀌면 위험 · 종류 칸도 바뀐다 (API-SPEC A5, DATA-MODEL Q-34)
   if (source === 'rule' && (rec.source !== 'rule' || (input.name !== undefined && input.name !== rec.name))) {

@@ -13,6 +13,7 @@ export function valuesFromDetail(food: FoodDetail): FormValues {
     quantity: String(food.quantity),
     unit: food.unit,
     storage: food.storage,
+    category: food.source === 'manual' ? food.category : null, // 직접 등록 식품만 종류를 고칠 수 있다 (SCREEN-SPEC 6.2)
   }
 }
 
@@ -38,6 +39,8 @@ export function buildInfoPatch(food: FoodDetail, v: FormValues): UpdateFoodInput
   const unit = v.unit.trim()
   if (unit !== food.unit) patch.unit = unit
   if (v.purchaseDate !== food.purchase_date) patch.purchase_date = v.purchaseDate
+  if (v.storage !== null && v.storage !== food.storage) patch.storage = v.storage // 보관 방법도 한 번에 저장한다 (D-172)
+  if (food.source === 'manual' && v.category !== null && v.category !== food.category) patch.category = v.category
   return patch
 }
 
@@ -47,6 +50,8 @@ export function isInfoChanged(food: FoodDetail, v: FormValues): boolean {
     v.name.trim() !== food.name ||
     v.quantity.trim() !== String(food.quantity) ||
     v.unit.trim() !== food.unit ||
-    v.purchaseDate !== food.purchase_date
+    v.purchaseDate !== food.purchase_date ||
+    v.storage !== food.storage ||
+    (food.source === 'manual' && v.category !== food.category)
   )
 }
