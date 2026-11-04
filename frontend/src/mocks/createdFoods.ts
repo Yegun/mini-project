@@ -14,7 +14,7 @@ import type {
 import type { ProcessedFood, RecordsData } from '../types/records'
 import type { ManualRegisterInput, RuleRegisterInput } from '../types/register'
 import type { RuleStorageOption } from '../types/rule'
-import foodsMock from './foods.json'
+import { foodsMock } from './foodsMock'
 import rulesMock from './rules.json'
 import { ruleFields } from './ruleInfo'
 

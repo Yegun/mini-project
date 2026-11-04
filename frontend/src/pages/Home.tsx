@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import EmptyHome from '../components/EmptyHome'
 import ErrorNotice from '../components/ErrorNotice'
-import FoodBarRow from '../components/FoodBarRow'
 import FoodFilters, {
   type CategoryFilter,
   type StatusFilter,
@@ -80,11 +79,7 @@ export default function Home({ result, onRetry, onSelectFood, onAddFood, onTrash
         onStorage={setStorage}
         onCategory={setCategory}
       />
-      <WeekCalendar today={today}>
-        {visible.map((food) => (
-          <FoodBarRow key={food.id} food={food} today={today} onSelect={onSelectFood} />
-        ))}
-      </WeekCalendar>
+      <WeekCalendar today={today} foods={visible} onSelectFood={onSelectFood} />
       {visible.length === 0 ? (
         <p className="notice notice--empty" role="status">
           {noneInStatus ? '그 상태의 식품이 없어요.' : '조건에 맞는 식품이 없어요.'}

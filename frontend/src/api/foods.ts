@@ -19,8 +19,7 @@ import type {
 import { readFailure, readMessage } from './errors'
 import { send } from './http'
 import { notifyLoginRequired } from './session'
-import foodsMock from '../mocks/foods.json'
-import foodsEmptyMock from '../mocks/foods.empty.json'
+import { foodsEmptyMock, foodsMock } from '../mocks/foodsMock'
 import { addMockFood, withCreatedFoods } from '../mocks/createdFoods'
 
 const FOODS_PATH = '/api/foods'
