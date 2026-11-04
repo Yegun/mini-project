@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { restoreFood } from '../api/records'
+import AdviceCard from '../components/AdviceCard'
 import EmptyHome from '../components/EmptyHome'
 import ErrorNotice from '../components/ErrorNotice'
 import { formatKoreanDate } from '../lib/dateText'
@@ -55,6 +56,7 @@ export default function RecordsPage({ initial, onAddFood }: Props) {
       {result.status === 'ready' && (
         <>
           {error && <ErrorNotice message={error} />}
+          <AdviceCard onAddFood={onAddFood} />
           <RecordsView
             data={result.data}
             restoringId={restoringId}

@@ -1,0 +1,50 @@
+/* 기록 화면의 AI 조언 카드. 색은 index.css 의 색 변수를 쓴다. */
+.advice {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: var(--soft);
+}
+
+.advice__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.advice__title {
+  margin: 0;
+  font-size: 1.125rem;
+}
+
+.advice__button {
+  flex: none;
+}
+
+.advice__button:disabled {
+  opacity: 0.5;
+}
+
+.advice__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+  padding-left: 1.25rem;
+  line-height: 1.5;
+}
+
+.advice__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.advice__empty p {
+  margin: 0;
+}
