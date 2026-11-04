@@ -1,8 +1,9 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { recommend } from '../api/recommendations'
 import EmptyHome from '../components/EmptyHome'
 import ErrorNotice from '../components/ErrorNotice'
 import FormField from '../components/FormField'
+import ThinkingScreen from '../components/ThinkingScreen'
 import {
   CUISINE_LABEL,
   CUISINES,
@@ -18,6 +19,7 @@ import '../components/Recommend.css'
 
 interface Props {
   onAddFood: () => void // 가진 식품이 없을 때의 식품 등록 버튼 (OQ-05)
+  onDirtyChange?: (dirty: boolean) => void // 기다리는 중인지. 기다리는 동안 탭을 누르면 확인 창이 뜬다 (SCREEN-SPEC 15.3 의 5번)
 }
 
 // 사용자 확정 문구 (OQ-03, ARCH 3절)
@@ -26,7 +28,7 @@ const AI_FAILED = 'AI 가 응답하지 못했어요. 다시 시도해 주세요.
 const NO_MATCH = '추천할 음식을 찾지 못했어요. 음식 종류를 바꿔 다시 추천받아 보세요.'
 
 // 음식추천 화면 (US-021, US-022, SCREEN-SPEC 8절). 추천 결과는 저장하지 않아 화면을 나가면 사라진다 (D-122).
-export default function RecommendPage({ onAddFood }: Props) {
+export default function RecommendPage({ onAddFood, onDirtyChange }: Props) {
   const [meal, setMeal] = useState<Meal | null>(null)
   const [cuisine, setCuisine] = useState<Cuisine | null>(null)
   const [cuisineText, setCuisineText] = useState('')
@@ -34,6 +36,11 @@ export default function RecommendPage({ onAddFood }: Props) {
   const [error, setError] = useState<string | null>(null)
   const [data, setData] = useState<RecommendData | null>(null)
   const lock = useRef(false) // 연타해도 요청은 한 번 (D-112)
+  const runToken = useRef(0) // 취소하면 보낸 요청의 늦은 결과를 버린다 (D-154)
+
+  useEffect(() => {
+    onDirtyChange?.(loading) // 확인 중 화면이 보이는 동안만 탭 이동 확인 창을 띄운다
+  }, [loading, onDirtyChange])
 
   // 끼니와 음식 종류를 고르고, '직접 입력'이면 글자를 적어야 추천받을 수 있다 (D-116 ~ D-118)
   const ready = meal !== null && cuisine !== null && (cuisine !== 'custom' || cuisineText.trim() !== '')
@@ -41,14 +48,26 @@ export default function RecommendPage({ onAddFood }: Props) {
   async function run() {
     if (lock.current || !ready || meal === null || cuisine === null) return
     lock.current = true
+    const token = ++runToken.current
     setLoading(true)
     setError(null)
     const res = await recommend({ meal, cuisine, cuisineText })
+    if (token !== runToken.current) return // 취소했다: 늦게 온 결과는 쓰지 않는다 (SCREEN-SPEC 15.3)
     lock.current = false
     setLoading(false)
     if (res.status === 'ok') setData(res.data)
     else setError(res.message ?? AI_FAILED) // 고른 끼니 · 음식 종류는 그대로 남아 다시 시도할 수 있다
   }
+
+  // 확인 중 화면의 취소: 기다리기를 멈추고 이 화면으로 돌아온다. 고른 끼니 · 음식 종류는 그대로 남는다 (D-154)
+  function cancel() {
+    runToken.current += 1
+    lock.current = false
+    setLoading(false)
+  }
+
+  // 추천을 기다리는 동안에는 확인 중 화면이 화면 전체를 쓴다 (SCREEN-SPEC 15절)
+  if (loading) return <ThinkingScreen message="추천을 만들고 있어요" onCancel={cancel} />
 
   return (
     <main className="register">

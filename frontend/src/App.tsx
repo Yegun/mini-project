@@ -172,7 +172,7 @@ function App() {
   } else if (screen.name === 'records') {
     page = <RecordsPage initial={screen.initial} onAddFood={() => addFoodFrom('records')} />
   } else if (screen.name === 'recommend') {
-    page = <RecommendPage onAddFood={() => addFoodFrom('recommend')} />
+    page = <RecommendPage onAddFood={() => addFoodFrom('recommend')} onDirtyChange={setDirty} />
   } else if (screen.name === 'settings') {
     page = <SettingsPage onWithdrawn={() => go({ name: 'login' })} />
   } else {

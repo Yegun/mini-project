@@ -9,6 +9,7 @@ import PhotoUpload from '../components/PhotoUpload'
 import RuleRegisterForm from '../components/RuleRegisterForm'
 import RegisterChoice from '../components/RegisterChoice'
 import RuleSearch from '../components/RuleSearch'
+import ThinkingScreen from '../components/ThinkingScreen'
 import {
   checkManualForm,
   checkRuleForm,
@@ -70,6 +71,7 @@ export default function RegisterPage({ today, onBack, onDone, onDirtyChange }: P
   const searchSeq = useRef(0) // 늦게 온 옛 검색 결과가 덮어쓰지 않게
   const submitLock = useRef(false) // 연타해도 요청은 한 번
   const photoLock = useRef(false) // 사진 올리기도 연타해도 요청은 한 번 (D-112)
+  const analysisToken = useRef(0) // 취소하면 올려 둔 요청의 늦은 결과를 버린다 (D-154)
 
   // 검색어를 적었거나, 식품을 골랐거나(직접 등록으로 갔거나), 값을 처음과 다르게 바꿨으면 "입력한 것이 있다".
   // 구매일 기본값(오늘)처럼 처음부터 채워진 값만 있으면 입력으로 보지 않는다 (SCREEN-SPEC 11.1-6)
@@ -111,9 +113,11 @@ export default function RegisterPage({ today, onBack, onDone, onDirtyChange }: P
   async function uploadPhoto() {
     if (photoLock.current || !photo) return
     photoLock.current = true
+    const token = ++analysisToken.current
     setAnalyzing(true)
     setPhotoError(null)
     const res = await analyzePhoto(photo)
+    if (token !== analysisToken.current) return // 취소했다: 늦게 온 결과는 쓰지 않는다. 이미 보낸 요청은 멈추지 못할 수 있다 (SCREEN-SPEC 15.3)
     photoLock.current = false
     setAnalyzing(false)
     if (res.status === 'ok') {
@@ -129,6 +133,13 @@ export default function RegisterPage({ today, onBack, onDone, onDirtyChange }: P
       return
     }
     setPhotoError(res.message ?? (res.status === 'invalid' ? PHOTO_INVALID : AI_FAILED)) // 사진은 그대로 남는다
+  }
+
+  // 확인 중 화면의 취소: 기다리기를 멈추고 사진 올리기 화면으로 돌아간다. 고른 사진은 그대로 남는다 (D-154)
+  function cancelAnalysis() {
+    analysisToken.current += 1
+    photoLock.current = false
+    setAnalyzing(false)
   }
 
   function pickRule(picked: RuleCandidate) {
@@ -203,6 +214,9 @@ export default function RegisterPage({ today, onBack, onDone, onDirtyChange }: P
       setSaveError((result.status === 'failed' && result.message) || SAVE_FAILED) // API 문구가 있으면 그것을 보인다
     }
   }
+
+  // 사진을 읽는 동안에는 확인 중 화면이 화면 전체를 쓴다 (SCREEN-SPEC 15절). 끝나면 확인 화면, 실패하면 이 화면에 오류가 보인다
+  if (analyzing) return <ThinkingScreen message="지금 사진을 분석하고 있어요" onCancel={cancelAnalysis} />
 
   return (
     <main className="register">
