@@ -1,6 +1,7 @@
 import { formatKoreanDate } from '../lib/dateText'
 import type { ExpiryMode, FormValues } from '../lib/registerForm'
 import type { FieldErrors } from '../types/register'
+import CategoryPicker from './CategoryPicker'
 import FormField from './FormField'
 import QuantityUnitDateFields from './QuantityUnitDateFields'
 import StoragePicker from './StoragePicker'
@@ -40,6 +41,15 @@ export default function ManualRegisterForm({ values, errors, submitting, onChang
           aria-invalid={Boolean(errors.name)}
           aria-describedby={errors.name ? 'name-error' : undefined}
           onChange={(e) => onChange({ name: e.target.value })}
+        />
+      </FormField>
+
+      <FormField label="식품 종류" id="category" error={errors.category}>
+        <CategoryPicker
+          id="category"
+          value={values.category}
+          disabled={submitting}
+          onChange={(category) => onChange({ category })}
         />
       </FormField>
 
@@ -106,9 +116,12 @@ export default function ManualRegisterForm({ values, errors, submitting, onChang
         )}
       </FormField>
 
-      <button type="submit" className="button button--primary button--wide" disabled={submitting}>
-        {submitting ? '등록하는 중…' : '등록'}
-      </button>
+      {/* 등록 버튼은 화면 아래(아래 탭 바로 위)에 고정되어 스크롤해도 제자리에 있다 (D-151) */}
+      <div className="sticky-action">
+        <button type="submit" className="button button--primary button--wide" disabled={submitting}>
+          {submitting ? '등록하는 중…' : '등록'}
+        </button>
+      </div>
     </form>
   )
 }

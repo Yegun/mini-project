@@ -48,6 +48,7 @@ export function linesFromAnalysis(data: AnalyzeData): ReviewLine[] {
 export function valuesOf(line: ReviewLine): FormValues {
   return {
     name: line.name,
+    category: null, // 확인 화면 줄에는 종류 고르기가 없다. 이름을 고친 줄의 종류는 AI 가 읽은 종류를 서버가 쓴다 (API-SPEC 5절 50번)
     quantity: line.quantity,
     unit: line.unit,
     purchaseDate: line.purchaseDate,

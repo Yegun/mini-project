@@ -27,6 +27,9 @@ export default function PhotoUpload({ photo, error, busy, onPick, onUpload }: Pr
         />
       </label>
 
+      {/* 사진을 올리는 곳의 작고 연한 안내 한 줄 (D-182). 팝업이 아니다 */}
+      <p className="register-choice__hint">물건을 펼쳐서 찍으면 더 정확해요. 사진은 저장하지 않아요.</p>
+
       {photo && <p className="field__hint">고른 사진: {photo.name}</p>}
 
       {error && <ErrorNotice message={error} />}

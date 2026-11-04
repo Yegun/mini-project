@@ -16,6 +16,7 @@ import {
   type FormValues,
 } from '../lib/registerForm'
 import { checkPhoto, PHOTO_INVALID } from '../lib/photoFile'
+import type { Category } from '../types/food'
 import type { AnalyzeData } from '../types/photo'
 import type { FieldErrors, FieldName } from '../types/register'
 import type { RuleCandidate, SearchState } from '../types/rule'
@@ -34,6 +35,7 @@ type Step = 'choose' | 'photo' | 'review' | 'search' | 'rule' | 'manual'
 // 값이 바뀌면 그 칸의 안내를 지운다 (입력칸 → 안내가 붙은 칸)
 const FIELD_OF: Record<keyof FormValues, FieldName> = {
   name: 'name',
+  category: 'category',
   quantity: 'quantity',
   unit: 'unit',
   purchaseDate: 'purchase_date',
@@ -139,7 +141,7 @@ export default function RegisterPage({ today, onBack, onDone, onDirtyChange }: P
 
   function goManual() {
     setRule(null)
-    setValues((v) => ({ ...v, name: query.trim(), storage: null })) // 검색어를 이름칸에 미리 채움
+    setValues((v) => ({ ...v, name: query.trim(), category: null, storage: null })) // 검색어를 이름칸에 미리 채움. 종류는 사용자가 고른다
     setErrors({})
     setSaveError(null)
     setStep('manual')
@@ -167,6 +169,7 @@ export default function RegisterPage({ today, onBack, onDone, onDirtyChange }: P
     setErrors(found)
     setSaveError(null)
     if (Object.keys(found).length > 0 || values.storage === null) return
+    if (step === 'manual' && values.category === null) return // checkManualForm 이 이미 안내한다 (타입 좁히기용)
 
     const base = {
       name: values.name.trim(),
@@ -182,6 +185,7 @@ export default function RegisterPage({ today, onBack, onDone, onDirtyChange }: P
         ? await createRuleFood(base)
         : await createManualFood({
             ...base,
+            category: values.category as Category, // 위에서 비어 있지 않음을 확인했다
             ...(values.expiryMode === 'date'
               ? { expiry_date: values.expiryDate }
               : { expiry_in_days: Number(values.expiryDays.trim()) }),

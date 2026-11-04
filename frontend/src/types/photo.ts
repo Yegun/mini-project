@@ -1,5 +1,5 @@
 // 사진 읽기(F1)의 응답. 기준은 API-SPEC 2-5.
-import type { Storage } from './food'
+import type { Category, Storage } from './food'
 
 export interface StorageInfo {
   storage: Storage
@@ -14,6 +14,9 @@ export interface AnalyzedItem {
   storages: StorageInfo[]
   purchase_date: string // 영수증에서 읽은 날짜, 못 읽으면 오늘 (D-106, D-107)
   from_rule: boolean // 규칙표 값이면 true, AI 가 알려 준 값이면 false
+  is_danger: boolean // 위험 식품인지. 규칙표에 같은 이름이 있으면 규칙표 값, 없으면 AI 가 알려 준 값 (D-135, D-164)
+  danger_note: string | null // 위험 이유 한 줄. is_danger 가 true 일 때만 글자
+  category: Category // 식품 종류. 이름을 고쳐 직접 등록 식품이 되는 줄의 종류로 쓰인다 (API-SPEC 5절 50번)
 }
 
 export interface AnalyzeData {

@@ -53,9 +53,12 @@ export default function RuleRegisterForm({
         />
       </FormField>
 
-      <button type="submit" className="button button--primary button--wide" disabled={submitting}>
-        {submitting ? '등록하는 중…' : '등록'}
-      </button>
+      {/* 등록 버튼은 화면 아래(아래 탭 바로 위)에 고정되어 스크롤해도 제자리에 있다 (D-151) */}
+      <div className="sticky-action">
+        <button type="submit" className="button button--primary button--wide" disabled={submitting}>
+          {submitting ? '등록하는 중…' : '등록'}
+        </button>
+      </div>
     </form>
   )
 }

@@ -28,7 +28,7 @@ const MOCK_MODE = import.meta.env.VITE_USE_MOCK
 
 // 등록 화면마다 안내를 붙일 수 있는 칸. 규칙표 등록은 이름을 검색 결과에서 고르므로 이름 칸이 없다.
 const RULE_FORM_FIELDS: readonly FieldName[] = ['storage', 'quantity', 'unit', 'purchase_date']
-const MANUAL_FORM_FIELDS: readonly FieldName[] = ['name', 'storage', 'quantity', 'unit', 'purchase_date', 'expiry']
+const MANUAL_FORM_FIELDS: readonly FieldName[] = ['name', 'category', 'storage', 'quantity', 'unit', 'purchase_date', 'expiry']
 
 // 어떤 실패든 화면은 "불러오기 실패" 하나로 보여 준다. message 는 API 문구 (없으면 화면 기본 문구).
 export class LoadFoodsError extends Error {
