@@ -16,6 +16,7 @@ import type { ManualRegisterInput, RuleRegisterInput } from '../types/register'
 import type { RuleStorageOption } from '../types/rule'
 import foodsMock from './foods.json'
 import rulesMock from './rules.json'
+import { ruleFields } from './ruleInfo'
 
 interface MockRule {
   id: string
@@ -89,6 +90,10 @@ export function addMockFood(input: RuleRegisterInput | ManualRegisterInput, toda
     expiry_status: mockLevel(today, expiry),
     days_left: dayNumber(expiry) - dayNumber(today),
     show_on_calendar: true,
+    // 직접 등록 식품은 위험 표시가 없고 종류는 등록할 때 고른 값, 규칙표 식품은 규칙표 값 (D-166, API-SPEC 0-1)
+    ...(isManual(input)
+      ? { is_danger: false, danger_note: null, category: input.category ?? 'other' }
+      : ruleFields(input.name)),
   })
 }
 
@@ -188,6 +193,13 @@ export function updateMockFood(id: string, input: UpdateFoodInput, today: string
 
   const patch: Partial<MockRecord> = { source, purchase_date: purchase }
   if (input.name !== undefined) patch.name = input.name
+  // 이름 · 등록 방식이 바뀌면 위험 · 종류 칸도 바뀐다 (API-SPEC A5, DATA-MODEL Q-34)
+  if (source === 'rule' && (rec.source !== 'rule' || (input.name !== undefined && input.name !== rec.name))) {
+    Object.assign(patch, ruleFields(input.name ?? rec.name)) // 규칙표 값을 읽어 붙인다
+  } else if (source === 'manual' && rec.source === 'rule') {
+    Object.assign(patch, { is_danger: false, danger_note: null, category: rec.category ?? 'other' }) // 바뀌기 전 규칙표의 종류를 저장
+  }
+  if (source === 'manual' && input.category !== undefined) patch.category = input.category // 직접 등록 식품만 종류를 고친다
   if (input.quantity !== undefined) patch.quantity = input.quantity
   if (input.unit !== undefined) patch.unit = input.unit
   if (expiry !== rec.expiry_date) patch.expiry_date = expiry

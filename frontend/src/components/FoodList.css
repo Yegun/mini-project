@@ -12,32 +12,37 @@
   align-items: center;
   gap: 0.75rem;
   width: 100%;
-  padding: 0.75rem 1rem 0.75rem 0;
+  padding: 0.75rem 1rem 0.75rem 0.875rem;
   border: 1px solid var(--line);
   border-radius: 0.75rem;
-  background: var(--surface);
+  background-color: var(--surface);
+  background-image: linear-gradient(var(--tc, transparent), var(--tc, transparent)); /* 종류 색 배경 (FoodCapsules.css) */
   font: inherit;
   text-align: left;
   cursor: pointer;
   overflow: hidden;
 }
 
-/* 상태 색 띠 */
+/* 상태 색 막대: 줄 가장자리에 붙이지 않고 안쪽에 둥글게 띄운다 (줄 모서리와 종류 색 배경과 부딪히지 않게) */
 .food-list__strip {
   align-self: stretch;
-  width: 0.5rem;
+  width: 0.375rem;
   flex: none;
+  border-radius: 999px;
+}
+
+.food-list__main {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap; /* 이름 옆에 캡슐이 놓이고, 좁으면 캡슐이 아래로 내려간다 */
+  align-items: center;
+  gap: 0.375rem 0.625rem;
+  min-width: 0;
 }
 
 .food-list__name {
-  flex: 1;
   font-weight: 700;
   overflow-wrap: anywhere;
-}
-
-.food-list__storage {
-  color: var(--muted);
-  font-size: 0.8125rem;
 }
 
 .visually-hidden {

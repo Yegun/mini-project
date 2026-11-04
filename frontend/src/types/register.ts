@@ -1,6 +1,6 @@
 // 식품 등록 요청·결과 모양 (A2 규칙표, A3 직접). 기준은 API-SPEC 2-3.
 // 바뀌면 이 파일과 api/foods.ts, mocks/ 만 고친다.
-import type { Storage } from './food'
+import type { Category, Storage } from './food'
 
 // 규칙표에서 골라 등록 (A2). 기한은 API 가 계산한다.
 export interface RuleRegisterInput {
@@ -20,6 +20,7 @@ export interface ManualRegisterInput {
   purchase_date: string
   expiry_date?: string // YYYY-MM-DD
   expiry_in_days?: number // 구매일 + N일
+  category?: Category // 식품 종류. API-SPEC 에서는 필수이고, 등록 화면에 종류 고르기를 넣을 때(이슈 6) 필수로 바꾼다
 }
 
 // 입력칸 이름. 입력 오류 응답이 "어느 칸 문제인지" 알려 줄 때 쓴다.

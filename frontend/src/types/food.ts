@@ -10,6 +10,19 @@ export const STORAGE_LABEL: Record<Storage, string> = {
   freezer: '냉동',
 }
 
+// 식품 종류 (API-SPEC 0-1, 5절 44번). 직접 등록 식품은 등록할 때 고른 값, 규칙표 식품은 규칙표 값을 API 가 붙여 준다.
+export type Category = 'vegetable' | 'fruit' | 'meat' | 'seafood' | 'other'
+
+// 화면 표시 순서와 이름 (채소 · 과일 · 육류 · 수산 · 기타). 'other'(그 밖)의 화면 이름은 사용자 요청으로 '기타'
+export const CATEGORIES: readonly Category[] = ['vegetable', 'fruit', 'meat', 'seafood', 'other']
+export const CATEGORY_LABEL: Record<Category, string> = {
+  vegetable: '채소',
+  fruit: '과일',
+  meat: '육류',
+  seafood: '수산',
+  other: '기타',
+}
+
 // 상태 판정은 API 가 한다 (D-009).
 export type ExpiryStatus = 'fresh' | 'warning' | 'soon' | 'expired' // 여유 · 주의 · 임박 · 지남
 
@@ -32,6 +45,9 @@ export interface Food {
   expiry_status: ExpiryStatus // 처리 상태 `status`(D-032)와 겹치지 않게 지은 이름
   days_left: number // 기한 − 오늘. 지났으면 음수 (−1 = 하루 지남)
   show_on_calendar: boolean // 지난 지 4일 이상이면 false (D-014). 목록에는 남는다
+  is_danger: boolean // 위험 식품인지. 규칙표 식품만 참이 될 수 있다 (D-164, D-166). 처리된 식품에도 붙는다
+  danger_note: string | null // 위험 이유 한 줄. is_danger 가 참일 때만 글자
+  category: Category | null // 식품 종류. 규칙표에서 이름을 못 찾는 규칙표 식품이면 null (API-SPEC 5절 47번)
 }
 
 export interface FoodListResponse {

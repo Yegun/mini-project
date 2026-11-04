@@ -1,0 +1,117 @@
+/* 보관 방법 · 종류 캡슐과 종류 색 줄 배경 (SCREEN-SPEC 4.8, 6.1).
+   캡슐 바닥에 카드색을 먼저 깔아 줄 배경이 비쳐 글자가 흐려지지 않게 한다. 글자는 밝은색에서 진하게, 어두운색에서 밝게. */
+.cap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.1875rem 0.625rem;
+  border-radius: 999px;
+  background: linear-gradient(var(--cap-bg), var(--cap-bg)), var(--surface);
+  color: var(--cap-fg);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  /* 캡슐 둘레의 가는 선: 줄 배경과 같은 계열 색이어도 캡슐이 따로 보이게 한다 */
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cap-fg) 35%, transparent);
+}
+
+/* 종류 캡슐은 그림이 있어 왼쪽 여백을 줄인다 */
+.cap:has(.cap__icon) {
+  padding-left: 0.3125rem;
+}
+
+.cap__icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex: none;
+}
+
+/* 보관 방법 */
+.cap--fridge {
+  --cap-bg: rgba(20, 184, 166, 0.26);
+  --cap-fg: #0b5f58;
+}
+.cap--room {
+  --cap-bg: rgba(120, 120, 135, 0.24);
+  --cap-fg: #444455;
+}
+.cap--freezer {
+  --cap-bg: rgba(99, 102, 241, 0.24);
+  --cap-fg: #3730a3;
+}
+
+/* 식품 종류 */
+.cap--vegetable {
+  --cap-bg: rgba(67, 176, 92, 0.3);
+  --cap-fg: #256f39;
+}
+.cap--fruit {
+  --cap-bg: rgba(240, 138, 60, 0.32);
+  --cap-fg: #a8540f;
+}
+.cap--meat {
+  --cap-bg: rgba(229, 118, 123, 0.34);
+  --cap-fg: #a93f46;
+}
+.cap--seafood {
+  --cap-bg: rgba(74, 163, 223, 0.3);
+  --cap-fg: #1b6a9e;
+}
+.cap--other {
+  --cap-bg: rgba(179, 160, 122, 0.8); /* 기타는 줄 배경(0.4)보다 캡슐을 훨씬 진하게 해서 서로 구분한다 */
+  --cap-fg: #3d3112;
+}
+
+:root[data-tone='dark'] .cap--fridge {
+  --cap-fg: #5eead4;
+}
+:root[data-tone='dark'] .cap--room {
+  --cap-fg: #c4c4d0;
+}
+:root[data-tone='dark'] .cap--freezer {
+  --cap-fg: #a5b4fc;
+}
+:root[data-tone='dark'] .cap--vegetable {
+  --cap-fg: #7ee09a;
+}
+:root[data-tone='dark'] .cap--fruit {
+  --cap-fg: #ffb270;
+}
+:root[data-tone='dark'] .cap--meat {
+  --cap-fg: #ff9aa0;
+}
+:root[data-tone='dark'] .cap--seafood {
+  --cap-fg: #7cc4f0;
+}
+:root[data-tone='dark'] .cap--other {
+  --cap-bg: rgba(179, 160, 122, 0.45);
+  --cap-fg: #f1e6c8;
+}
+
+/* 줄 전체의 종류 색 배경. 줄이 background-image 로 이 값을 깐다 */
+.tint--vegetable {
+  --tc: rgba(67, 176, 92, 0.2);
+}
+.tint--fruit {
+  --tc: rgba(240, 138, 60, 0.22);
+}
+.tint--meat {
+  --tc: rgba(229, 118, 123, 0.24);
+}
+.tint--seafood {
+  --tc: rgba(74, 163, 223, 0.22);
+}
+.tint--other {
+  --tc: rgba(179, 160, 122, 0.4); /* 기타 줄 배경. 안의 캡슐(0.8)과 색이 같아 보이지 않게 캡슐보다 연하다 */
+}
+
+:root[data-tone='dark'] .tint--other {
+  --tc: rgba(179, 160, 122, 0.28);
+}
+
+.caps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}

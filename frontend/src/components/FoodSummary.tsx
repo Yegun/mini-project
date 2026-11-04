@@ -1,7 +1,7 @@
 import { formatKoreanDate } from '../lib/dateText'
 import { STATUS_LABEL, statusColor } from '../lib/statusColor'
-import { STORAGE_LABEL } from '../types/food'
 import type { FoodDetail } from '../types/foodDetail'
+import { CategoryCapsule, StorageCapsule } from './FoodCapsules'
 
 interface Props {
   food: FoodDetail
@@ -21,7 +21,17 @@ export default function FoodSummary({ food }: Props) {
         <dt>구매일</dt>
         <dd>{formatKoreanDate(food.purchase_date)}</dd>
         <dt>보관 방법</dt>
-        <dd>{STORAGE_LABEL[food.storage]}</dd>
+        <dd>
+          <StorageCapsule storage={food.storage} />
+        </dd>
+        {food.category && (
+          <>
+            <dt>식품 종류</dt>
+            <dd>
+              <CategoryCapsule category={food.category} />
+            </dd>
+          </>
+        )}
         <dt>기한</dt>
         <dd className="summary__expiry">
           <span
