@@ -13,6 +13,7 @@ from app.calc import expiry_from_days
 # 칸 이름은 DATA-MODEL.md (D-032) 의 이름을 쓴다.
 STORAGES = ("room", "fridge", "freezer")
 STATUSES = ("eaten", "discarded")
+CATEGORIES = ("vegetable", "fruit", "meat", "seafood", "other")  # 채소·과일·육류·수산·그 밖 (API-SPEC 5절 44번)
 _DATE_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 # 이메일: @ 앞뒤에 글자가 있고 @ 뒤에 점이 있는 모양까지만 (D-096)
 _EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
@@ -72,6 +73,13 @@ def validate_storage(value) -> str:
     """보관 방법은 상온·냉장·냉동 중 하나 (D-032). 없거나 다르면 invalid_storage."""
     if not isinstance(value, str) or value not in STORAGES:
         raise ValidationError("storage", "invalid_storage")
+    return value
+
+
+def validate_category(value) -> str:
+    """V-41 식품 종류는 다섯 값 중 하나여야 한다. 없거나 다르면 invalid_category."""
+    if not isinstance(value, str) or value not in CATEGORIES:
+        raise ValidationError("category", "invalid_category")
     return value
 
 

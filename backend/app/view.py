@@ -7,6 +7,7 @@ from app.status import days_left, show_on_calendar, status_of
 
 def food_json(food: dict, today: date) -> dict:
     """저장소의 식품(날짜는 YYYY-MM-DD 글자)에 계산 값 3개(expiry_status, days_left, show_on_calendar)를 붙인다.
+    위험 여부·이유·종류(is_danger, danger_note, category)는 저장소가 규칙표에서 읽어 준 값을 그대로 내보낸다.
 
     상태는 API 가 계산하고 화면은 색만 입힌다 (D-009). 처리된 식품은 계산 값이 null 이다.
     주인(user_id)은 내보내지 않는다.
@@ -25,6 +26,10 @@ def food_json(food: dict, today: date) -> dict:
         "expiry_status": None,
         "days_left": None,
         "show_on_calendar": None,
+        # 저장하지 않고 규칙표에서 읽어 붙인 값 (D-164). 처리된 식품에도 붙는다 (API-SPEC 0-1절)
+        "is_danger": food["is_danger"],
+        "danger_note": food["danger_note"],
+        "category": food["category"],
     }
     if food["status"] == "none":
         left = days_left(date.fromisoformat(food["expiry_date"]), today)

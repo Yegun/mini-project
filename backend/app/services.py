@@ -21,6 +21,7 @@ from app.validation import (
     check_purchase_not_after_expiry,
     parse_date,
     resolve_manual_expiry,
+    validate_category,
     validate_quantity,
     validate_storage,
     validate_storage_allowed,
@@ -100,6 +101,10 @@ def register_manual_food(conn: psycopg.Connection, user_id: str, raw: dict, toda
     규칙표의 이름이나 별칭으로는 직접 등록할 수 없다 (rule_name_exists).
     """
     fields = _basic_fields(raw)
+    # API-SPEC A3 실패 표의 순서: 기한 날짜 모양 → 종류 → 기한 입력(둘 중 하나, 과거, 구매일)
+    if _is_given(raw["expiry_date"]):
+        parse_date(raw["expiry_date"], "expiry_date")
+    category = validate_category(raw["category"])
     expiry_date = resolve_manual_expiry(
         fields["purchase_date"], raw["expiry_date"], raw["expiry_in_days"], today
     )
@@ -115,6 +120,7 @@ def register_manual_food(conn: psycopg.Connection, user_id: str, raw: dict, toda
         purchase_date=fields["purchase_date"].isoformat(),
         expiry_date=expiry_date.isoformat(),
         source="manual",
+        category=category,
     )
 
 
@@ -182,9 +188,11 @@ def _expiry_keeping_ratio(
 def change_info(
     conn: psycopg.Connection, user_id: str, food: dict, fields: dict, today: date
 ) -> dict:
-    """A5 정보 수정 (이름, 구매일, 수량, 단위). fields 에는 보낸 칸만 들어 있다.
+    """A5 정보 고치기 (이름, 구매일, 수량, 단위, 보관 방법, 종류). fields 에는 보낸 칸만 들어 있다.
 
-    이름과 구매일을 한 번에 고치면 이름 변경을 먼저 처리하고, 그 기한에 구매일 이동을 적용한다 (D-026).
+    여러 칸이 함께 오면 이름 → 보관 방법 → 구매일 순서로 기한을 다시 계산하고 한 묶음으로 저장한다 (V-39, D-026, D-172).
+    이름 규칙을 먼저 적용한 뒤 그 결과의 식품을 기준으로 보관 방법 규칙을, 마지막으로 구매일 이동을 적용한다.
+    칸 하나라도 어기면 아무것도 저장하지 않는다 (부르는 쪽이 transaction 으로 되돌린다).
     """
     purchase_old = _day(food["purchase_date"])
     expiry_old = _day(food["expiry_date"])
@@ -203,11 +211,16 @@ def change_info(
     expiry_input = (
         parse_date(fields["expiry_date"], "expiry_date") if _is_given(fields.get("expiry_date")) else None
     )
+    new_storage = validate_storage(fields["storage"]) if "storage" in fields else food["storage"]
+    # 종류도 보낸 값의 모양은 검사한다. 규칙표 식품에 보내면 무시한다 (API-SPEC A5, 5절 46번)
+    new_category = validate_category(fields["category"]) if "category" in fields else None
 
     expiry = expiry_old
     source = food["source"]
+    category = food["category"]  # 직접 등록 식품이면 저장된 종류, 규칙표 식품이면 규칙표에서 읽은 값이다
     stored_name = food["name"]
     expiry_decided = False  # 이번 요청이 기한을 새로 정했는가 (구매일 > 기한일 때 어느 칸 탓인지 가른다)
+    storage_decided_by_name = False  # 이름 단계가 새 보관 방법까지 반영해 기한을 이미 계산했는가
 
     new_rule = rules_repo.find_rule(conn, new_name) if "name" in fields else None
     stored_new_name = new_rule["name"] if new_rule else new_name  # 별칭으로 보내도 저장되는 이름은 정식 이름
@@ -216,8 +229,17 @@ def change_info(
         expiry_decided = True
         if new_rule is not None:
             # 규칙표에 있는 이름: 규칙표 기준으로 다시 계산한다. 기한은 계산되므로 따로 받지 않는다 (보낸 값은 무시).
-            validate_storage_allowed(food["storage"], allowed_storages(new_rule))  # DATA-MODEL Q-24 ①
-            new_max = rule_max_days(new_rule, food["storage"])
+            allowed = allowed_storages(new_rule)
+            if food["storage"] not in allowed and new_storage != food["storage"]:
+                # 지금 보관 방법은 새 이름에서 불가이지만 같은 요청이 보관 방법도 바꾼다. 바뀐 뒤 보관 방법을 기준으로
+                # 처리한다 (2026-11-04 사용자 결정, API-SPEC 5절 55번을 이렇게 고쳐야 한다). 새 방법으로 한 번에 계산한다.
+                validate_storage_allowed(new_storage, allowed)
+                target_storage = new_storage
+                storage_decided_by_name = True
+            else:
+                validate_storage_allowed(food["storage"], allowed)  # DATA-MODEL Q-24 ①
+                target_storage = food["storage"]
+            new_max = rule_max_days(new_rule, target_storage)
             if food["source"] == "rule":
                 # 규칙표는 늘어나기만 해서 옛 이름이 사라지는 일은 없다고 본다 (사용자 설명)
                 old_rule = rules_repo.get_rule_by_name(conn, food["name"])
@@ -227,6 +249,7 @@ def change_info(
                 current_max = (expiry_old - purchase_old).days
             expiry = _expiry_keeping_ratio(purchase_old, today, current_max, new_max)
             source = "rule"
+            category = None  # 규칙표 식품은 종류를 규칙표에서 읽어 붙인다. 저장한 값은 비운다 (DATA-MODEL Q-34)
         else:
             # 규칙표에 없는 이름: 이미 지난 식품은 못 바꾸고, 새 기한을 직접 적어야 한다 (V-11, PRD 4-4).
             if expiry_old < today:
@@ -236,6 +259,38 @@ def change_info(
             check_expiry_not_in_past(expiry_input, today)
             expiry = expiry_input
             source = "manual"
+            if food["source"] == "rule":
+                # 바뀌기 전 규칙표의 종류를 저장한다. 규칙표에서 못 찾으면 other (DATA-MODEL Q-34)
+                category = food["category"] or "other"
+
+    # 보관 방법: 이름 규칙을 적용한 결과의 식품을 기준으로 한다 (V-39). 같은 보관 방법이면 기한 그대로 성공이고
+    # 함께 온 expiry_date 는 무시한다 (이 줄이 아래 줄들보다 먼저 적용된다, API-SPEC A5).
+    if new_storage != food["storage"] and not storage_decided_by_name:
+        if source == "manual" and expiry_decided:
+            pass  # 이름이 규칙표에 없게 되어 적은 기한이 최종이다. 보관 방법은 값만 바뀐다 (API-SPEC A5)
+        elif source == "manual":
+            # 계산할 규칙표가 없으므로 새 기한을 직접 적어야 한다 (D-023)
+            if expiry_input is None:
+                raise ApiError("expiry_required", "expiry_date")
+            check_expiry_not_in_past(expiry_input, today)
+            check_purchase_not_after_expiry(purchase_old, expiry_input)
+            expiry = expiry_input
+            expiry_decided = True
+        else:
+            rule = rules_repo.get_rule_by_name(conn, stored_name)
+            if rule is None:
+                # 규칙표 내용이 바뀌었다. 기한을 직접 적게 하는 길은 열지 않는다 (API-SPEC 5절 7번)
+                raise ValidationError("storage", "rule_not_found")
+            validate_storage_allowed(new_storage, allowed_storages(rule))
+            current_max = rule_max_days(rule, food["storage"])
+            new_max = rule_max_days(rule, new_storage)
+            remaining = remaining_days_after_storage_change(purchase_old, today, current_max, new_max)
+            new_expiry = new_expiry_after_storage_change(purchase_old, today, current_max, new_max)
+            # 계산 결과가 음수면 바꿀 수 없다. 이미 지난 식품은 새 기한이 오늘보다 뒤일 때만 바꿀 수 있다 (D-006, V-10).
+            if remaining < 0 or (expiry < today and new_expiry <= today):
+                raise ValidationError("storage", "storage_change_not_allowed")
+            expiry = new_expiry
+            expiry_decided = True
 
     if purchase_new != purchase_old and source == "rule":
         # 규칙표 식품은 구매일이 움직인 일수만큼 기한도 옮긴다. 직접 적은 기한은 그대로 둔다 (D-024).
@@ -250,8 +305,15 @@ def change_info(
         updates["purchase_date"] = purchase_new.isoformat()
     if expiry != expiry_old:
         updates["expiry_date"] = expiry.isoformat()
+    if new_storage != food["storage"]:
+        updates["storage"] = new_storage
+    if new_category is not None and source == "manual":
+        category = new_category  # 직접 등록 식품의 종류만 바꿀 수 있다
     if source != food["source"]:
         updates["source"] = source
+        updates["category"] = category if source == "manual" else None
+    elif source == "manual" and category != food["category"]:
+        updates["category"] = category
     if not updates:
         return food
     return _save(conn, user_id, food, **updates)

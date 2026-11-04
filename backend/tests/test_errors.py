@@ -12,7 +12,7 @@ SPEC = {
     "login_failed": 401, "login_required": 401, "email_taken": 409, "weak_password": 422,
     "not_found": 404, "expiry_required": 409, "invalid_email": 422, "required": 422,
     "invalid_quantity": 422, "invalid_date": 422, "invalid_storage": 422, "invalid_status": 422,
-    "rule_not_found": 422, "rule_name_exists": 422, "storage_not_allowed": 422,
+    "invalid_category": 422, "rule_not_found": 422, "rule_name_exists": 422, "storage_not_allowed": 422,
     "expiry_input_invalid": 422, "invalid_expiry_in_days": 422, "expiry_in_past": 422,
     "purchase_after_expiry": 422, "rename_expired_not_allowed": 422,
     "storage_change_not_allowed": 422, "password_mismatch": 422, "invalid_meal": 422, "invalid_cuisine": 422,
@@ -22,7 +22,7 @@ SPEC = {
 
 
 def test_status_table_matches_the_spec():
-    assert STATUS == SPEC and len(SPEC) == 30
+    assert STATUS == SPEC and len(SPEC) == 31
 
 
 def test_every_reason_has_a_message():
