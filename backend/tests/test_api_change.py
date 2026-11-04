@@ -47,6 +47,8 @@ def add(pg, email="kim@example.com", **over):
         expiry_date="2026-11-16", source="rule",
     )
     data.update(over)
+    if data["source"] == "manual":
+        data.setdefault("category", "other")  # 직접 등록 식품은 종류가 꼭 있어야 한다
     food = foods_repo.create_food(pg, uid, **data)
     pg.commit()
     return food
@@ -204,7 +206,8 @@ def test_a6_rule_name_vanished_from_the_rule_table(me, pg):
     response = storage(me, food, storage="freezer")
     assert shape(response) == (422, "storage", "rule_not_found")  # 문서가 정한 방식 (API-SPEC 5절 7번)
     assert response.json()["message"] == "이 식품의 보관 정보를 찾을 수 없어요."
-    assert stored(pg, food) == food
+    # 규칙표에서 이름을 찾을 수 없으면 종류는 null, 위험은 아님으로 보인다 (API-SPEC 0-1절). 그 밖의 칸은 그대로다.
+    assert stored(pg, food) == {**food, "category": None, "is_danger": False, "danger_note": None}
 
 
 def test_a6_not_found_cases_and_order(me, other, pg):
@@ -402,3 +405,234 @@ def test_a5_a6_need_login(client):
     fake = "0b0e0b8e-3f4b-4f43-9f0a-5d5b0d9b3b11"
     assert shape(client.patch(f"/foods/{fake}", json={})) == (401, None, "login_required")
     assert shape(client.patch(f"/foods/{fake}/storage", json={"storage": "room"})) == (401, None, "login_required")
+
+
+# ---- 이름을 고칠 때 종류 (DATA-MODEL Q-34, v0.5.0) -------------------------------------------------------
+def patch_name(me, food, **body):
+    return me.patch(f"/foods/{food['id']}", json=body)
+
+
+def stored_category(pg, food):
+    return pg.execute("SELECT category FROM foods WHERE id = %s", (food["id"],)).fetchone()["category"]
+
+
+def test_rename_rule_food_to_unknown_name_keeps_the_old_rule_category(me, pg):
+    food = add(pg, name="닭고기", storage="fridge", expiry_date="2026-11-16")
+    body = patch_name(me, food, name="수제 닭요리", expiry_date="2026-11-20").json()
+    assert (body["source"], body["category"], body["is_danger"]) == ("manual", "meat", False)  # 위험 표시는 없어진다 (D-166)
+    assert stored_category(pg, food) == "meat"
+
+
+def test_rename_rule_food_to_unknown_name_when_rule_is_gone_stores_other(me, pg):
+    food = add(pg, name="당근")
+    pg.execute("DELETE FROM rules WHERE name = '당근'")
+    pg.commit()
+    body = patch_name(me, food, name="수제 당근", expiry_date="2026-11-20").json()
+    assert (body["source"], body["category"]) == ("manual", "other")
+
+
+def test_rename_manual_food_to_rule_name_clears_the_stored_category(me, pg):
+    food = add(pg, name="수제청", source="manual", category="fruit", purchase_date="2026-10-20", expiry_date="2026-11-19")
+    body = patch_name(me, food, name="사과").json()
+    assert (body["source"], body["category"]) == ("rule", "fruit")  # 이제 규칙표 값(사과는 과일)을 읽어 붙인다
+    assert stored_category(pg, food) is None
+
+
+def test_rename_manual_food_to_unknown_name_keeps_its_category(me, pg):
+    food = add(pg, name="수제청", source="manual", category="seafood", expiry_date="2026-11-20")
+    body = patch_name(me, food, name="다른 수제청", expiry_date="2026-11-25").json()
+    assert (body["source"], body["category"]) == ("manual", "seafood")
+
+
+def test_plain_edits_do_not_touch_the_category(me, pg):
+    food = add(pg, name="수제청", source="manual", category="meat", expiry_date="2026-11-20")
+    assert me.patch(f"/foods/{food['id']}", json={"quantity": 3}).json()["category"] == "meat"
+    rule_food = add(pg, name="당근")
+    assert me.patch(f"/foods/{rule_food['id']}", json={"quantity": 3}).json()["category"] == "vegetable"
+    assert stored_category(pg, rule_food) is None
+
+
+# ======== A5 정보 고치기에 보관 방법·종류를 함께 (v0.5.0, API-SPEC A5, V-39, D-172) ========
+def test_a5_storage_in_patch_recalculates_by_ratio_like_the_old_storage_route(me, pg):
+    # 당근 냉장 21일 중 4일 보관 → 냉동 120일 기준 97일 남음 (A6 와 같은 계산)
+    food = add(pg)
+    body = info(me, food, storage="freezer").json()
+    assert (body["storage"], body["source"], body["expiry_date"]) == ("freezer", "rule", day(97))
+    assert stored(pg, food)["expiry_date"] == day(97)
+
+
+def test_a5_patch_and_old_storage_route_give_the_same_result(me, pg):
+    one, two = add(pg), add(pg)
+    assert info(me, one, storage="freezer").json()["expiry_date"] == storage(me, two, storage="freezer").json()["expiry_date"]
+
+
+def test_a5_same_storage_in_patch_changes_nothing_and_ignores_expiry(me, pg):
+    food = add(pg)
+    before = stored(pg, food)
+    for body in ({"storage": "fridge"}, {"storage": "fridge", "expiry_date": "2030-01-01"}):
+        response = info(me, food, **body)
+        assert response.status_code == 200 and response.json()["expiry_date"] == "2026-11-16"
+    assert stored(pg, food) == before
+
+
+def test_a5_same_storage_wins_even_for_manual_food_and_does_not_ask_for_an_expiry(me, pg):
+    food = add(pg, name="수제청", storage="room", source="manual")
+    assert info(me, food, storage="room").status_code == 200  # 기한을 다시 적게 하지 않는다
+
+
+def test_a5_manual_food_must_rewrite_the_expiry_when_the_storage_changes(me, pg):
+    food = add(pg, name="수제청", storage="room", source="manual", expiry_date="2026-11-05")
+    response = info(me, food, storage="fridge")
+    assert shape(response) == (409, "expiry_date", "expiry_required")
+    assert stored(pg, food) == food  # 아무것도 저장하지 않는다
+    body = info(me, food, storage="fridge", expiry_date="2026-12-01").json()
+    assert (body["storage"], body["expiry_date"], body["source"]) == ("fridge", "2026-12-01", "manual")
+
+
+@pytest.mark.parametrize(
+    "extra, expected",
+    [
+        ({"expiry_date": "2026-10-29"}, (422, "expiry_date", "expiry_in_past")),
+        ({"expiry_date": "2026-10-25"}, (422, "expiry_date", "expiry_in_past")),
+        ({"expiry_date": "2026-13-40"}, (422, "expiry_date", "invalid_date")),
+    ],
+)
+def test_a5_manual_food_new_expiry_errors(me, pg, extra, expected):
+    food = add(pg, name="수제청", storage="room", source="manual", expiry_date="2026-11-05")
+    assert shape(info(me, food, storage="fridge", **extra)) == expected
+    assert stored(pg, food) == food
+
+
+def test_a5_storage_not_allowed_and_bad_value(me, pg):
+    egg = add(pg, name="달걀", storage="fridge", expiry_date="2026-11-30")
+    assert shape(info(me, egg, storage="freezer")) == (422, "storage", "storage_not_allowed")  # 달걀 냉동 불가
+    assert shape(info(me, egg, storage="shelf")) == (422, "storage", "invalid_storage")
+    assert shape(info(me, egg, storage=None)) == (422, "storage", "invalid_storage")
+    assert stored(pg, egg) == egg
+
+
+def test_a5_rule_name_vanished_blocks_the_storage_change(me, pg):
+    food = add(pg)
+    pg.execute("DELETE FROM rules WHERE name = '당근'")
+    pg.commit()
+    assert shape(info(me, food, storage="freezer")) == (422, "storage", "rule_not_found")
+
+
+def test_a5_name_then_storage_then_purchase_order(me, pg):
+    # 당근(냉장) → 양파(규칙표 이름)로 바꾸고, 그 식품 기준으로 냉동으로 바꾸고, 구매일을 이틀 뒤로 옮긴다.
+    food = add(pg, name="당근", storage="fridge", purchase_date="2026-10-26", expiry_date="2026-11-16")
+    body = info(me, food, name="양파", storage="freezer", purchase_date="2026-10-28").json()
+    assert (body["name"], body["storage"], body["source"], body["purchase_date"]) == ("양파", "freezer", "rule", "2026-10-28")
+    # 양파 냉장 60일 → 냉동 180일, 구매일 10/26 에서 4일 보관한 비율을 이어받고, 구매일이 2일 움직여 기한도 2일 뒤로
+    expected = date(2026, 10, 30) + timedelta(days=((60 - 4) * 180) // 60) + timedelta(days=2)
+    assert body["expiry_date"] == expected.isoformat()
+
+
+def test_a5_rename_to_unknown_name_and_storage_together_uses_the_written_expiry(me, pg):
+    food = add(pg, name="당근", storage="fridge", expiry_date="2026-11-16")
+    body = info(me, food, name="수제 당근", storage="freezer", expiry_date="2027-01-15").json()
+    assert (body["name"], body["storage"], body["source"], body["expiry_date"]) == ("수제 당근", "freezer", "manual", "2027-01-15")
+    assert body["category"] == "vegetable"  # 바뀌기 전 규칙표의 종류 (Q-34)
+
+
+def test_a5_rename_to_unknown_name_with_storage_still_needs_the_expiry(me, pg):
+    food = add(pg, name="당근", storage="fridge", expiry_date="2026-11-16")
+    assert shape(info(me, food, name="수제 당근", storage="freezer")) == (409, "expiry_date", "expiry_required")
+    assert stored(pg, food) == food
+
+
+def test_a5_storage_and_purchase_together_for_a_rule_food(me, pg):
+    # 보관 방법을 먼저 계산하고(구매일 옛 값 기준), 그 기한을 구매일이 움직인 만큼 옮긴다
+    food = add(pg, purchase_date="2026-10-26", expiry_date="2026-11-16")
+    body = info(me, food, storage="freezer", purchase_date="2026-10-28").json()
+    assert body["expiry_date"] == day(97 + 2)
+
+
+def test_a5_storage_and_purchase_together_for_a_manual_food(me, pg):
+    food = add(pg, name="수제청", storage="room", source="manual", purchase_date="2026-10-20", expiry_date="2026-11-05")
+    body = info(me, food, storage="fridge", expiry_date="2026-12-01", purchase_date="2026-10-25").json()
+    assert (body["storage"], body["expiry_date"], body["purchase_date"]) == ("fridge", "2026-12-01", "2026-10-25")
+    late = info(me, food, storage="room", expiry_date="2026-12-10", purchase_date="2026-12-20")
+    assert shape(late) == (422, "expiry_date", "purchase_after_expiry")  # 구매일이 새 기한보다 뒤
+
+
+def test_a5_expired_food_cannot_change_storage_if_the_new_expiry_is_not_after_today(me, pg):
+    # 이미 지난 당근: 냉동 계산 결과가 음수이면 바꿀 수 없다 (V-10)
+    food = add(pg, purchase_date="2026-08-01", expiry_date="2026-08-22")
+    assert shape(info(me, food, storage="freezer")) == (422, "storage", "storage_change_not_allowed")
+    assert stored(pg, food) == food
+
+
+def test_a5_one_bad_field_saves_nothing_at_all(me, pg):
+    food = add(pg)
+    response = info(me, food, quantity=5, unit="봉", storage="shelf")  # 수량·단위는 맞지만 보관 방법이 틀렸다
+    assert shape(response) == (422, "storage", "invalid_storage")
+    assert stored(pg, food) == food
+    response = info(me, food, quantity=5, storage="freezer", purchase_date="not-a-date")
+    assert shape(response) == (422, "purchase_date", "invalid_date")
+    assert stored(pg, food) == food
+
+
+def test_a5_category_changes_only_for_manual_foods(me, pg):
+    manual = add(pg, name="수제청", source="manual", category="other", expiry_date="2026-11-20")
+    body = info(me, manual, category="fruit").json()
+    assert body["category"] == "fruit" and stored_category(pg, manual) == "fruit"
+    assert (body["expiry_date"], body["status"]) == ("2026-11-20", "none")  # 기한과 상태는 그대로
+    rule = add(pg)
+    body = info(me, rule, category="meat").json()
+    assert body["category"] == "vegetable" and stored_category(pg, rule) is None  # 규칙표 식품은 무시한다
+
+
+@pytest.mark.parametrize("category", [None, "", "snack", "채소", 1])
+def test_a5_category_must_be_one_of_five_even_when_it_would_be_ignored(me, pg, category):
+    manual = add(pg, name="수제청", source="manual", expiry_date="2026-11-20")
+    rule = add(pg)
+    for food in (manual, rule):
+        assert shape(info(me, food, category=category)) == (422, "category", "invalid_category")
+    assert stored(pg, manual)["category"] == "other"
+
+
+def test_a5_other_accounts_and_processed_foods_are_not_found_for_the_new_fields(me, other, pg):
+    mine = add(pg)
+    assert shape(info(other, mine, storage="freezer")) == (404, None, "not_found")
+    me.patch(f"/foods/{mine['id']}/process", json={"status": "eaten"})
+    assert shape(info(me, mine, storage="freezer", category="fruit")) == (404, None, "not_found")
+
+
+def test_a5_empty_body_changes_nothing(me, pg):
+    food = add(pg)
+    assert info(me, food).status_code == 200
+    assert stored(pg, food) == food
+
+
+# ---- 이름을 규칙표 이름으로 바꾸면서 보관 방법도 바꿀 때: 바뀐 뒤 보관 방법 기준 (2026-11-04 사용자 결정) -----
+def test_a5_rename_to_a_rule_name_that_forbids_the_current_storage_but_the_new_storage_is_fine(me, pg):
+    # 당근(냉동 중)을 감자(냉동 불가)로 바꾸면서 냉장으로 바꾼다. 바뀐 뒤 보관 방법(냉장)이 허용이면 저장된다.
+    food = add(pg, name="당근", storage="freezer", purchase_date="2026-10-26", expiry_date="2027-02-23")
+    body = info(me, food, name="감자", storage="fridge").json()
+    assert (body["name"], body["storage"], body["source"]) == ("감자", "fridge", "rule")
+    # 당근 냉동 120일 중 4일 보관 → 감자 냉장 30일 기준 (120 − 4) × 30 ÷ 120 = 29일 남음
+    assert body["expiry_date"] == day(29)
+
+
+def test_a5_manual_food_renamed_to_a_rule_name_with_a_new_storage_uses_the_written_period(me, pg):
+    # 직접 등록 "수제 계란찜"(냉동, 10/20~11/19 = 30일 잡음)을 달걀(냉동 불가)로 바꾸면서 냉장으로 바꾼다
+    food = add(pg, name="수제 계란찜", storage="freezer", source="manual", purchase_date="2026-10-20", expiry_date="2026-11-19")
+    body = info(me, food, name="달걀", storage="fridge").json()
+    assert (body["name"], body["storage"], body["source"], body["category"]) == ("달걀", "fridge", "rule", "other")
+    # 직접 적은 30일 중 10일 보관 → 달걀 냉장 30일 기준 (30 − 10) × 30 ÷ 30 = 20일 남음
+    assert body["expiry_date"] == day(20)
+    assert stored_category(pg, food) is None  # 규칙표 식품이 되었으므로 저장한 종류는 비운다
+
+
+def test_a5_rename_to_a_rule_name_still_fails_when_the_new_storage_is_also_forbidden(me, pg):
+    food = add(pg, name="당근", storage="freezer", purchase_date="2026-10-26", expiry_date="2027-02-23")
+    assert shape(info(me, food, name="감자", storage="freezer")) == (422, "storage", "storage_not_allowed")
+    assert shape(info(me, food, name="감자")) == (422, "storage", "storage_not_allowed")  # 보관 방법을 안 바꾸면 그대로 거절
+    assert stored(pg, food) == food
+
+
+def test_a5_rename_with_a_forbidden_new_storage_for_the_new_name_saves_nothing(me, pg):
+    food = add(pg, name="당근", storage="freezer", purchase_date="2026-10-26", expiry_date="2027-02-23")
+    assert shape(info(me, food, name="달걀", storage="freezer", quantity=9)) == (422, "storage", "storage_not_allowed")
+    assert stored(pg, food) == food

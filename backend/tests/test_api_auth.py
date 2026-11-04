@@ -169,8 +169,8 @@ def put_legacy_foods(pg):
     ids = []
     for name, status, processed in [("양파", "none", None), ("우유", "eaten", "2026-10-30")]:
         row = pg.execute(
-            "INSERT INTO foods (user_id, name, storage, quantity, unit, purchase_date, expiry_date, source, status, processed_date)"
-            " VALUES (%s, %s, 'room', 1, '개', '2026-10-01', '2026-12-01', 'manual', %s, %s) RETURNING id",
+            "INSERT INTO foods (user_id, name, storage, quantity, unit, purchase_date, expiry_date, source, status, processed_date, category)"
+            " VALUES (%s, %s, 'room', 1, '개', '2026-10-01', '2026-12-01', 'manual', %s, %s, 'other') RETURNING id",
             (owner, name, status, processed),
         ).fetchone()
         ids.append(str(row["id"]))

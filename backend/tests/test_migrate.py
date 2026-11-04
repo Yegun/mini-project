@@ -1,4 +1,4 @@
-"""알렘빅 버전 파일 8개 (PostgreSQL 임시 schema). 번호 순서, 올리기·되돌리기, 한 단계씩의 결과, 실패하면 그 파일만 취소."""
+"""알렘빅 버전 파일 9개 (PostgreSQL 임시 schema). 번호 순서, 올리기·되돌리기, 한 단계씩의 결과, 실패하면 그 파일만 취소."""
 import sqlite3
 import uuid
 from datetime import date
@@ -15,7 +15,7 @@ from app.db.users_repo import authenticate
 
 TABLES = {"users", "sessions", "foods", "rules", "rule_aliases", "rule_storage"}
 VERSIONS_DIR = BACKEND_DIR / "alembic" / "versions"
-HEAD = "0008"
+HEAD = "0009"
 
 
 def tables(conn):
@@ -82,11 +82,12 @@ def test_version_files_are_numbered_in_order():
         "0001_create_tables.py", "0002_import_legacy_foods.py", "0003_create_legacy_owner_account.py",
         "0004_assign_ownerless_foods.py", "0005_foods_owner_required.py", "0006_block_public_api.py",
         "0007_legacy_migration_record.py", "0008_photo_analyses_and_rls.py",
+        "0009_danger_category_daily_tips.py",
     ]
 
 
 def test_each_version_points_to_the_one_before():
-    for number in range(1, 9):
+    for number in range(1, 10):
         text = next(VERSIONS_DIR.glob(f"000{number}_*.py")).read_text(encoding="utf-8")
         assert f'revision = "000{number}"' in text
         assert ("down_revision = None" if number == 1 else f'down_revision = "000{number - 1}"') in text
@@ -264,7 +265,7 @@ def test_0004_downgrade_makes_only_the_legacy_foods_ownerless_again(db, tmp_path
 
 # ---- 0005 주인 칸을 비울 수 없게 --------------------------------------------------------------------------
 def test_0005_requires_an_owner_that_exists_and_cascades(db):
-    db.up()
+    db.up("0005")  # 0009 부터는 직접 등록 식품에 종류가 필요해서, 이 시험은 0005 까지만 올린다
     conn = db.conn()
     insert = (
         "INSERT INTO foods (user_id, name, storage, quantity, unit, purchase_date, expiry_date, source)"
@@ -489,6 +490,154 @@ def test_0008_downgrade_drops_the_table_and_turns_rls_off(db):
     conn.close()
 
 
+# ---- 0009 위험·종류 칸과 오늘의 일반 조언 표 -------------------------------------------------------
+ALL_NINE = RLS_TABLES | {"daily_tips"}
+
+
+def columns(conn, table):
+    return {
+        r["column_name"]: (r["data_type"], r["is_nullable"])
+        for r in conn.execute(
+            "SELECT column_name, data_type, is_nullable FROM information_schema.columns"
+            " WHERE table_schema = current_schema() AND table_name = %s",
+            (table,),
+        )
+    }
+
+
+def test_0009_adds_three_columns_to_rules_and_one_to_foods(db):
+    db.up("0009")
+    conn = db.conn()
+    rules = columns(conn, "rules")
+    assert rules["is_danger"] == ("boolean", "NO")
+    assert rules["danger_note"] == ("text", "YES")
+    assert rules["category"] == ("text", "NO")
+    assert columns(conn, "foods")["category"] == ("text", "YES")
+    assert version(conn) == "0009"
+    conn.close()
+
+
+def test_0009_creates_daily_tips_with_one_row_per_day(db):
+    db.up("0009")
+    conn = db.conn()
+    assert columns(conn, "daily_tips") == {"tip_date": ("date", "NO"), "tips": ("jsonb", "NO")}
+    conn.execute("INSERT INTO daily_tips (tip_date, tips) VALUES ('2026-11-04', '[\"a\"]'::jsonb)")
+    conn.commit()
+    with pytest.raises(psycopg.errors.UniqueViolation):  # 하루에 한 줄
+        conn.execute("INSERT INTO daily_tips (tip_date, tips) VALUES ('2026-11-04', '[\"b\"]'::jsonb)")
+    conn.rollback()
+    for bad in ("'[]'::jsonb", "'{\"a\": 1}'::jsonb"):  # 비어 있거나 목록이 아니면 안 된다
+        with pytest.raises(psycopg.errors.CheckViolation):
+            conn.execute(f"INSERT INTO daily_tips (tip_date, tips) VALUES ('2026-11-05', {bad})")
+        conn.rollback()
+    conn.close()
+
+
+def test_0009_turns_row_level_security_on_for_all_nine_tables_without_policies(db):
+    db.up("0009")
+    conn = db.conn()
+    flags = rls_on(conn)
+    assert {t: flags[t] for t in ALL_NINE} == {t: True for t in ALL_NINE}
+    assert conn.execute("SELECT count(*) AS n FROM pg_policies WHERE schemaname = current_schema()").fetchone()["n"] == 0
+    conn.close()
+
+
+def test_0009_fills_the_first_thirty_rules_with_categories_and_seven_dangers(db):
+    from app.db.seed_rules import CATEGORY_OF, DANGER_NOTE_OF
+
+    db.up("0008")
+    conn = db.conn()
+    seeded = [("양파", "room"), ("고등어", "fridge"), ("달걀", "fridge"), ("사과", "fridge")]
+    for name, storage in seeded:  # 0008 모양(새 칸 없음)의 옛 규칙표 줄
+        conn.execute(
+            "INSERT INTO rules (id, name, default_storage) VALUES (gen_random_uuid(), %s, %s)", (name, storage)
+        )
+    conn.execute(  # 사진 등록으로 먼저 더해졌던 식품은 시드에 없다
+        "INSERT INTO rules (id, name, default_storage) VALUES (gen_random_uuid(), '닭가슴살', 'fridge')"
+    )
+    conn.commit()
+    db.up("0009")
+    rows = {r["name"]: r for r in conn.execute("SELECT name, is_danger, danger_note, category FROM rules")}
+    conn.rollback()
+    for name, _ in seeded:
+        assert rows[name]["category"] == CATEGORY_OF[name]
+        assert rows[name]["is_danger"] == (name in DANGER_NOTE_OF)
+        assert rows[name]["danger_note"] == DANGER_NOTE_OF.get(name)
+    assert (rows["닭가슴살"]["category"], rows["닭가슴살"]["is_danger"]) == ("other", False)
+    conn.close()
+
+
+def test_0009_values_equal_the_seed_file():
+    """0009 의 값과 seed_rules.py 의 값이 같아야 한다 (두 곳에 같은 값이 있다)."""
+    import importlib.util
+
+    from app.db import seed_rules
+
+    spec = importlib.util.spec_from_file_location("v0009", VERSIONS_DIR / "0009_danger_category_daily_tips.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    assert module.CATEGORY_OF == seed_rules.CATEGORY_OF
+    assert module.DANGER_NOTE_OF == seed_rules.DANGER_NOTE_OF
+    assert module.CATEGORIES == seed_rules.CATEGORIES
+
+
+def test_0009_sets_other_for_existing_manual_foods_and_leaves_rule_foods_empty(db):
+    db.up("0008")
+    conn = db.conn()
+    uid = conn.execute(
+        "INSERT INTO users (email, password_hash) VALUES ('c@example.com', 'x') RETURNING id"
+    ).fetchone()["id"]
+    for name, source in (("수제청", "manual"), ("양파", "rule")):
+        conn.execute(
+            "INSERT INTO foods (user_id, name, storage, quantity, unit, purchase_date, expiry_date, source, status)"
+            " VALUES (%s, %s, 'room', 1, '개', '2026-10-01', '2026-10-31', %s, 'none')",
+            (uid, name, source),
+        )
+    conn.commit()
+    db.up("0009")
+    got = {r["name"]: r["category"] for r in conn.execute("SELECT name, category FROM foods")}
+    conn.rollback()
+    assert got == {"수제청": "other", "양파": None}
+    conn.close()
+
+
+def test_0009_foods_category_rule_in_the_database(pg):
+    uid = pg.execute("SELECT id FROM users LIMIT 1").fetchone()["id"]
+
+    def insert(source, category):
+        pg.execute(
+            "INSERT INTO foods (user_id, name, storage, quantity, unit, purchase_date, expiry_date, source, status, category)"
+            " VALUES (%s, 'x', 'room', 1, '개', '2026-10-01', '2026-10-31', %s, 'none', %s)",
+            (uid, source, category),
+        )
+
+    insert("manual", "vegetable")  # 직접 등록은 종류가 있으면 된다
+    insert("rule", None)  # 규칙표 식품은 비워 둔다
+    pg.commit()
+    for source, category in (("manual", None), ("manual", "snack"), ("rule", "snack")):
+        with pytest.raises(psycopg.errors.CheckViolation):
+            insert(source, category)
+        pg.rollback()
+
+
+def test_0009_revokes_api_role_access_to_daily_tips(db, api_roles):
+    admin = api_roles
+    admin.row_factory = psycopg.rows.dict_row
+    db.up("0009")
+    for role in ("anon", "authenticated"):
+        assert not can_read(admin, role, db.schema, "daily_tips"), role
+
+
+def test_0009_downgrade_drops_what_it_added(db):
+    db.up("0009")
+    db.down("0008")
+    conn = db.conn()
+    assert "daily_tips" not in tables(conn) and version(conn) == "0008"
+    assert not ({"is_danger", "danger_note", "category"} & set(columns(conn, "rules")))
+    assert "category" not in columns(conn, "foods")
+    conn.close()
+
+
 # ---- 전체 ----------------------------------------------------------------------------------------
 def test_upgrade_to_head_builds_everything(pg):
     assert TABLES <= tables(pg)
@@ -517,12 +666,12 @@ def test_data_survives_running_upgrade_again(pg, pg_url, pg_schema):
 
 
 def test_failed_version_file_changes_nothing(pg, pg_url, pg_schema, tmp_path):
-    """0009 가 중간에 실패하면 그 파일의 일은 전부 취소되고 버전도 0008 에 머문다."""
+    """0010 이 중간에 실패하면 그 파일의 일은 전부 취소되고 버전도 0009 에 머문다."""
     extra = tmp_path / "extra_versions"
     extra.mkdir()
-    (extra / "0009_bad.py").write_text(
+    (extra / "0010_bad.py").write_text(
         'from alembic import op\n'
-        'revision = "0009"\ndown_revision = "0008"\nbranch_labels = None\ndepends_on = None\n'
+        'revision = "0010"\ndown_revision = "0009"\nbranch_labels = None\ndepends_on = None\n'
         'def upgrade():\n'
         '    op.execute("CREATE TABLE should_not_stay (id int)")\n'
         '    op.execute("SELECT 1/0")\n'

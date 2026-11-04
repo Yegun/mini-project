@@ -31,6 +31,7 @@ class ManualFoodBody(RuleFoodBody):
     # 기한은 날짜로 고르거나(expiry_date), 며칠 뒤인지(expiry_in_days) 적는다. 둘 중 하나만.
     expiry_date: Any = None
     expiry_in_days: Any = None
+    category: Any = None  # 식품 종류 (채소·과일·육류·수산·그 밖). 직접 등록은 필수 (V-41)
 
 
 class UpdateBody(Body):
@@ -40,6 +41,8 @@ class UpdateBody(Body):
     unit: Any = None
     purchase_date: Any = None
     expiry_date: Any = None
+    storage: Any = None  # 정보 고치기에서 보관 방법도 함께 바꿀 때
+    category: Any = None  # 직접 등록 식품의 종류. 규칙표 식품에 보내면 무시한다
 
 
 class StorageBody(Body):
@@ -87,8 +90,9 @@ def get_food(food_id: str, conn: Conn, user_id: UserId, today: Today):
 
 @router.patch("/foods/{food_id}")
 def update_food(food_id: str, body: UpdateBody, conn: Conn, user_id: UserId, today: Today):
-    """A5 정보 수정 🔒 (이름, 구매일, 수량, 단위). 보낸 칸만 바꾸고 안 보낸 칸은 그대로다.
+    """A5 정보 고치기 🔒 (이름, 구매일, 수량, 단위, 보관 방법, 종류). 보낸 칸만 바꾸고 안 보낸 칸은 그대로다.
 
+    여러 칸이 함께 오면 이름 → 보관 방법 → 구매일 순서로 기한을 다시 계산하고 한 묶음으로 저장한다 (V-39).
     기한을 다시 적어야 하면 409 expiry_required 로 알리고, 이때는 아무것도 저장하지 않는다.
     """
     fields = {name: getattr(body, name) for name in body.model_fields_set}

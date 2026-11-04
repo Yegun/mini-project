@@ -149,10 +149,12 @@ def test_app_role_can_read_and_add_but_not_change_rules(pg_url, pg_schema, pg_ru
         info.update(user=role, password=password, options=f"-c search_path={pg_schema}")
         app = psycopg.connect(**info, autocommit=True)
         try:
-            # 표 8개에 RLS 가 켜져 있어도(정책 없음) 앱 계정은 RLS 를 건너뛰어 줄을 읽는다 (Q-33)
+            # 표 9개에 RLS 가 켜져 있어도(정책 없음) 앱 계정은 RLS 를 건너뛰어 줄을 읽는다 (Q-33)
             assert app.execute("SELECT count(*) FROM rules").fetchone()[0] == 30
             # 규칙표 식품·보관 방법별 정보는 더할 수 있다 (사진으로 한꺼번에 등록, D-136)
-            app.execute("INSERT INTO rules (id, name, default_storage) VALUES (gen_random_uuid(), 'x', 'room')")
+            app.execute(
+                "INSERT INTO rules (id, name, default_storage, category) VALUES (gen_random_uuid(), 'x', 'room', 'other')"
+            )
             app.execute(
                 "INSERT INTO rule_storage (rule_id, storage, allowed, max_days)"
                 " SELECT id, 'room', true, 3 FROM rules WHERE name = 'x'"
@@ -171,6 +173,12 @@ def test_app_role_can_read_and_add_but_not_change_rules(pg_url, pg_schema, pg_ru
                     app.execute(statement)
             # 식품·계정·로그인 상태 표는 쓸 수 있다
             app.execute("INSERT INTO users (email, password_hash) VALUES ('r@example.com', 'x')")
+            # 오늘의 일반 조언은 읽고 더할 수만 있다 (DATA-MODEL 6-1)
+            app.execute("INSERT INTO daily_tips (tip_date, tips) VALUES ('2026-11-04', '[\"조언\"]'::jsonb)")
+            assert app.execute("SELECT count(*) FROM daily_tips").fetchone()[0] == 1
+            for statement in ("UPDATE daily_tips SET tips = tips", "DELETE FROM daily_tips"):
+                with pytest.raises(psycopg.errors.InsufficientPrivilege):
+                    app.execute(statement)
             # 사진 읽기 결과 표도 쓸 수 있다
             app.execute("INSERT INTO photo_analyses (user_id, items) SELECT id, '[]'::jsonb FROM users")
             app.execute("DELETE FROM photo_analyses")
@@ -250,3 +258,57 @@ def test_seed_does_not_commit_by_itself(pg):
     seed_rules(pg)
     pg.rollback()
     assert pg.execute("SELECT count(*) AS n FROM rules").fetchone()["n"] == 0
+
+
+# ---- 위험 식품·식품 종류 (v0.5.0, DATA-MODEL 5-3, 5-4) ---------------------------------------------------
+def test_seed_sets_category_for_all_30_with_the_documented_group_sizes(pg_rules):
+    rows = pg_rules.execute("SELECT category, count(*) AS n FROM rules GROUP BY category").fetchall()
+    assert {r["category"]: r["n"] for r in rows} == {"vegetable": 13, "fruit": 6, "meat": 3, "seafood": 4, "other": 4}
+
+
+def test_seed_marks_exactly_the_seven_danger_foods_with_their_notes(pg_rules):
+    rows = pg_rules.execute("SELECT name, danger_note FROM rules WHERE is_danger").fetchall()
+    assert {r["name"] for r in rows} == {"고등어", "오징어", "새우", "연어", "돼지고기", "소고기", "닭고기"}
+    assert all(r["danger_note"] for r in rows)
+    assert len({r["danger_note"] for r in rows}) == 7  # 식품마다 다른 문장 (Q-35)
+    egg = pg_rules.execute("SELECT is_danger, danger_note FROM rules WHERE name = '달걀'").fetchone()
+    assert egg == {"is_danger": False, "danger_note": None}  # 달걀은 위험 식품이 아니다 (D-167)
+
+
+def test_danger_foods_are_all_meat_or_seafood(pg_rules):
+    kinds = pg_rules.execute("SELECT DISTINCT category FROM rules WHERE is_danger").fetchall()
+    assert {r["category"] for r in kinds} == {"meat", "seafood"}
+
+
+def test_check_rules_rejects_missing_category(monkeypatch):
+    monkeypatch.setattr(seed_module, "CATEGORY_OF", {k: v for k, v in seed_module.CATEGORY_OF.items() if k != "양파"})
+    with pytest.raises(ValueError):
+        check_rules()
+
+
+def test_check_rules_rejects_danger_without_note_or_unknown_name(monkeypatch):
+    monkeypatch.setattr(seed_module, "DANGER_NOTE_OF", {"고등어": ""})
+    with pytest.raises(ValueError):
+        check_rules()
+    monkeypatch.setattr(seed_module, "DANGER_NOTE_OF", {"없는식품": "이유"})
+    with pytest.raises(ValueError):
+        check_rules()
+
+
+def test_add_rule_stores_danger_and_category(pg_rules):
+    assert add_rule(
+        pg_rules, "생닭", "fridge", storages(fridge=2), is_danger=True, danger_note="덜 익히면 위험해요", category="meat"
+    )
+    row = pg_rules.execute("SELECT is_danger, danger_note, category FROM rules WHERE name = '생닭'").fetchone()
+    assert row == {"is_danger": True, "danger_note": "덜 익히면 위험해요", "category": "meat"}
+
+
+def test_add_rule_defaults_to_not_danger_and_other(pg_rules):
+    add_rule(pg_rules, "닭가슴살", "fridge", storages())
+    row = pg_rules.execute("SELECT is_danger, danger_note, category FROM rules WHERE name = '닭가슴살'").fetchone()
+    assert row == {"is_danger": False, "danger_note": None, "category": "other"}
+
+
+def test_add_rule_drops_a_note_when_not_danger(pg_rules):
+    add_rule(pg_rules, "닭가슴살", "fridge", storages(), is_danger=False, danger_note="이유")
+    assert pg_rules.execute("SELECT danger_note FROM rules WHERE name = '닭가슴살'").fetchone()["danger_note"] is None
