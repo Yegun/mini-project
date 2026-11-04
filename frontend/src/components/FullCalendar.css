@@ -1,0 +1,291 @@
+/* 전체 달력 (SCREEN-SPEC 14절). 색은 index.css 의 색 변수를 쓴다. */
+.fc {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem 1rem 14rem; /* 아래는 날짜 목록 창이 올라와도 마지막 줄이 가려지지 않게 비운다 */
+}
+
+.fc__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.fc__title {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+/* 맨 위 오른쪽 닫기 (13.2 의 2번). 전체 달력에는 로그아웃 버튼을 따로 두지 않는다 */
+.fc__close {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border: none;
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 1.25rem;
+  cursor: pointer;
+}
+
+/* 끝나는 날 / 시작하는 날 기준 (D-147) */
+.fc__basis {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border-radius: 999px;
+  background: var(--soft);
+}
+
+.fc__basis-btn {
+  height: 2.25rem;
+  border: none;
+  border-radius: 999px;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.fc__basis-btn--on {
+  background: var(--btn);
+  color: var(--btn-fg);
+}
+
+.fc__nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.fc__arrow {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 1.75rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.fc__month-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.fc__month {
+  font-size: 1.125rem;
+  font-weight: 900;
+}
+
+.fc__today {
+  height: 1.75rem;
+  padding: 0 0.75rem;
+  border: none;
+  border-radius: 999px;
+  background: var(--btn);
+  color: var(--btn-fg);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.fc__today--here {
+  opacity: 0.45;
+}
+
+.fc__close:focus-visible,
+.fc__basis-btn:focus-visible,
+.fc__arrow:focus-visible,
+.fc__today:focus-visible,
+.fc__cell:focus-visible {
+  outline: 3px solid var(--btn);
+  outline-offset: 2px;
+}
+
+.fc__weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.25rem;
+  text-align: center;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.fc__weekday--sun {
+  color: #e0454a;
+}
+
+.fc__weekday--sat {
+  color: #3b82f6;
+}
+
+:root[data-tone='dark'] .fc__weekday--sun {
+  color: #ff8a8f;
+}
+
+:root[data-tone='dark'] .fc__weekday--sat {
+  color: #7fb0ff;
+}
+
+/* 달이 바뀔 때 달력이 옆으로 스르륵 옮겨 간다. 다음 달은 오른쪽에서, 이전 달은 왼쪽에서 들어온다 (D-186 ~ D-188) */
+.fc__viewport {
+  overflow: hidden;
+}
+
+.fc__grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.25rem;
+}
+
+.fc__grid--next {
+  animation: fc-in-right 0.3s ease;
+}
+
+.fc__grid--prev {
+  animation: fc-in-left 0.3s ease;
+}
+
+@keyframes fc-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(2.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fc-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-2.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fc__grid--next,
+  .fc__grid--prev {
+    animation: none;
+  }
+}
+
+/* 날짜 칸 */
+.fc__cell {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.125rem;
+  min-width: 0;
+  min-height: 4.75rem;
+  padding: 0.25rem;
+  border: 2px solid transparent;
+  border-radius: 0.625rem;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.fc__cell--out {
+  opacity: 0.45; /* 이전 · 다음 달 날짜 */
+}
+
+/* 누른 날짜에는 테두리 */
+.fc__cell--selected {
+  border-color: var(--btn);
+}
+
+.fc__day {
+  display: grid;
+  place-items: center;
+  align-self: flex-start;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+/* 일요일 날짜 숫자는 빨강, 토요일 날짜 숫자는 파랑. 오늘 동그라미 안의 글자는 동그라미 색에 맞춘다 */
+.fc__day--sun {
+  color: #e0454a;
+}
+
+.fc__day--sat {
+  color: #3b82f6;
+}
+
+:root[data-tone='dark'] .fc__day--sun {
+  color: #ff8a8f;
+}
+
+:root[data-tone='dark'] .fc__day--sat {
+  color: #7fb0ff;
+}
+
+.fc__day--today,
+:root[data-tone='dark'] .fc__day--today {
+  background: var(--btn);
+  color: var(--btn-fg);
+}
+
+/* 식품 이름 한 줄: 상태 색 점 + 이름 */
+.fc__chip {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 0;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.fc__dot {
+  flex: none;
+  width: 0.4375rem;
+  height: 0.4375rem;
+  border-radius: 50%;
+}
+
+.fc__chip-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 이름이 다 안 들어가면 남은 수 */
+.fc__more {
+  font-size: 0.6875rem;
+  font-weight: 800;
+  color: var(--muted);
+}
+
+.fc__empty {
+  padding: 1rem 0;
+  color: var(--muted);
+  text-align: center;
+}

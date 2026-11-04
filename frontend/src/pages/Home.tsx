@@ -19,12 +19,13 @@ interface Props {
   onSelectFood?: (id: string) => void // 식품 상세 화면으로
   onAddFood?: () => void // 식품 등록 화면으로
   onTrash?: (food: Food) => void // 휴지통 버튼: 다 먹음 · 버림 · 삭제 선택창
+  onOpenFull?: () => void // 전체 달력 열기 (막대 달력의 연 · 월 옆 >)
 }
 
 // 홈. 순서는 API 가 준 그대로 쓴다. 날짜 판정은 하지 않는다.
 // 알약 수 세기와 거르기는 화면이 홈 목록 하나로 한다 (SCREEN-SPEC 4.6, ARCHITECTURE 9절 31번).
 // 상태 · 보관 방법 · 식품 종류를 함께 걸면 모두 맞는 식품만 보이고, 홈을 다시 열면 '전체'로 돌아온다 (D-140).
-export default function Home({ result, onRetry, onSelectFood, onAddFood, onTrash }: Props) {
+export default function Home({ result, onRetry, onSelectFood, onAddFood, onTrash, onOpenFull }: Props) {
   const [status, setStatus] = useState<StatusFilter>('all')
   const [storage, setStorage] = useState<StorageFilter>('all')
   const [category, setCategory] = useState<CategoryFilter>('all')
@@ -79,7 +80,7 @@ export default function Home({ result, onRetry, onSelectFood, onAddFood, onTrash
         onStorage={setStorage}
         onCategory={setCategory}
       />
-      <WeekCalendar today={today} foods={visible} onSelectFood={onSelectFood} />
+      <WeekCalendar today={today} foods={visible} onSelectFood={onSelectFood} onOpenFull={onOpenFull} />
       {visible.length === 0 ? (
         <p className="notice notice--empty" role="status">
           {noneInStatus ? '그 상태의 식품이 없어요.' : '조건에 맞는 식품이 없어요.'}

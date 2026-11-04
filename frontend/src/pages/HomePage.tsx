@@ -12,6 +12,7 @@ interface Props {
   initial?: FoodListResponse // 탭을 눌러 올 때 이미 불러온 목록 (D-086)
   onSelectFood: (id: string) => void // 달력 막대나 목록의 식품을 누르면 상세 화면으로
   onAddFood: (today: string) => void // 등록 화면으로. 구매일 기본값용으로 API 가 준 오늘 날짜를 함께 넘긴다
+  onOpenCalendar: (data: FoodListResponse) => void // 연 · 월 옆 > : 전체 달력으로. 지금 불러온 목록을 그대로 쓴다 (ARCH 9절 31번)
 }
 
 // 임시 문구 (OQ-03). 처리는 기록 화면에서 홈으로 되돌릴 수 있어 "되돌릴 수 없어요"를 쓰지 않는다 (D-072, 사용자 확정 문구)
@@ -29,7 +30,7 @@ const CONFIRM_LABEL: Record<TrashChoice, string> = { eaten: '다 먹음', discar
 // 홈 화면: 목록을 불러와 Home 에 넘긴다. 로그아웃 버튼은 모든 화면 공통이라 App 에 있다 (D-130).
 // 휴지통 흐름 (SCREEN-SPEC 4.8): 줄의 휴지통 → 아래에서 선택창 → 하나를 고르면 확인 창 → 확인하면 요청.
 // 성공하면 줄이 사라지고(마지막 식품이면 안내 문구와 등록 버튼), 실패하면 오류 메시지가 보이고 그 줄은 그대로 남는다.
-export default function HomePage({ initial, onAddFood, onSelectFood }: Props) {
+export default function HomePage({ initial, onAddFood, onSelectFood, onOpenCalendar }: Props) {
   const { result, reload, refresh } = useFoods(initial)
   const [target, setTarget] = useState<Food | null>(null) // 선택창이 열려 있는 식품
   const [pending, setPending] = useState<{ food: Food; choice: TrashChoice } | null>(null) // 확인 창
@@ -68,6 +69,9 @@ export default function HomePage({ initial, onAddFood, onSelectFood }: Props) {
         result={result}
         onRetry={reload}
         onSelectFood={onSelectFood}
+        onOpenFull={() => {
+          if (result.status === 'ready') onOpenCalendar(result.data)
+        }}
         onTrash={(food) => {
           setError(null)
           setTarget(food)

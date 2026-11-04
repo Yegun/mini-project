@@ -6,6 +6,7 @@ import { setLoginRequiredListener } from './api/session'
 import BottomTabs, { type Tab } from './components/BottomTabs'
 import ConfirmDialog from './components/ConfirmDialog'
 import ErrorNotice from './components/ErrorNotice'
+import FullCalendar from './components/FullCalendar'
 import LogoutBar from './components/LogoutBar'
 import FoodDetailPage from './pages/FoodDetailPage'
 import HomePage from './pages/HomePage'
@@ -14,6 +15,8 @@ import RecommendPage from './pages/RecommendPage'
 import RecordsPage from './pages/RecordsPage'
 import RegisterPage from './pages/RegisterPage'
 import SettingsPage from './pages/SettingsPage'
+import type { CalendarView } from './types/calendar'
+import { INITIAL_CALENDAR_VIEW } from './types/calendar'
 import type { FoodListResponse } from './types/food'
 import type { RecordsData } from './types/records'
 
@@ -25,8 +28,9 @@ type Screen =
   | { name: 'records'; initial?: RecordsData }
   | { name: 'recommend' }
   | { name: 'settings' }
+  | { name: 'calendar'; initial: FoodListResponse; view: CalendarView } // 전체 달력 (홈의 연 · 월 옆 >)
   | { name: 'register'; today: string; from: Tab }
-  | { name: 'detail'; id: string; from: Tab }
+  | { name: 'detail'; id: string; from: Tab; back?: Screen } // back: 뒤로 가면 돌아갈 화면(전체 달력은 보던 모습 그대로, D-150)
 
 function screenOf(tab: Tab): Screen {
   if (tab === 'records') return { name: 'records' }
@@ -148,9 +152,21 @@ function App() {
     page = (
       <FoodDetailPage
         id={screen.id}
-        onBack={() => go(screenOf(screen.from))}
+        onBack={() => go(screen.back ?? screenOf(screen.from))}
         onDone={() => go({ name: 'home' })} // 저장 · 처리 · 삭제 성공 → 홈 (D-020). 홈이 목록을 새로 불러온다
         onDirtyChange={setDirty}
+      />
+    )
+  } else if (screen.name === 'calendar') {
+    page = (
+      <FullCalendar
+        today={screen.initial.today}
+        foods={screen.initial.items}
+        view={screen.view}
+        onClose={() => go({ name: 'home' })} // 닫기(X) → 홈 (13.2 의 2번)
+        onSelectFood={(id, view) =>
+          go({ name: 'detail', id, from: 'home', back: { name: 'calendar', initial: screen.initial, view } })
+        }
       />
     )
   } else if (screen.name === 'records') {
@@ -165,13 +181,15 @@ function App() {
         initial={screen.initial}
         onAddFood={(today) => go({ name: 'register', today, from: 'home' })}
         onSelectFood={(id) => go({ name: 'detail', id, from: 'home' })}
+        onOpenCalendar={(data) => go({ name: 'calendar', initial: data, view: INITIAL_CALENDAR_VIEW })}
       />
     )
   }
 
   return (
     <div className="app--tabs">
-      <LogoutBar onLoggedOut={() => go({ name: 'login' })} />
+      {/* 전체 달력은 홈에서 여는 달력이라 로그아웃 버튼을 따로 두지 않는다 (13.2 의 2번) */}
+      {screen.name !== 'calendar' && <LogoutBar onLoggedOut={() => go({ name: 'login' })} />}
       {tabError && (
         <div className="app__notice">
           <ErrorNotice message={tabError.message} />
