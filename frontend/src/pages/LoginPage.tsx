@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import { login, signup } from '../api/auth'
 import ErrorNotice from '../components/ErrorNotice'
 import FormField from '../components/FormField'
-import { checkSignup, type AuthErrors } from '../lib/authForm'
+import { checkSignup, signupRules, type AuthErrors } from '../lib/authForm'
 import '../components/Register.css'
 
 interface Props {
@@ -78,6 +78,7 @@ export default function LoginPage({ onLoggedIn }: Props) {
             id="email"
             className="input"
             type="email"
+            placeholder={isSignup ? 'abc@mail.com 처럼' : '이메일'}
             inputMode="email"
             autoComplete="email"
             value={email}
@@ -96,6 +97,7 @@ export default function LoginPage({ onLoggedIn }: Props) {
             id="password"
             className="input"
             type="password"
+            placeholder={isSignup ? '8자 이상, 영문 · 숫자 · 특수문자 모두 포함' : '비밀번호'}
             autoComplete={isSignup ? 'new-password' : 'current-password'}
             value={password}
             disabled={busy}
@@ -107,6 +109,17 @@ export default function LoginPage({ onLoggedIn }: Props) {
             }}
           />
         </FormField>
+
+        {isSignup && (
+          <ul className="rules" aria-label="가입 규칙">
+            {signupRules(email, password).map((rule) => (
+              <li key={rule.text} className={rule.ok ? 'rules__item rules__item--ok' : 'rules__item'}>
+                <span aria-hidden="true">{rule.ok ? '✓' : '○'}</span> {rule.text}
+                <span className="visually-hidden">{rule.ok ? ' (지켜짐)' : ' (아직)'}</span>
+              </li>
+            ))}
+          </ul>
+        )}
 
         <button type="submit" className="button button--primary button--wide" disabled={busy}>
           {isSignup ? (busy ? '가입하는 중…' : '가입하기') : busy ? '로그인하는 중…' : '로그인'}

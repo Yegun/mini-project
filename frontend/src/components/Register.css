@@ -372,3 +372,20 @@
   line-height: 1.45;
   word-break: keep-all;
 }
+/* 가입 규칙 안내: 입력하는 동안 규칙마다 지켜졌는지 바로 보인다 (SCREEN-SPEC 3.2) */
+.rules {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.rules__item--ok {
+  color: var(--text);
+  font-weight: 700;
+}
+

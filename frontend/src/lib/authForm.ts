@@ -22,6 +22,17 @@ export function isStrongPassword(password: string): boolean {
   )
 }
 
+// 가입 입력 중 규칙마다 지켜졌는지 보여 주기 위한 목록 (D-184). 보여 주기만 하고 최종 판단은 API 가 한다
+export function signupRules(email: string, password: string): { text: string; ok: boolean }[] {
+  return [
+    { text: '이메일은 @ 와 점이 있는 주소', ok: EMAIL_SHAPE.test(email.trim()) },
+    { text: '비밀번호 8자 이상', ok: password.length >= 8 },
+    { text: '영문 포함', ok: /[A-Za-z]/.test(password) },
+    { text: '숫자 포함', ok: /[0-9]/.test(password) },
+    { text: '특수문자 포함', ok: /[^A-Za-z0-9]/.test(password) },
+  ]
+}
+
 export function checkSignup(email: string, password: string): AuthErrors {
   const errors: AuthErrors = {}
   if (!EMAIL_SHAPE.test(email.trim())) errors.email = INVALID_EMAIL
