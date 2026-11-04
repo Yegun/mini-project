@@ -214,3 +214,22 @@
   font-size: 0.875rem;
   text-align: center;
 }
+
+/* 좁은 폰(360px 이하): 이름 · 보관 · 남은 날 칸을 줄여 요일 칸이 숫자 하나씩 들어가게 한다 */
+@media (max-width: 360px) {
+  .week-calendar {
+    --week-label-w: 5.25rem;
+    --week-storage-w: 2.75rem;
+    --week-bubble-w: 3rem;
+  }
+
+  .week-calendar__day {
+    font-size: 0.6875rem;
+  }
+
+  .week-calendar__date {
+    width: 1.25rem;
+    height: 1.25rem;
+    font-size: 0.6875rem;
+  }
+}

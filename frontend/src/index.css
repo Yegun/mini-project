@@ -145,6 +145,24 @@
   }
 }
 
+/* 화면이 바뀔 때 0.3초 안에 서서히 나타난다 (0절 움직임, D-186 ~ D-188).
+   위치를 옮기는 효과는 쓰지 않는다. 화면 안의 아래 고정 버튼이 움직임 끝에 튀기 때문이다. */
+main {
+  animation: page-in 0.3s ease;
+}
+
+@keyframes page-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  main {
+    animation: none;
+  }
+}
+
 *,
 *::before,
 *::after {
