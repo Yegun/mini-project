@@ -90,14 +90,19 @@ def test_search_by_name_part_gives_name_default_and_disallowed(me):
     assert response.status_code == 200
     items = response.json()["items"]
     assert [i["name"] for i in items] == ["양배추", "양파"]  # 이름순
-    assert set(items[0]) == {"name", "default_storage", "disallowed_storages"}
+    assert set(items[0]) == {"name", "default_storage", "disallowed_storages", "category"}
     onion = next(i for i in items if i["name"] == "양파")
     assert (onion["default_storage"], onion["disallowed_storages"]) == ("room", [])
 
 
 def test_search_shows_disallowed_in_storage_order(me):
     milk = me.get("/rules", params={"q": "우유"}).json()["items"][0]
-    assert milk == {"name": "우유", "default_storage": "fridge", "disallowed_storages": ["room", "freezer"]}
+    assert milk == {
+        "name": "우유",
+        "default_storage": "fridge",
+        "disallowed_storages": ["room", "freezer"],
+        "category": "other",
+    }
 
 
 def test_search_by_alias_shows_the_food_name_once(me):

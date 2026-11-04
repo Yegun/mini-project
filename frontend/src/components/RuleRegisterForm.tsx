@@ -2,7 +2,7 @@ import type { FormValues } from '../lib/registerForm'
 import type { FieldErrors } from '../types/register'
 import type { RuleCandidate } from '../types/rule'
 import FormField from './FormField'
-import { StorageCapsule } from './FoodCapsules'
+import { CategoryCapsule, StorageCapsule } from './FoodCapsules'
 import QuantityUnitDateFields from './QuantityUnitDateFields'
 import { CuisineIcon } from './RecommendIcons'
 import StoragePicker from './StoragePicker'
@@ -48,6 +48,10 @@ export default function RuleRegisterForm({
           <span className="picked-card__sub">
             기본 보관
             <StorageCapsule storage={rule.default_storage} withIcon />
+          </span>
+          <span className="picked-card__sub">
+            종류
+            <CategoryCapsule category={rule.category ?? null} />
           </span>
         </div>
         <button type="button" className="picked-card__change" disabled={submitting} onClick={onChangeFood}>
