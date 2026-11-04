@@ -1,15 +1,148 @@
 /* 휴대폰 화면 우선. 넓은 화면에서는 같은 폭의 한 열을 가운데에 둔다 (SCREEN-SPEC 0절). */
+
+/* ───────── 색 변수 (SCREEN-SPEC 0절, 9.5) ─────────
+   밝기(data-tone: light / dark)와 포인트 색(data-accent: butter / carrot / berry)은 lib/appearance.ts 가
+   문서 맨 위 요소(html)에 속성으로 붙인다. 아래 변수를 쓰는 곳은 색을 직접 적지 않는다.
+   상태 색(여유 · 주의 · 임박 · 지남, lib/statusColor.ts)과 위험 ⚠ 빨강은 어떤 색에서도 바뀌지 않는다 (D-180).
+   값은 비교용 시안에서 가져온 임시 값이다. */
 :root {
-  --text: #1c2b26;
-  --bg: #f4faf7;
+  /* 밝은색 + 버터 옐로 (처음 값) */
+  --bg: #fffbf0; /* 화면 바탕 */
+  --surface: #fff; /* 카드 · 입력칸 바탕 */
+  --soft: #fff6d6; /* 연한 포인트 바탕 (입력칸 · 달력 카드 · 흐린 칸) */
+  --line: #ececec; /* 테두리 */
+  --line-strong: #cfcfcf; /* 입력칸 테두리 */
+  --text: #202020;
+  --muted: #666;
+  --faint: #767676;
+  --acc: #ff9034; /* 포인트 색 (오늘 세로선 등 작은 강조) */
+  --tint: rgba(253, 214, 100, 0.55); /* 지금 있는 탭 뒤 바탕 */
+  --hero-1: #fff2c3; /* 홈 위쪽 띠 그라데이션 */
+  --hero-2: #fdd664;
+  --btn: #202020; /* 주 버튼 바탕. 밝은색에서는 거의 검정, 어두운색에서는 포인트 색 */
+  --btn-fg: #fff;
+  --danger: #b3261e;
+  --danger-bg: #fdeaea;
+  --danger-ink: #7a1f1f;
+  --warn-ink: #8a5300;
+  --status-ring: transparent; /* 어두운색에서 지남(검정)이 바탕에 묻히지 않게 하는 옅은 테두리 */
+  --overlay: rgba(0, 0, 0, 0.4);
+
   --tabs-h: 3.75rem; /* 아래 탭 높이 (components/BottomTabs.css) */
 
-  font: 16px/1.5 system-ui, 'Segoe UI', 'Malgun Gothic', Roboto, sans-serif;
-  color-scheme: light; /* 컴포넌트 색이 밝은 배경 기준이라 어두운 모드는 쓰지 않는다 */
+  font-family: system-ui, 'Segoe UI', 'Malgun Gothic', Roboto, sans-serif;
+  font-size: 16px; /* 글자 크기 5단계가 이 값을 바꾼다. 화면 글자는 모두 rem 이라 같은 비율로 커지고 작아진다 (9.6) */
+  line-height: 1.5;
+  color-scheme: light;
   color: var(--text);
   background: var(--bg);
   -webkit-text-size-adjust: 100%;
   text-rendering: optimizeLegibility;
+}
+
+:root[data-accent='carrot'] {
+  --bg: #fff8f0;
+  --soft: #fff0e0;
+  --acc: #e8590c;
+  --tint: rgba(255, 169, 90, 0.45);
+  --hero-1: #ffe6cc;
+  --hero-2: #ffa95a;
+}
+
+:root[data-accent='berry'] {
+  --bg: #faf8ff;
+  --soft: #f3efff;
+  --acc: #ee6a92;
+  --tint: rgba(185, 165, 255, 0.45);
+  --hero-1: #ece5ff;
+  --hero-2: #b9a5ff;
+}
+
+/* 어두운색 + 버터 옐로 */
+:root[data-tone='dark'] {
+  --bg: #232323;
+  --surface: #2e2e2e;
+  --soft: #3a3418;
+  --line: #3d3d3d;
+  --line-strong: #5a5a5a;
+  --text: #f4f4f4;
+  --muted: #a8a8a8;
+  --faint: #8e8e8e;
+  --acc: #ffb454;
+  --tint: rgba(253, 214, 100, 0.2);
+  --hero-1: #4b3f14;
+  --hero-2: #2f2910;
+  --btn: #fdd664;
+  --btn-fg: #202020;
+  --danger: #ff8a8f;
+  --danger-bg: #3a1f21;
+  --danger-ink: #ffb4b8;
+  --warn-ink: #f2c864;
+  --status-ring: rgba(255, 255, 255, 0.45);
+  --overlay: rgba(0, 0, 0, 0.6);
+  color-scheme: dark;
+}
+
+:root[data-tone='dark'][data-accent='carrot'] {
+  --bg: #241f1b;
+  --surface: #302a24;
+  --soft: #3d2c1c;
+  --line: #43392f;
+  --line-strong: #5c5043;
+  --text: #f6efe8;
+  --muted: #b0a498;
+  --acc: #ff9a4d;
+  --tint: rgba(255, 169, 90, 0.22);
+  --hero-1: #573213;
+  --hero-2: #35200d;
+  --btn: #ffa95a;
+  --btn-fg: #241f1b;
+}
+
+:root[data-tone='dark'][data-accent='berry'] {
+  --bg: #1f1c27;
+  --surface: #2a2635;
+  --soft: #312b47;
+  --line: #3b3550;
+  --line-strong: #52496c;
+  --text: #f1eefa;
+  --muted: #a39db8;
+  --acc: #ff8fb0;
+  --tint: rgba(185, 165, 255, 0.24);
+  --hero-1: #3d3266;
+  --hero-2: #262040;
+  --btn: #b9a5ff;
+  --btn-fg: #1f1c27;
+}
+
+/* 글자 크기 5단계 (설정 > 글자 크기). 가운데가 처음 값 '보통' (SCREEN-SPEC 9.6) */
+:root[data-font='1'] {
+  font-size: 14px;
+}
+:root[data-font='2'] {
+  font-size: 15px;
+}
+:root[data-font='4'] {
+  font-size: 18px;
+}
+:root[data-font='5'] {
+  font-size: 20px;
+}
+
+/* 색이 바뀔 때 서서히 바뀐다 (0절 움직임). 기기에서 움직임 줄이기를 켜 두었으면 바로 바뀐다 */
+:root.appearance-changing,
+:root.appearance-changing * {
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease,
+    border-color 0.3s ease !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root.appearance-changing,
+  :root.appearance-changing * {
+    transition: none !important;
+  }
 }
 
 *,
@@ -21,6 +154,8 @@
 body {
   margin: 0;
   min-height: 100svh;
+  background: var(--bg);
+  color: var(--text);
 }
 
 #root {
@@ -38,6 +173,11 @@ button {
 }
 
 button:focus-visible {
-  outline: 3px solid #0f7a52;
+  outline: 3px solid var(--btn);
   outline-offset: 2px;
+}
+
+/* 어두운색에서 지남(검정)이 바탕에 묻히지 않게 옅은 테두리를 둔다 (D-180) */
+[data-status='expired'] {
+  box-shadow: inset 0 0 0 1px var(--status-ring);
 }

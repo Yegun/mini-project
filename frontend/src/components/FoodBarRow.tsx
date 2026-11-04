@@ -40,6 +40,7 @@ export default function FoodBarRow({ food, today, onSelect }: Props) {
         className={barClass}
         style={barStyle}
         aria-label={description}
+        data-status={food.expiry_status}
         onClick={() => onSelect?.(food.id)}
       />
     </div>

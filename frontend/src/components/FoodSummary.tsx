@@ -26,6 +26,7 @@ export default function FoodSummary({ food }: Props) {
         <dd className="summary__expiry">
           <span
             className="summary__dot"
+            data-status={food.expiry_status}
             style={{ background: statusColor(food.expiry_status) }}
             aria-hidden="true"
           />

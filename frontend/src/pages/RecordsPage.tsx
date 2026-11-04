@@ -105,7 +105,7 @@ function RecordsView({ data, restoringId, onRestore, onAddFood }: ViewProps) {
           <dd className="records__statuses">
             {STATUSES.map((s) => (
               <span key={s} className="records__status">
-                <span className="records__dot" style={{ background: statusColor(s) }} aria-hidden="true" />
+                <span className="records__dot" data-status={s} style={{ background: statusColor(s) }} aria-hidden="true" />
                 {STATUS_LABEL[s]} {summary.by_status[s]}
               </span>
             ))}

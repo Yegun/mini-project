@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { withdraw } from '../api/account'
+import AppearanceSettings from '../components/AppearanceSettings'
 import WithdrawDialog from '../components/WithdrawDialog'
 import '../components/Register.css'
 
@@ -19,7 +20,8 @@ const PRIVACY_ITEMS = [
   '탈퇴하면 계정과 식품이 모두 삭제돼요.',
 ]
 
-// 설정 화면 (US-023 ~ US-025, SCREEN-SPEC 9절): 개인정보 안내 + [계정 탈퇴]. 그 밖의 설정은 없다 (PRD 5-3).
+// 설정 화면 (US-023 ~ US-025, SCREEN-SPEC 9절): 화면 모양(밝기 · 포인트 색 · 글자 크기) + 개인정보 안내 + [계정 탈퇴].
+// 기한 기준 조절 같은 다른 설정은 없다 (PRD 5-3).
 export default function SettingsPage({ onWithdrawn }: Props) {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -59,6 +61,8 @@ export default function SettingsPage({ onWithdrawn }: Props) {
       <header className="register__header">
         <h1 className="register__title">설정</h1>
       </header>
+
+      <AppearanceSettings />
 
       <details className="settings__privacy">
         <summary className="settings__summary">개인정보 안내</summary>

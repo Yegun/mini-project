@@ -1,4 +1,4 @@
-/* 식품 등록 화면. 색은 홈과 같은 값을 쓴다 (#0f7a52 초록, #d9e3df 테두리). */
+/* 식품 등록 화면. 색은 index.css 의 색 변수를 쓴다. */
 .register {
   display: flex;
   flex-direction: column;
@@ -45,7 +45,7 @@
 /* AI 안내: 작고 연한 글씨 (D-105) */
 .register-choice__hint {
   margin: 0;
-  color: #8a9691;
+  color: var(--faint);
   font-size: 0.8125rem;
   text-align: center;
 }
@@ -71,15 +71,15 @@
   flex-direction: column;
   gap: 0.75rem;
   padding: 0.75rem 1rem 1rem;
-  border: 1px solid #d9e3df;
+  border: 1px solid var(--line);
   border-radius: 0.75rem;
-  background: #fff;
+  background: var(--surface);
 }
 
 /* 뺀 줄은 흐리게 (다시 넣을 수 있다) */
 .review-card--off {
   opacity: 0.55;
-  background: #f4faf7;
+  background: var(--soft);
 }
 
 .review-card__head {
@@ -108,7 +108,7 @@
 }
 
 .photo-upload__pick:has(.photo-upload__input:focus-visible) {
-  outline: 3px solid #0f7a52;
+  outline: 3px solid var(--btn);
   outline-offset: 2px;
 }
 
@@ -126,9 +126,9 @@
 
 /* 설정 */
 .settings__privacy {
-  border: 1px solid #d9e3df;
+  border: 1px solid var(--line);
   border-radius: 0.75rem;
-  background: #fff;
+  background: var(--surface);
 }
 
 .settings__summary {
@@ -146,8 +146,8 @@
 }
 
 .settings__withdraw {
-  border-color: #b3261e;
-  color: #b3261e;
+  border-color: var(--danger);
+  color: var(--danger);
 }
 
 /* 검색 */
@@ -174,9 +174,9 @@
   width: 100%;
   min-height: 3rem;
   padding: 0.75rem 1rem;
-  border: 1px solid #d9e3df;
+  border: 1px solid var(--line);
   border-radius: 0.75rem;
-  background: #fff;
+  background: var(--surface);
   font: inherit;
   font-weight: 700;
   text-align: left;
@@ -189,9 +189,9 @@
   justify-content: space-between;
   gap: 0.75rem;
   padding: 0.75rem 1rem;
-  border: 1px solid #d9e3df;
+  border: 1px solid var(--line);
   border-radius: 0.75rem;
-  background: #fff;
+  background: var(--surface);
 }
 
 .picked-food__name {
@@ -218,12 +218,12 @@
 }
 
 .field__hint {
-  color: #5d6670;
+  color: var(--muted);
   font-size: 0.875rem;
 }
 
 .field__error {
-  color: #b3261e;
+  color: var(--danger);
   font-size: 0.875rem;
   word-break: keep-all;
 }
@@ -232,19 +232,19 @@
   width: 100%;
   min-height: 2.75rem;
   padding: 0 0.75rem;
-  border: 1px solid #b9c9c3;
+  border: 1px solid var(--line-strong);
   border-radius: 0.75rem;
-  background: #fff;
+  background: var(--surface);
   font: inherit; /* 16px 이상이어야 휴대폰에서 확대되지 않는다 */
   color: inherit;
 }
 
 .input[aria-invalid='true'] {
-  border-color: #b3261e;
+  border-color: var(--danger);
 }
 
 .input:focus-visible {
-  outline: 3px solid #0f7a52;
+  outline: 3px solid var(--btn);
   outline-offset: 2px;
 }
 
@@ -268,9 +268,9 @@
   flex: 1;
   min-height: 2.75rem;
   padding: 0 0.5rem;
-  border: 1px solid #b9c9c3;
+  border: 1px solid var(--line-strong);
   border-radius: 0.75rem;
-  background: #fff;
+  background: var(--surface);
   font: inherit;
   font-weight: 700;
   cursor: pointer;
@@ -284,16 +284,16 @@
 }
 
 .choice--selected {
-  border-color: #0f7a52;
-  background: #0f7a52;
-  color: #fff;
+  border-color: var(--btn);
+  background: var(--btn);
+  color: var(--btn-fg);
 }
 
 /* 불가: 숨기지 않고 흐리게 (D-005) */
 .choice--dim {
   border-style: dashed;
-  background: #f4faf7;
-  color: #8a9691;
+  background: var(--soft);
+  color: var(--faint);
   cursor: not-allowed;
 }
 
@@ -307,18 +307,18 @@
 .button {
   min-height: 2.75rem;
   padding: 0 1.25rem;
-  border: 1px solid #0f7a52;
+  border: 1px solid var(--btn);
   border-radius: 999px;
-  background: #fff;
-  color: #0f7a52;
+  background: var(--surface);
+  color: var(--btn);
   font: inherit;
   font-weight: 700;
   cursor: pointer;
 }
 
 .button--primary {
-  background: #0f7a52;
-  color: #fff;
+  background: var(--btn);
+  color: var(--btn-fg);
 }
 
 .button--wide {

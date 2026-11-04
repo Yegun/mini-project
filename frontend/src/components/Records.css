@@ -1,4 +1,4 @@
-/* 기록 화면. 색은 홈과 같은 값을 쓴다 (#0f7a52 초록, #d9e3df 테두리). */
+/* 기록 화면. 색은 index.css 의 색 변수를 쓴다. */
 .records__section {
   display: flex;
   flex-direction: column;
@@ -18,9 +18,9 @@
 
 .records__card {
   padding: 1rem;
-  border: 1px solid #d9e3df;
+  border: 1px solid var(--line);
   border-radius: 1rem;
-  background: #fff;
+  background: var(--surface);
 }
 
 .records__card-title {
@@ -34,13 +34,13 @@
   gap: 0.5rem 1rem;
   margin: 0;
   padding: 1rem;
-  border: 1px solid #d9e3df;
+  border: 1px solid var(--line);
   border-radius: 1rem;
-  background: #fff;
+  background: var(--surface);
 }
 
 .records__table dt {
-  color: #5d6670;
+  color: var(--muted);
 }
 
 .records__table dd {
@@ -75,7 +75,7 @@
 .records__group-title {
   margin: 0;
   font-size: 1rem;
-  color: #5d6670;
+  color: var(--muted);
 }
 
 .records__list {
@@ -93,9 +93,9 @@
   justify-content: space-between;
   gap: 0.75rem;
   padding: 0.75rem 1rem;
-  border: 1px solid #d9e3df;
+  border: 1px solid var(--line);
   border-radius: 0.75rem;
-  background: #fff;
+  background: var(--surface);
 }
 
 .records__item-text {
@@ -110,10 +110,10 @@
 }
 
 .records__item-meta {
-  color: #5d6670;
+  color: var(--muted);
   font-size: 0.875rem;
 }
 
 .records__empty {
-  color: #5d6670;
+  color: var(--muted);
 }

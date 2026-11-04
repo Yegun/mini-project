@@ -18,9 +18,9 @@
 
 .recommend__card {
   padding: 0.75rem 1rem;
-  border: 1px solid #d9e3df;
+  border: 1px solid var(--line);
   border-radius: 0.75rem;
-  background: #fff;
+  background: var(--surface);
 }
 
 .recommend__name {
@@ -37,7 +37,7 @@
 
 /* 지금 없는 재료는 눈에 띄게 따로 (D-115) */
 .recommend__ingredients--missing {
-  color: #8a5300;
+  color: var(--warn-ink);
 }
 
 .recommend__label {
@@ -47,9 +47,9 @@
 .recommend__empty {
   margin: 0;
   padding: 1.25rem 1rem;
-  border: 1px solid #d9e3df;
+  border: 1px solid var(--line);
   border-radius: 0.75rem;
-  background: #fff;
+  background: var(--surface);
   text-align: center;
   line-height: 1.5;
   word-break: keep-all;

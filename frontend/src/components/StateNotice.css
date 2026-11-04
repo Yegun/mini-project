@@ -15,13 +15,13 @@
 }
 
 .notice--error {
-  background: #fdeaea;
-  color: #7a1f1f;
+  background: var(--danger-bg);
+  color: var(--danger-ink);
 }
 
 .notice--empty {
-  background: #fff;
-  border: 1px solid #d9e3df;
+  background: var(--surface);
+  border: 1px solid var(--line);
 }
 
 .notice__button {
@@ -37,7 +37,7 @@
 }
 
 .notice__button--primary {
-  border-color: #0f7a52;
-  background: #0f7a52;
-  color: #fff;
+  border-color: var(--btn);
+  background: var(--btn);
+  color: var(--btn-fg);
 }

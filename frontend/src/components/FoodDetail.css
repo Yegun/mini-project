@@ -4,9 +4,9 @@
   flex-direction: column;
   gap: 0.75rem;
   padding: 1rem;
-  border: 1px solid #d9e3df;
+  border: 1px solid var(--line);
   border-radius: 1rem;
-  background: #fff;
+  background: var(--surface);
 }
 
 .detail__heading {
@@ -25,16 +25,16 @@
 }
 
 .button--danger {
-  border-color: #b3261e;
-  color: #b3261e;
+  border-color: var(--danger);
+  color: var(--danger);
 }
 
 /* 요약 */
 .summary {
   padding: 1rem;
-  border: 1px solid #d9e3df;
+  border: 1px solid var(--line);
   border-radius: 1rem;
-  background: #fff;
+  background: var(--surface);
 }
 
 .summary__name {
@@ -51,7 +51,7 @@
 }
 
 .summary__list dt {
-  color: #5d6670;
+  color: var(--muted);
 }
 
 .summary__list dd {
@@ -79,7 +79,7 @@
 }
 
 .confirm::backdrop {
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--overlay);
 }
 
 .confirm__message {

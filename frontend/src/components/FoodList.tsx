@@ -16,6 +16,7 @@ export default function FoodList({ foods, onSelect }: Props) {
           <button type="button" className="food-list__item" onClick={() => onSelect?.(food.id)}>
             <span
               className="food-list__strip"
+              data-status={food.expiry_status}
               style={{ background: statusColor(food.expiry_status) }}
               aria-hidden="true"
             />
