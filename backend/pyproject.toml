@@ -5,9 +5,11 @@ description = "task-flow API (FastAPI)"
 requires-python = ">=3.12"
 dependencies = [
     "alembic>=1.20.1",
+    "anthropic>=2.4.0",
     "argon2-cffi>=25.1.0",
     "fastapi",
     "psycopg[binary]>=3.3.6",
+    "python-multipart>=0.0.33",
     "uvicorn",
 ]
 

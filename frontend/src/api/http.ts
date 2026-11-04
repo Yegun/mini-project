@@ -5,14 +5,16 @@ import { notifyLoginRequired } from './session'
 // 요청을 보내고 Response 를 돌려준다. API 에 닿지 못하면 null.
 // 401 중 login_required 만 로그인 화면으로 보낸다. 로그인 실패(login_failed)도 401 이지만
 // 그때는 로그인 화면에 그대로 남아 안내만 보여야 하므로 reason 으로 가른다.
-export async function send(path: string, method = 'GET', body?: object): Promise<Response | null> {
+// body 가 FormData(사진 올리기)이면 그대로 보낸다. 브라우저가 Content-Type 을 알아서 붙인다.
+export async function send(path: string, method = 'GET', body?: object | FormData): Promise<Response | null> {
   let res: Response
+  const isForm = body instanceof FormData
   try {
     res = await fetch(path, {
       method,
       credentials: 'same-origin',
-      headers: body ? { 'Content-Type': 'application/json' } : undefined,
-      body: body ? JSON.stringify(body) : undefined,
+      headers: body && !isForm ? { 'Content-Type': 'application/json' } : undefined,
+      body: body ? (isForm ? body : JSON.stringify(body)) : undefined,
     })
   } catch {
     return null
