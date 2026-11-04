@@ -47,6 +47,7 @@ export default function PhotoReview({ analysis, onDone, onReupload, onDirtyChang
   const seqs = useRef<number[]>([]) // 늦게 온 옛 규칙표 검색 결과가 덮어쓰지 않게
   const timers = useRef<(ReturnType<typeof setTimeout> | undefined)[]>([])
 
+  const includedCount = lines.filter((l) => l.included).length
   const edited = lines.some(isEdited)
   useEffect(() => {
     onDirtyChange?.(edited)
@@ -174,8 +175,6 @@ export default function PhotoReview({ analysis, onDone, onReupload, onDirtyChang
     }
   }
 
-  const includedCount = lines.filter((l) => l.included).length
-
   return (
     <form
       className="register__form"
@@ -197,7 +196,12 @@ export default function PhotoReview({ analysis, onDone, onReupload, onDirtyChang
       )}
 
       {/* 확인 화면 맨 위의 작고 연한 안내 한 줄 (D-182) */}
-      <p className="register-choice__hint">가려지거나 빠진 식품이 있을 수 있어요. 틀린 것만 고쳐 주세요.</p>
+      <div className="review__intro">
+        <p className="review__summary">
+          읽은 식품 <strong>{lines.length}개</strong> 중 <strong>{includedCount}개</strong> 등록
+        </p>
+        <p className="register-choice__hint">가려지거나 빠진 식품이 있을 수 있어요. 틀린 것만 고쳐 주세요.</p>
+      </div>
 
       <ul className="review__list" aria-label="읽은 식품">
         {lines.map((line, i) => (
@@ -237,7 +241,7 @@ export default function PhotoReview({ analysis, onDone, onReupload, onDirtyChang
           className="button button--primary button--wide"
           disabled={submitting || includedCount === 0}
         >
-          {submitting ? '등록하는 중…' : '한꺼번에 등록'}
+          {submitting ? '등록하는 중…' : includedCount > 0 ? `${includedCount}개 한꺼번에 등록` : '한꺼번에 등록'}
         </button>
       </div>
     </form>
@@ -277,7 +281,8 @@ function ReviewCard({ index, line, disabled, onToggle, onName, onNameBlur, onVal
     <li className={off ? 'review-card review-card--off' : 'review-card'}>
       <div className="review-card__head">
         <strong className="review-card__title">
-          식품 {index + 1}
+          <span className="review-card__no">{index + 1}</span>
+          <span className="review-card__name">{line.item.name}</span>
           {danger && <DangerMark note={line.item.danger_note} />}
         </strong>
         <button type="button" className="button button--link" disabled={disabled} onClick={onToggle}>

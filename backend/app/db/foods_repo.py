@@ -215,12 +215,14 @@ def list_processed_for_advice(conn: psycopg.Connection, user_id: str, limit: int
 def list_processed_foods(conn: psycopg.Connection, user_id: str) -> dict[str, list[dict]]:
     """기록 화면의 처리한 식품 목록 (D2). 다 먹음 / 버림을 나눠, 최근 처리한 순 → 이름순 (D-073, D-074).
 
-    줄마다 id, name, quantity, unit, processed_date 만 준다.
+    줄마다 id, name, quantity, unit, processed_date, category 를 준다. category 는 홈 목록과 같은 방식으로 붙인다.
     """
     rows = conn.execute(
-        "SELECT id, name, quantity, unit, status, processed_date FROM foods"
-        " WHERE user_id = %s AND status <> 'none'"
-        ' ORDER BY processed_date DESC, name COLLATE "C", id',
+        "SELECT f.id, f.name, f.quantity, f.unit, f.status, f.processed_date,"
+        " CASE WHEN f.source = 'manual' THEN f.category ELSE r.category END AS category"
+        " FROM foods f LEFT JOIN rules r ON f.source = 'rule' AND r.name = f.name"
+        " WHERE f.user_id = %s AND f.status <> 'none'"
+        ' ORDER BY f.processed_date DESC, f.name COLLATE "C", f.id',
         (user_id,),
     ).fetchall()
     result: dict[str, list[dict]] = {"eaten": [], "discarded": []}
@@ -232,6 +234,7 @@ def list_processed_foods(conn: psycopg.Connection, user_id: str) -> dict[str, li
                 "quantity": float(row["quantity"]),
                 "unit": row["unit"],
                 "processed_date": row["processed_date"].isoformat(),
+                "category": row["category"],
             }
         )
     return result

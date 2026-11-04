@@ -19,7 +19,7 @@ def _as_date(value) -> date:
 def records_summary(conn: psycopg.Connection, user_id: str, today) -> dict:
     """모양:
     {"eaten": {"year", "month"}, "discarded": {"year", "month"}, "food_kinds": int,
-     "by_storage": {"room", "fridge", "freezer"}, "expiry_dates": ["YYYY-MM-DD", ...]}
+     "by_storage": {"room", "fridge", "freezer"}, "by_category": {종류: 수}, "expiry_dates": ["YYYY-MM-DD", ...]}
     """
     today = _as_date(today)
     year_start = date(today.year, 1, 1)
@@ -44,10 +44,20 @@ def records_summary(conn: psycopg.Connection, user_id: str, today) -> dict:
         "SELECT expiry_date FROM foods WHERE user_id = %s AND status = 'none' ORDER BY expiry_date",
         (user_id,),
     ).fetchall()
+    category_rows = conn.execute(
+        "SELECT COALESCE(CASE WHEN f.source = 'manual' THEN f.category ELSE r.category END, 'other') AS category,"
+        " count(*) AS n FROM foods f LEFT JOIN rules r ON f.source = 'rule' AND r.name = f.name"
+        " WHERE f.user_id = %s AND f.status = 'none' GROUP BY 1",
+        (user_id,),
+    ).fetchall()
+    by_category = {"vegetable": 0, "fruit": 0, "meat": 0, "seafood": 0, "other": 0}
+    for r in category_rows:
+        by_category[r["category"]] = r["n"]
     return {
         "eaten": {"year": row["eaten_year"], "month": row["eaten_month"]},
         "discarded": {"year": row["discarded_year"], "month": row["discarded_month"]},
         "food_kinds": row["food_kinds"],
         "by_storage": {"room": row["room"], "fridge": row["fridge"], "freezer": row["freezer"]},
+        "by_category": by_category,
         "expiry_dates": [r["expiry_date"].isoformat() for r in expiry_rows],
     }

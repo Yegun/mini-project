@@ -67,14 +67,31 @@
   gap: 0.75rem;
 }
 
+.review__intro {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.review__summary {
+  margin: 0;
+  font-size: 1.0625rem;
+  font-weight: 700;
+}
+
+.review__summary strong {
+  color: var(--btn);
+}
+
 .review-card {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  padding: 0.75rem 1rem 1rem;
+  padding: 0.875rem 1.125rem 1.125rem;
   border: 1px solid var(--line);
-  border-radius: 0.75rem;
+  border-radius: 1.25rem;
   background: var(--surface);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 /* 뺀 줄은 흐리게 (다시 넣을 수 있다) */
@@ -87,6 +104,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 0.5rem;
+  padding-bottom: 0.625rem;
+  border-bottom: 1px solid var(--line);
 }
 
 .review-card__body {
@@ -315,7 +335,27 @@
 .review-card__title {
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: 0.5rem;
+  min-width: 0;
+  font-size: 1.125rem;
+}
+
+.review-card__no {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  background: var(--btn);
+  color: var(--btn-fg);
+  font-size: 0.8125rem;
+  font-weight: 800;
+}
+
+.review-card__name {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 /* 위험 식품 안내 상자: 빨간 안내 (SCREEN-SPEC 16.2). 위험 ⚠ 는 늘 빨강이다 */
