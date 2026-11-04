@@ -32,6 +32,9 @@ function mockData(): AnalyzeData {
         ],
         purchase_date: today,
         from_rule: true,
+        is_danger: false,
+        danger_note: null,
+        category: 'other',
       },
       {
         item_no: 1,
@@ -44,6 +47,9 @@ function mockData(): AnalyzeData {
         ],
         purchase_date: today,
         from_rule: false,
+        is_danger: true,
+        danger_note: '닭고기는 덜 익혀 먹으면 살모넬라 같은 식중독의 위험이 있어요',
+        category: 'meat',
       },
       {
         item_no: 2,
@@ -56,6 +62,9 @@ function mockData(): AnalyzeData {
         ],
         purchase_date: today,
         from_rule: false,
+        is_danger: false,
+        danger_note: null,
+        category: 'vegetable',
       },
     ],
   }

@@ -26,7 +26,11 @@ def storages(room=None, fridge=None, freezer=None):
 
 
 def item(name="닭가슴살", recommended="fridge", **kw):
-    return {"name": name, "recommended_storage": recommended, "storages": kw.get("storages", storages(fridge=3, freezer=90))}
+    """AI 가 주는 한 줄. 위험 여부(danger)·이유·종류도 준다 (V-36). 기본은 위험 아님, other."""
+    return {
+        "name": name, "recommended_storage": recommended, "storages": kw.get("storages", storages(fridge=3, freezer=90)),
+        "danger": kw.get("danger", False), "danger_note": kw.get("danger_note"), "category": kw.get("category", "other"),
+    }
 
 
 def upload(client, data=JPG, filename="receipt.jpg", content_type="image/jpeg", field="image"):
@@ -123,10 +127,12 @@ def test_returns_items_with_numbers_and_keeps_the_text_result(client, me, pg, ai
         {
             "item_no": 0, "name": "닭가슴살", "recommended_storage": "fridge",
             "storages": storages(fridge=3, freezer=90), "purchase_date": "2026-10-28", "from_rule": False,
+            "is_danger": False, "danger_note": None, "category": "other",
         },
         {
             "item_no": 1, "name": "김치", "recommended_storage": "fridge",
             "storages": storages(room=2, fridge=60), "purchase_date": "2026-10-28", "from_rule": False,
+            "is_danger": False, "danger_note": None, "category": "other",
         },
     ]
     kept = photo_analyses_repo.get_valid_analysis(pg, me, body["analysis_id"])
@@ -296,3 +302,94 @@ def test_nothing_else_is_changed(client, me, pg, ai_answer):
     upload(client)
     after = {t: pg.execute(f"SELECT count(*) AS n FROM {t}").fetchone()["n"] for t in before}
     assert after == before  # 식품도 규칙표도 바꾸지 않는다 (D-136)
+
+
+# ---- 위험 여부·식품 종류 (v0.5.0, V-36, D-165, D-190, D-191, API-SPEC F1) --------------------------------
+def analyzed(client, ai_answer, *items, receipt_date="2026-10-28"):
+    ai_answer["answer"] = {"items": list(items), "receipt_date": receipt_date}
+    response = upload(client)
+    assert response.status_code == 200, response.text
+    return response.json()
+
+
+def test_ai_danger_and_category_are_returned_as_is_for_a_new_food(client, me, ai_answer):
+    body = analyzed(
+        client, ai_answer,
+        item("생닭", danger=True, danger_note="  덜 익히면 위험해요  ", category="meat", storages=storages(fridge=2, freezer=90)),
+    )
+    got = body["items"][0]
+    assert (got["is_danger"], got["danger_note"], got["category"], got["from_rule"]) == (True, "덜 익히면 위험해요", "meat", False)
+    assert "danger" not in got  # AI 의 칸 이름 danger 는 응답에서 is_danger 로 바뀐다 (API-SPEC 5절 49번)
+
+
+def test_rule_table_danger_and_category_win_over_the_ai_values(client, me, ai_answer):
+    # AI 는 닭고기를 위험 아님·수산으로, 달걀을 위험·육류로 잘못 줬다. 규칙표 값이 쓰인다 (D-190, D-191)
+    body = analyzed(
+        client, ai_answer,
+        item("닭고기", danger=False, category="seafood", storages=storages(fridge=2, freezer=180)),
+        item("달걀", danger=True, danger_note="AI 가 잘못 준 이유", category="meat", storages=storages(room=7, fridge=30)),
+    )
+    chicken, egg = body["items"]
+    assert (chicken["from_rule"], chicken["is_danger"], chicken["category"]) == (True, True, "meat")
+    assert chicken["danger_note"] == "닭고기는 덜 익혀 먹으면 살모넬라 같은 식중독의 위험이 있어요"
+    assert (egg["is_danger"], egg["danger_note"], egg["category"]) == (False, None, "other")
+
+
+def test_alias_gets_the_formal_names_danger_and_category(client, me, ai_answer):
+    got = analyzed(client, ai_answer, item("쇠고기", danger=False, category="other", storages=storages(fridge=3, freezer=180)))["items"][0]
+    assert (got["name"], got["is_danger"], got["category"]) == ("소고기", True, "meat")
+
+
+@pytest.mark.parametrize("danger", [None, "true", "참", 1, 0, [], {}])
+def test_a_line_without_a_clear_danger_value_is_dropped(client, me, ai_answer, danger):
+    keep = item("김치", storages=storages(room=2, fridge=60))
+    body = analyzed(client, ai_answer, item("생닭", danger=danger), keep)
+    assert [i["name"] for i in body["items"]] == ["김치"]  # V-36: 그 줄만 빠지고 나머지는 남는다
+    assert body["items"][0]["item_no"] == 0
+
+
+def test_a_line_without_the_danger_key_is_dropped(client, me, ai_answer):
+    broken = item("생닭")
+    del broken["danger"]
+    assert analyzed(client, ai_answer, broken) == {"analysis_id": None, "items": []}
+
+
+@pytest.mark.parametrize("note", [None, "", "   ", 3, [], {}])
+def test_a_danger_line_without_a_usable_note_is_dropped(client, me, ai_answer, note):
+    assert analyzed(client, ai_answer, item("생닭", danger=True, danger_note=note))["items"] == []
+
+
+def test_a_note_on_a_not_danger_line_is_cleared(client, me, ai_answer):
+    got = analyzed(client, ai_answer, item("김치", danger=False, danger_note="필요 없는 글", storages=storages(room=2, fridge=60)))["items"][0]
+    assert (got["is_danger"], got["danger_note"]) == (False, None)
+
+
+@pytest.mark.parametrize("category", [None, "", "snack", "채소", 1, ["meat"]])
+def test_an_unreadable_category_becomes_other_and_the_line_stays(client, me, ai_answer, category):
+    got = analyzed(client, ai_answer, item("김치", category=category, storages=storages(room=2, fridge=60)))["items"][0]
+    assert got["category"] == "other"
+
+
+@pytest.mark.parametrize("category", ["vegetable", "fruit", "meat", "seafood", "other"])
+def test_each_of_the_five_categories_is_kept(client, me, ai_answer, category):
+    got = analyzed(client, ai_answer, item("김치", category=category, storages=storages(room=2, fridge=60)))["items"][0]
+    assert got["category"] == category
+
+
+def test_danger_and_category_are_kept_with_the_stored_text_result(client, me, pg, ai_answer):
+    body = analyzed(client, ai_answer, item("생닭", danger=True, danger_note="이유", category="meat"))
+    kept = photo_analyses_repo.get_valid_analysis(pg, me, body["analysis_id"])
+    assert kept["items"] == body["items"]
+    assert (kept["items"][0]["is_danger"], kept["items"][0]["category"]) == (True, "meat")  # 한꺼번에 등록이 여기서 가져간다
+
+
+def test_dropping_a_line_for_danger_does_not_touch_the_rule_table(client, me, pg, ai_answer):
+    analyzed(client, ai_answer, item("생닭", danger=None))
+    assert rules_repo.get_rule_by_name(pg, "생닭") is None
+
+
+def test_the_photo_instructions_ask_for_danger_and_category():
+    # 지시문이 AI 에게 위험 여부·이유·종류를 달라고 하는지 (AI 를 부르지 않고 글만 확인한다)
+    text = ai.PHOTO_SYSTEM
+    for word in ("danger", "danger_note", "category", "vegetable", "fruit", "meat", "seafood", "other"):
+        assert word in text, word

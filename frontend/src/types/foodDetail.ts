@@ -1,6 +1,6 @@
 // 식품 상세(A4), 정보 수정(A5), 보관 방법 변경(A6), 처리(A7), 삭제(A8) 요청·결과 모양. 기준은 API-SPEC 2-3.
 // 칸 이름·값이 바뀌면 이 파일과 api/foodDetail.ts, mocks/ 만 고친다.
-import type { Food, Storage } from './food'
+import type { Category, Food, Storage } from './food'
 import type { FieldErrors } from './register'
 import type { RuleStorageOption } from './rule'
 
@@ -19,6 +19,8 @@ export interface UpdateFoodInput {
   unit?: string
   purchase_date?: string
   expiry_date?: string
+  storage?: Storage // 정보 고치기에서 보관 방법도 함께 바꿀 때 (API-SPEC A5). 화면 연결은 이슈 8
+  category?: Category // 직접 등록 식품의 종류. 규칙표 식품에 보내면 API 가 무시한다 (API-SPEC 5절 46번)
 }
 
 // A6 요청. expiry_date 는 직접 등록 식품이 "기한 다시 적기"로 적었을 때만 (D-023)

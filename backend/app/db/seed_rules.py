@@ -56,6 +56,32 @@ RULES: list[tuple[str, str, int | None, int | None, int | None, tuple[str, ...]]
 ]
 
 
+CATEGORIES = ("vegetable", "fruit", "meat", "seafood", "other")
+
+# 식품 종류 (DATA-MODEL 5-3). RULES 의 묶음(채소 13 · 과일 6 · 육류 3 · 수산 4 · 그 밖 4)과 같다.
+CATEGORY_OF: dict[str, str] = {
+    **dict.fromkeys(
+        ("양파", "대파", "감자", "당근", "양배추", "오이", "상추", "시금치", "마늘", "애호박", "토마토", "배추", "버섯"),
+        "vegetable",
+    ),
+    **dict.fromkeys(("사과", "바나나", "딸기", "귤", "포도", "배"), "fruit"),
+    **dict.fromkeys(("돼지고기", "소고기", "닭고기"), "meat"),
+    **dict.fromkeys(("고등어", "오징어", "새우", "연어"), "seafood"),
+    **dict.fromkeys(("달걀", "우유", "두부", "콩나물"), "other"),
+}
+
+# 위험 식품 7개와 이유 한 줄 (DATA-MODEL 5-4, D-167). 달걀은 위험 식품이 아니다. 여기 없는 식품은 위험이 아니다.
+DANGER_NOTE_OF: dict[str, str] = {
+    "고등어": "고등어는 쉽게 상하고, 상한 것을 먹으면 두드러기와 구토가 생길 수 있어요",
+    "오징어": "오징어는 날것이나 덜 익힌 것을 먹으면 식중독이 생기기 쉬워요",
+    "새우": "새우는 쉽게 상하고, 날것이나 덜 익힌 것을 먹으면 식중독이 생길 수 있어요",
+    "연어": "연어는 날것으로 먹으면 기생충이 있을 수 있어요",
+    "돼지고기": "돼지고기는 덜 익혀 먹으면 기생충과 식중독의 위험이 있어요",
+    "소고기": "소고기는 덜 익혀 먹으면 식중독 균이 남아 있을 수 있어요",
+    "닭고기": "닭고기는 덜 익혀 먹으면 살모넬라 같은 식중독의 위험이 있어요",
+}
+
+
 def rule_id_for(name: str) -> str:
     return str(uuid.uuid5(_NAMESPACE, name))
 
@@ -78,6 +104,10 @@ def check_rules() -> None:
             if alias in seen:
                 raise ValueError(f"별칭 {alias} 이(가) {seen[alias]} 와 {name} 에 두 번 있다")
             seen[alias] = name
+    if set(CATEGORY_OF) != set(names) or not set(CATEGORY_OF.values()) <= set(CATEGORIES):
+        raise ValueError("식품 종류가 모든 식품에 하나씩, 다섯 값 중에서 정해져 있어야 한다")
+    if not set(DANGER_NOTE_OF) <= set(names) or not all(DANGER_NOTE_OF.values()):
+        raise ValueError("위험 식품은 규칙표에 있는 이름이어야 하고 이유 한 줄이 있어야 한다")
 
 
 def seed_rules(conn: psycopg.Connection) -> None:
@@ -92,8 +122,9 @@ def seed_rules(conn: psycopg.Connection) -> None:
             days = {"room": room, "fridge": fridge, "freezer": freezer}
             rid = rule_id_for(name)
             conn.execute(
-                "INSERT INTO rules (id, name, default_storage) VALUES (%s, %s, %s)",
-                (rid, name, default),
+                "INSERT INTO rules (id, name, default_storage, is_danger, danger_note, category)"
+                " VALUES (%s, %s, %s, %s, %s, %s)",
+                (rid, name, default, name in DANGER_NOTE_OF, DANGER_NOTE_OF.get(name), CATEGORY_OF[name]),
             )
             for storage, max_days in days.items():
                 conn.execute(

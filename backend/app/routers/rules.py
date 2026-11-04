@@ -23,6 +23,7 @@ def search_rules(conn: Conn, user_id: UserId, q: str = ""):
                 "name": rule["name"],
                 "default_storage": rule["default_storage"],
                 "disallowed_storages": disallowed_storages(rule),
+                "category": rule["category"],
             }
             for rule in found
         ]

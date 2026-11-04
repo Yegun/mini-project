@@ -1,5 +1,9 @@
 import ErrorNotice from './ErrorNotice'
+import { StorageCapsule } from './FoodCapsules'
+import { NoMatchArt } from './RecommendIcons'
+import { SearchIcon } from './RegisterIcons'
 import type { RuleCandidate, SearchState } from '../types/rule'
+import './RegisterFlow.css'
 
 interface Props {
   query: string
@@ -22,15 +26,18 @@ export default function RuleSearch({ query, search, onQueryChange, onSearch, onP
           onSearch()
         }}
       >
-        <input
-          className="input"
-          type="search"
-          autoComplete="off"
-          placeholder="식품 이름을 검색해 보세요"
-          aria-label="식품 이름"
-          value={query}
-          onChange={(e) => onQueryChange(e.target.value)}
-        />
+        <span className="search-box">
+          <SearchIcon className="search-box__icon" />
+          <input
+            className="input search-box__input"
+            type="search"
+            autoComplete="off"
+            placeholder="식품 이름을 검색해 보세요"
+            aria-label="식품 이름"
+            value={query}
+            onChange={(e) => onQueryChange(e.target.value)}
+          />
+        </span>
         <button
           type="submit"
           className="button button--primary"
@@ -51,7 +58,10 @@ export default function RuleSearch({ query, search, onQueryChange, onSearch, onP
           {search.rules.map((rule) => (
             <li key={rule.name}>
               <button type="button" className="rule-list__item" onClick={() => onPick(rule)}>
-                {rule.name}
+                <span className="rule-list__name">{rule.name}</span>
+                {/* 규칙표가 정한 기본 보관 방법 */}
+                <StorageCapsule storage={rule.default_storage} withIcon />
+                <span className="rule-list__chev" aria-hidden="true" />
               </button>
             </li>
           ))}
@@ -60,9 +70,10 @@ export default function RuleSearch({ query, search, onQueryChange, onSearch, onP
 
       {search.status === 'done' && search.rules.length === 0 && (
         <div className="notice notice--empty">
+          <NoMatchArt className="notice__art" />
           <p className="notice__text">‘{search.q}’ 이름의 식품을 찾지 못했어요.</p>
           <button type="button" className="button button--primary" onClick={onManual}>
-            직접 등록
+            직접 넣기
           </button>
         </div>
       )}

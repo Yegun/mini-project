@@ -25,11 +25,14 @@ def storages(room=None, fridge=None, freezer=None):
 # F1 이 보관하는 읽기 결과의 줄 (DATA-MODEL 6절). 우유는 규칙표에 있는 식품, 닭가슴살·김치는 AI 가 알려 준 새 식품이다.
 READ_ITEMS = [
     {"item_no": 0, "name": "닭가슴살", "recommended_storage": "fridge", "storages": storages(fridge=3, freezer=90),
-     "purchase_date": "2026-10-28", "from_rule": False},
+     "purchase_date": "2026-10-28", "from_rule": False,
+     "is_danger": True, "danger_note": "닭가슴살은 덜 익히면 위험해요", "category": "meat"},
     {"item_no": 1, "name": "우유", "recommended_storage": "fridge", "storages": storages(fridge=7, freezer=30),
-     "purchase_date": "2026-10-28", "from_rule": True},
+     "purchase_date": "2026-10-28", "from_rule": True,
+     "is_danger": False, "danger_note": None, "category": "other"},
     {"item_no": 2, "name": "김치", "recommended_storage": "fridge", "storages": storages(room=2, fridge=60),
-     "purchase_date": "2026-10-28", "from_rule": False},
+     "purchase_date": "2026-10-28", "from_rule": False,
+     "is_danger": False, "danger_note": None, "category": "other"},
 ]
 
 
@@ -377,9 +380,12 @@ def test_photo_analysis_then_bulk_registration_end_to_end(client, me, pg_rules, 
 
     monkeypatch.setattr(ai, "read_photo", lambda image, media_type: {
         "items": [
-            {"name": "닭가슴살", "recommended_storage": "fridge", "storages": storages(fridge=3, freezer=90)},
-            {"name": "계란", "recommended_storage": "freezer", "storages": storages(room=1, fridge=1, freezer=1)},  # 별칭: 규칙표 값으로 바뀐다
-            {"name": "두리안", "recommended_storage": "room", "storages": storages(room=0, fridge=5)},  # 규칙 위반: 빠진다
+            {"name": "닭가슴살", "recommended_storage": "fridge", "storages": storages(fridge=3, freezer=90),
+             "danger": True, "danger_note": "닭가슴살은 덜 익히면 위험해요", "category": "meat"},
+            {"name": "계란", "recommended_storage": "freezer", "storages": storages(room=1, fridge=1, freezer=1),
+             "danger": True, "danger_note": "AI 가 잘못 준 이유", "category": "meat"},  # 별칭: 규칙표 값으로 바뀐다
+            {"name": "두리안", "recommended_storage": "room", "storages": storages(room=0, fridge=5),
+             "danger": False, "danger_note": None, "category": "fruit"},  # 규칙 위반: 빠진다
         ],
         "receipt_date": "2026-10-29",
     })
@@ -398,3 +404,72 @@ def test_photo_analysis_then_bulk_registration_end_to_end(client, me, pg_rules, 
     assert rules_repo.get_rule_by_name(pg, "닭가슴살") is not None  # 등록을 확정해서 규칙표에 더해졌다
     assert [f["name"] for f in client.get("/foods").json()["items"]] == ["닭가슴살", "달걀"]  # 홈에 나온다
     assert count(pg, "photo_analyses") == 0
+
+
+# ---- 위험 여부·식품 종류 (v0.5.0, V-26, V-36, D-136, D-165, API-SPEC F2, 5절 50번) -----------------------
+def test_new_food_adds_the_rule_with_the_stored_danger_note_and_category(client, me, pg, analysis):
+    # READ_ITEMS[0] 닭가슴살: 서버가 보관한 AI 결과에 위험(이유 있음)·육류가 들어 있다
+    response = post(client, analysis, [line(0, "닭가슴살")])
+    assert response.status_code == 201
+    row = pg.execute("SELECT is_danger, danger_note, category FROM rules WHERE name = '닭가슴살'").fetchone()
+    assert row == {"is_danger": True, "danger_note": "닭가슴살은 덜 익히면 위험해요", "category": "meat"}
+    food = response.json()["items"][0]
+    assert (food["source"], food["is_danger"], food["danger_note"], food["category"]) == (
+        "rule", True, "닭가슴살은 덜 익히면 위험해요", "meat")  # 응답에는 방금 더한 규칙표 값이 붙는다
+
+
+def test_the_screen_cannot_set_the_rule_danger_or_category(client, me, pg, analysis):
+    body = line(0, "닭가슴살", is_danger=False, danger_note="화면이 보낸 이유", category="vegetable", danger=False)
+    assert post(client, analysis, [body]).status_code == 201
+    row = pg.execute("SELECT is_danger, danger_note, category FROM rules WHERE name = '닭가슴살'").fetchone()
+    assert row == {"is_danger": True, "danger_note": "닭가슴살은 덜 익히면 위험해요", "category": "meat"}  # D-136
+
+
+def test_rule_foods_in_the_read_result_keep_the_rule_values(client, me, pg, analysis):
+    response = post(client, analysis, [line(1, "우유")])  # 규칙표에 있는 식품
+    food = response.json()["items"][0]
+    assert (food["is_danger"], food["danger_note"], food["category"]) == (False, None, "other")
+    assert pg.execute("SELECT count(*) AS n FROM rules WHERE name = '우유'").fetchone()["n"] == 1  # 더해지지 않는다
+
+
+def test_renamed_to_an_unknown_name_takes_the_category_from_the_read_result(client, me, pg, analysis):
+    # 닭가슴살(AI 종류: 육류)의 이름을 고쳐 규칙표에 없게 됐다. 종류는 그 줄의 AI 가 읽은 값, 위험 표시는 없다
+    response = post(client, analysis, [line(0, "수제 닭요리", expiry_date="2026-11-20")])
+    assert response.status_code == 201
+    food = response.json()["items"][0]
+    assert (food["source"], food["category"], food["is_danger"], food["danger_note"]) == ("manual", "meat", False, None)
+    assert pg.execute("SELECT category FROM foods WHERE name = '수제 닭요리'").fetchone()["category"] == "meat"
+    assert rules_repo.get_rule_by_name(pg, "수제 닭요리") is None  # 규칙표에 더하지 않는다
+
+
+def test_the_screen_cannot_choose_the_category_of_a_renamed_line(client, me, pg, analysis):
+    response = post(client, analysis, [line(0, "수제 닭요리", expiry_date="2026-11-20", category="fruit")])
+    assert response.json()["items"][0]["category"] == "meat"  # 서버가 보관한 결과의 값만 쓴다 (5절 50번)
+
+
+def test_a_result_saved_before_this_version_still_registers(client, me, pg):
+    # 이 버전 이전에 보관된 읽기 결과(30분 안)에는 위험·종류 칸이 없다. 위험 아님, other 로 등록된다
+    old = [{"item_no": 0, "name": "닭가슴살", "recommended_storage": "fridge", "storages": storages(fridge=3, freezer=90),
+            "purchase_date": "2026-10-28", "from_rule": False}]
+    analysis_id = photo_analyses_repo.save_analysis(pg, me, old)
+    pg.commit()
+    food = post(client, analysis_id, [line(0, "닭가슴살")]).json()["items"][0]
+    assert (food["is_danger"], food["danger_note"], food["category"]) == (False, None, "other")
+    renamed = photo_analyses_repo.save_analysis(pg, me, old)
+    pg.commit()
+    assert post(client, renamed, [line(0, "수제 닭요리", expiry_date="2026-11-20")]).json()["items"][0]["category"] == "other"
+
+
+def test_a_failed_registration_adds_nothing_to_the_rule_table_including_danger(client, me, pg, analysis):
+    bad = [line(0, "닭가슴살"), line(1, "우유", quantity=0)]  # 둘째 줄이 틀려서 전부 취소된다
+    assert post(client, analysis, bad).status_code == 422
+    assert rules_repo.get_rule_by_name(pg, "닭가슴살") is None
+    assert foods_of(pg, me) == []
+
+
+def test_danger_shows_in_the_home_list_and_detail_after_registration(client, me, pg, analysis):
+    food = post(client, analysis, [line(0, "닭가슴살")]).json()["items"][0]
+    listed = [f for f in client.get("/foods").json()["items"] if f["id"] == food["id"]][0]
+    assert (listed["is_danger"], listed["category"]) == (True, "meat")
+    detail = client.get(f"/foods/{food['id']}").json()
+    assert (detail["is_danger"], detail["danger_note"]) == (True, "닭가슴살은 덜 익히면 위험해요")

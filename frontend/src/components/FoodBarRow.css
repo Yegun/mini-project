@@ -1,16 +1,39 @@
+/* 막대 달력의 한 줄은 네 칸으로 나뉜다: [|이름]  [요일 7칸 + 막대]  [보관 방법]  [남은 날].
+   이름 칸은 배경 박스 없이 이름 옆에 상태 색 세로 기둥이 있고, 요일 칸 · 보관 방법 칸 · 남은 날 칸에는 같은 높이의 둥근 네모 바탕이 깔린다.
+   요일 칸 바탕은 포인트 색을 진하게 섞은 것이고, 보관 방법 칸은 보관 방법 색, 남은 날 칸은 상태 색이다. 칸 사이와 줄 사이에는 틈이 있다. */
 .food-row {
-  min-height: 3.25rem;
-  padding: 0.25rem 0;
+  --block-bg: color-mix(in srgb, var(--acc) 26%, transparent);
+  --block-radius: 0.75rem;
+  position: relative;
+  isolation: isolate;
+  height: 2.25rem; /* 칸(박스) 높이는 항상 일정하다. 이름이 길어도 늘어나지 않는다 */
+  margin-bottom: 0.625rem; /* 줄 사이 위아래 틈 */
 }
 
+/* 요일 7칸 뒤의 바탕. 양옆으로 조금 넓게 깔아서 일요일에 시작하거나 토요일에 끝나는 막대가 가장자리에 붙지 않게 한다 */
+.food-row::before {
+  content: '';
+  grid-column: 2 / 9;
+  grid-row: 1;
+  align-self: stretch;
+  margin-inline: -0.5rem;
+  z-index: -1;
+  border-radius: var(--block-radius);
+  background: var(--block-bg);
+}
+
+/* 이름 칸: 배경 박스 없이, 이름 왼쪽에 상태 색 세로 기둥을 하나 세운다 */
 .food-row__label {
   grid-column: 1;
   grid-row: 1;
+  align-self: stretch;
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.125rem;
-  padding: 0;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  margin-right: 0.5rem; /* 요일 칸 바탕과 사이 틈 */
+  padding: 0 0 0 0.25rem;
+  line-height: 1.15;
   border: 0;
   background: none;
   font: inherit;
@@ -18,33 +41,142 @@
   cursor: pointer;
 }
 
+/* 상태 색 세로 기둥: 얇고 끝이 둥글다. 색은 지금 식품 상태(여유 초록 · 주의 노랑 · 임박 빨강 · 지남 검정) */
+.food-row__pillar {
+  flex: none;
+  align-self: stretch;
+  width: 0.3125rem;
+  margin-block: 0.25rem;
+  border-radius: 999px;
+}
+
 .food-row__name {
-  font-weight: 700;
+  min-width: 0;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1; /* 이름이 길면 한 줄까지만 보이고(넘치면 ...) 칸 높이는 그대로 */
+  line-clamp: 1;
+  overflow: hidden;
+  font-weight: 800;
   font-size: 0.9375rem;
   overflow-wrap: anywhere;
 }
 
-.food-row__storage {
-  color: #5d6670;
+/* 보관 방법 칸: 남은 날 칸 바로 왼쪽. 칸 색은 식품 줄 캡슐과 같은 보관 방법 색(냉장 청록 · 상온 살구 · 냉동 남보라) */
+.food-row__storage-box {
+  grid-column: 9;
+  grid-row: 1;
+  align-self: stretch;
+  display: grid;
+  place-items: center;
+  margin-left: 0.75rem; /* 요일 칸 바탕과 사이 틈 */
+  margin-right: 0.25rem; /* 남은 날 칸과 사이 틈 */
+  border-radius: var(--block-radius);
+  background: linear-gradient(var(--cap-bg), var(--cap-bg)), var(--surface);
+  color: var(--cap-fg);
   font-size: 0.8125rem;
+  font-weight: 800;
+  line-height: 1.15;
+  text-align: center;
+}
+
+/* 칸 안에는 글자 대신 보관 방법 그림이 들어간다 (홈 거르기 드롭다운과 같은 그림). 글자는 스크린 리더용 aria-label 로 남는다 */
+.food-row__storage-icon {
+  width: 1.375rem;
+  height: 1.375rem;
+}
+
+/* 보관 방법 칸의 은은한 빛: 그림 뒤에 보관 방법마다 다른 빛이 퍼진다. 기본 칸 색 위에 겹쳐 깐다 */
+.food-row__storage-box.cap--room {
+  background:
+    radial-gradient(circle at 50% 55%, rgba(255, 228, 110, 0.75), rgba(255, 228, 110, 0) 68%),
+    linear-gradient(var(--cap-bg), var(--cap-bg)),
+    var(--surface);
+}
+
+.food-row__storage-box.cap--fridge {
+  background:
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0) 50%),
+    radial-gradient(circle at 50% 55%, rgba(110, 225, 210, 0.7), rgba(110, 225, 210, 0) 68%),
+    linear-gradient(var(--cap-bg), var(--cap-bg)),
+    var(--surface);
+}
+
+.food-row__storage-box.cap--freezer {
+  background:
+    radial-gradient(circle at 50% 55%, rgba(225, 245, 255, 0.85), rgba(225, 245, 255, 0) 68%),
+    linear-gradient(var(--cap-bg), var(--cap-bg)),
+    var(--surface);
+}
+
+/* 보관 방법 칸의 움직임: 배경은 상온 햇살 · 냉동 눈 · 냉장 찬 바람, 그림은 해와 눈꽃이 천천히 돌고 냉장고 문이 열렸다 닫힌다 (움직임 정의는 FoodCapsules.css) */
+.food-row__storage-box.cap--room .food-row__storage-icon {
+  animation: storage-spin 24s linear infinite;
+}
+
+.food-row__storage-box.cap--freezer .food-row__storage-icon {
+  animation: storage-spin 30s linear infinite;
+}
+
+.food-row__storage-box.cap--fridge .fridge-door {
+  transform-box: fill-box;
+  transform-origin: right center;
+  animation: fridge-door 7s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .food-row__storage-box .food-row__storage-icon,
+  .food-row__storage-box .fridge-door {
+    animation: none;
+  }
+}
+
+/* 남은 날 칸: 요일 칸 바탕과 같은 높이의 둥근 네모. 상태 색(.bubble--*)이 그대로 입혀진다 */
+.food-row__bubble {
+  grid-column: 10;
+  grid-row: 1;
+  align-self: stretch;
+  display: grid;
+  margin-left: 0.25rem; /* 보관 방법 칸과 사이 틈 */
+}
+
+.food-row__bubble .bubble {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  padding: 0 0.25rem;
+  border-radius: var(--block-radius);
+  font-size: 0.875rem; /* +3일 · -2일 */
+  font-weight: 800;
+  text-align: center;
 }
 
 .food-row__bar {
   grid-row: 1;
-  height: 1.5rem;
+  height: 1.125rem; /* 칸이 얇아진 만큼 막대도 얇게 */
   padding: 0;
   border: 0;
   border-radius: 999px;
   cursor: pointer;
+  /* 막대가 나타날 때 왼쪽에서 오른쪽으로 차오른다. 줄마다 70ms 씩 늦게 시작한다 (처음 열 때, 주를 넘길 때, 거를 때) */
+  animation: bar-fill 0.6s cubic-bezier(0.22, 0.8, 0.3, 1) both;
+  animation-delay: calc(var(--i, 0) * 70ms);
 }
 
-/* 이번 주 밖으로 잘린 쪽은 직각으로 (잘렸다는 표시) */
-.food-row__bar--cut-start {
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
+/* 오른쪽을 가린 상태(clip-path)에서 가림을 풀어 가는 방식이라 막대의 둥근 끝이 찌그러지지 않는다 */
+@keyframes bar-fill {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
 }
 
-.food-row__bar--cut-end {
-  border-top-right-radius: 0;
-  border-bottom-right-radius: 0;
+/* 기기에서 움직임 줄이기를 켜 두었으면 바로 나타난다 */
+@media (prefers-reduced-motion: reduce) {
+  .food-row__bar {
+    animation: none;
+  }
 }

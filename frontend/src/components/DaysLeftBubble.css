@@ -1,0 +1,41 @@
+/* 남은 날 말풍선. 바닥에 카드색을 먼저 깔아 줄 배경(종류 색)이 비쳐 글자가 흐려지지 않게 한다.
+   상태 색(여유 초록 · 주의 노랑 · 임박 빨강 · 지남 검정)은 포인트 색을 바꿔도 변하지 않는다 (D-180). */
+.bubble {
+  flex: none;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.bubble--fresh {
+  background: linear-gradient(rgba(47, 182, 122, 0.28), rgba(47, 182, 122, 0.28)), var(--surface);
+  color: #14683f;
+}
+
+.bubble--warning {
+  background: linear-gradient(rgba(232, 176, 74, 0.36), rgba(232, 176, 74, 0.36)), var(--surface);
+  color: #6f4700;
+}
+
+.bubble--soon {
+  background: linear-gradient(rgba(224, 69, 74, 0.24), rgba(224, 69, 74, 0.24)), var(--surface);
+  color: #a8262c;
+}
+
+.bubble--expired {
+  background: #1f2328;
+  color: #fff;
+}
+
+:root[data-tone='dark'] .bubble--fresh {
+  color: #6fe0a8;
+}
+:root[data-tone='dark'] .bubble--warning {
+  color: #f2c864;
+}
+:root[data-tone='dark'] .bubble--soon {
+  color: #ff8a8f;
+}

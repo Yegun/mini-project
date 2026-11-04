@@ -12,11 +12,14 @@ import type { BulkItemInput } from '../types/bulk'
 import type { Storage } from '../types/food'
 import type { AnalyzeData } from '../types/photo'
 import type { FieldName } from '../types/register'
+import DangerBox from './DangerBox'
+import DangerMark from './DangerMark'
 import ErrorNotice from './ErrorNotice'
 import ExpiryRewriteField from './ExpiryRewriteField'
 import FormField from './FormField'
 import QuantityUnitDateFields from './QuantityUnitDateFields'
 import StoragePicker from './StoragePicker'
+import './RegisterForm.css'
 
 interface Props {
   analysis: AnalyzeData // analysis_id 가 있는 읽기 결과
@@ -45,6 +48,7 @@ export default function PhotoReview({ analysis, onDone, onReupload, onDirtyChang
   const seqs = useRef<number[]>([]) // 늦게 온 옛 규칙표 검색 결과가 덮어쓰지 않게
   const timers = useRef<(ReturnType<typeof setTimeout> | undefined)[]>([])
 
+  const includedCount = lines.filter((l) => l.included).length
   const edited = lines.some(isEdited)
   useEffect(() => {
     onDirtyChange?.(edited)
@@ -172,11 +176,9 @@ export default function PhotoReview({ analysis, onDone, onReupload, onDirtyChang
     }
   }
 
-  const includedCount = lines.filter((l) => l.included).length
-
   return (
     <form
-      className="register__form"
+      className="register__form register-form--fancy"
       noValidate
       onSubmit={(e) => {
         e.preventDefault()
@@ -193,6 +195,14 @@ export default function PhotoReview({ analysis, onDone, onReupload, onDirtyChang
           )}
         </div>
       )}
+
+      {/* 확인 화면 맨 위의 작고 연한 안내 한 줄 (D-182) */}
+      <div className="review__intro">
+        <p className="review__summary">
+          읽은 식품 <strong>{lines.length}개</strong> 중 <strong>{includedCount}개</strong> 등록
+        </p>
+        <p className="register-choice__hint">가려지거나 빠진 식품이 있을 수 있어요. 틀린 것만 고쳐 주세요.</p>
+      </div>
 
       <ul className="review__list" aria-label="읽은 식품">
         {lines.map((line, i) => (
@@ -225,13 +235,16 @@ export default function PhotoReview({ analysis, onDone, onReupload, onDirtyChang
         ))}
       </ul>
 
-      <button
-        type="submit"
-        className="button button--primary button--wide"
-        disabled={submitting || includedCount === 0}
-      >
-        {submitting ? '등록하는 중…' : '한꺼번에 등록'}
-      </button>
+      {/* '한꺼번에 등록' 버튼은 화면 아래(아래 탭 바로 위)에 고정되어 스크롤해도 제자리에 있다 (D-151) */}
+      <div className="sticky-action">
+        <button
+          type="submit"
+          className="button button--primary button--wide"
+          disabled={submitting || includedCount === 0}
+        >
+          {submitting ? '등록하는 중…' : includedCount > 0 ? `${includedCount}개 한꺼번에 등록` : '한꺼번에 등록'}
+        </button>
+      </div>
     </form>
   )
 }
@@ -262,15 +275,23 @@ function ReviewCard({ index, line, disabled, onToggle, onName, onNameBlur, onVal
   const maxDays = useOriginal
     ? Object.fromEntries(line.item.storages.map((s) => [s.storage, s.max_days]))
     : undefined
+  // 위험 표시는 읽은 이름 그대로일 때만 보인다. 이름을 고치면 AI 가 알려 준 정보를 붙이지 않는다 (SCREEN-SPEC 5.4)
+  const danger = line.item.is_danger && line.nameCheck === 'original'
 
   return (
     <li className={off ? 'review-card review-card--off' : 'review-card'}>
       <div className="review-card__head">
-        <strong>식품 {index + 1}</strong>
+        <strong className="review-card__title">
+          <span className="review-card__no">{index + 1}</span>
+          <span className="review-card__name">{line.item.name}</span>
+          {danger && <DangerMark note={line.item.danger_note} />}
+        </strong>
         <button type="button" className="button button--link" disabled={disabled} onClick={onToggle}>
           {off ? '다시 넣기' : '빼기'}
         </button>
       </div>
+
+      {danger && <DangerBox />}
 
       <fieldset className="review-card__body" disabled={off || disabled}>
         <FormField label="이름" id={`${p}name`} error={line.errors.name}>
@@ -289,17 +310,19 @@ function ReviewCard({ index, line, disabled, onToggle, onName, onNameBlur, onVal
 
         <QuantityUnitDateFields
           idPrefix={p}
+          unitChips
           values={valuesOf(line)}
           errors={line.errors}
           onChange={onValues}
         />
 
-        <FormField label="보관 방법" id={`${p}storage`} error={line.errors.storage}>
+        <FormField label="보관" id={`${p}storage`} error={line.errors.storage}>
           <StoragePicker
             id={`${p}storage`}
             value={line.storage}
             options={options}
             maxDays={maxDays}
+            variant="tiles"
             onChange={onStorage}
           />
         </FormField>

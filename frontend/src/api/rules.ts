@@ -22,6 +22,7 @@ function toCandidate(rule: ApiRule): RuleCandidate {
   return {
     name: rule.name,
     default_storage: rule.default_storage,
+    category: rule.category,
     storages: storagesFromDisallowed(rule.disallowed_storages ?? []),
   }
 }

@@ -1,6 +1,6 @@
 // 식품 등록 요청·결과 모양 (A2 규칙표, A3 직접). 기준은 API-SPEC 2-3.
 // 바뀌면 이 파일과 api/foods.ts, mocks/ 만 고친다.
-import type { Storage } from './food'
+import type { Category, Storage } from './food'
 
 // 규칙표에서 골라 등록 (A2). 기한은 API 가 계산한다.
 export interface RuleRegisterInput {
@@ -20,10 +20,11 @@ export interface ManualRegisterInput {
   purchase_date: string
   expiry_date?: string // YYYY-MM-DD
   expiry_in_days?: number // 구매일 + N일
+  category: Category // 식품 종류 (필수, V-41). 직접 등록 화면에서 사용자가 고른다 (SCREEN-SPEC 5.2)
 }
 
 // 입력칸 이름. 입력 오류 응답이 "어느 칸 문제인지" 알려 줄 때 쓴다.
-export type FieldName = 'name' | 'storage' | 'quantity' | 'unit' | 'purchase_date' | 'expiry'
+export type FieldName = 'name' | 'category' | 'storage' | 'quantity' | 'unit' | 'purchase_date' | 'expiry'
 export type FieldErrors = Partial<Record<FieldName, string>>
 
 export type RegisterResult =

@@ -1,6 +1,6 @@
 // 규칙표 검색(C1) 응답 모양. 백엔드 응답은 ApiRule, 화면이 쓰는 모양은 RuleCandidate 이고 api/rules.ts 가 바꿔 준다.
 // 화면은 기한을 계산하지 않으므로 보관 기간(max_days)은 받지 않는다 (D-016).
-import type { Storage } from './food'
+import type { Category, Storage } from './food'
 
 export interface RuleStorageOption {
   storage: Storage
@@ -12,11 +12,13 @@ export interface ApiRule {
   name: string
   default_storage: Storage
   disallowed_storages: Storage[]
+  category: Category
 }
 
 export interface RuleCandidate {
   name: string // 규칙표 이름은 겹치지 않아 목록의 key 로도 쓴다 (D-035)
   default_storage: Storage // 등록 화면에서 미리 선택되는 보관 방법
+  category?: Category // 식품 종류. 가짜 데이터에는 없다
   storages: RuleStorageOption[]
 }
 

@@ -1,0 +1,200 @@
+/* 기록 화면의 AI 조언 카드 (components/AdviceCard.tsx). 색은 index.css 의 색 변수를 쓴다.
+   움직임(기다리는 줄 반짝임 · 조언이 차례로 올라옴)은 약하게, "움직임 줄이기"를 켜면 멈춘다. */
+.advice {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 1.25rem;
+  background:
+    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--acc) 24%, transparent), transparent 60%),
+    var(--soft);
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--acc) 12%, transparent);
+}
+
+.advice__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.advice__lead {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  min-width: 0;
+}
+
+/* 제목 앞 반짝이 배지 */
+.advice__badge {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: linear-gradient(145deg, var(--hero-1), var(--hero-2));
+  color: #202020; /* 배지는 어두운색에서도 어두운 그라데이션이라 반짝이는 밝게 (홈 띠와 같다) */
+  box-shadow: 0 1px 4px color-mix(in srgb, var(--acc) 35%, transparent);
+}
+
+:root[data-tone='dark'] .advice__badge {
+  color: #f4f4f4;
+}
+
+.advice__badge-icon {
+  width: 1.4rem;
+  height: 1.4rem;
+}
+
+/* 제목 옆에 작고 연한 안내. 좁은 화면에서는 제목 아래로 내려온다 */
+.advice__titlebox {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.125rem 0.5rem;
+  min-width: 0;
+}
+
+.advice__title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 900;
+}
+
+.advice__note {
+  color: var(--faint);
+  font-size: 0.75rem;
+  font-weight: 400;
+  white-space: nowrap; /* 글자가 중간에 꺾이지 않고, 자리가 모자라면 통째로 제목 아래로 */
+  opacity: 0.85;
+}
+
+.advice__button {
+  flex: none;
+}
+
+.advice__button:disabled {
+  opacity: 0.5;
+}
+
+.advice__hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  word-break: keep-all;
+}
+
+/* 기다리는 동안: 조언이 들어올 줄 자리가 반짝인다 */
+.advice__skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.advice__skeleton span {
+  display: block;
+  height: 2.75rem;
+  border-radius: 0.875rem;
+  background: linear-gradient(
+    100deg,
+    color-mix(in srgb, var(--text) 6%, transparent) 30%,
+    color-mix(in srgb, var(--text) 14%, transparent) 50%,
+    color-mix(in srgb, var(--text) 6%, transparent) 70%
+  );
+  background-size: 200% 100%;
+  animation: advice-shimmer 1.4s linear infinite;
+}
+
+.advice__skeleton span:nth-child(2) {
+  width: 88%;
+}
+
+.advice__skeleton span:nth-child(3) {
+  width: 72%;
+}
+
+@keyframes advice-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+
+/* 조언: 전구 아이콘이 붙은 카드 줄. 위에서부터 차례로 올라온다 */
+.advice__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.advice__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  padding: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 0.875rem;
+  background: var(--surface);
+  line-height: 1.5;
+  word-break: keep-all;
+  animation: advice-rise 0.35s ease both;
+  animation-delay: calc(var(--i, 0) * 90ms);
+}
+
+@keyframes advice-rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.advice__bulb {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: rgba(255, 210, 63, 0.22);
+}
+
+.advice__bulb svg {
+  width: 1.3rem;
+  height: 1.3rem;
+}
+
+.advice__text {
+  min-width: 0;
+  padding-top: 0.2rem;
+}
+
+.advice__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.advice__empty p {
+  margin: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .advice__skeleton span,
+  .advice__item {
+    animation: none;
+  }
+}

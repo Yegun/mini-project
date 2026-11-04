@@ -1,0 +1,213 @@
+/* 휴지통 선택창: 화면 맨 아래에서 올라오는 창 (SCREEN-SPEC 4.8) */
+.sheet {
+  width: min(40rem, 100%);
+  max-width: 100%;
+  margin: auto auto 0; /* 화면 아래에 붙인다 */
+  padding: 1.25rem 1rem calc(1rem + env(safe-area-inset-bottom));
+  border: none;
+  border-radius: 1.25rem 1.25rem 0 0;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.sheet[open] {
+  animation: sheet-up 0.3s ease;
+}
+
+.sheet::backdrop {
+  background: var(--overlay);
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet[open] {
+    animation: none;
+  }
+}
+
+/* ───────── 휴지통 선택창 안쪽 (components/TrashSheet.tsx): 식품 그림 · 이름 / 행동 카드 세 개 / 취소 ───────── */
+/* 주의: position 을 여기서 바꾸지 않는다. 모달 창은 브라우저 기본값(fixed)으로 화면에 고정돼야 한다.
+   relative 로 덮어쓰면 팝업이 페이지 안 자기 자리에 놓여 윗부분이 화면 밖으로 잘린다. 손잡이 막대(::before)는 fixed 위에서도 기준이 된다. */
+.trash-sheet {
+  padding-top: 1.75rem; /* 맨 위 손잡이 막대 자리 */
+}
+
+/* 위로 끌어올릴 수 있을 것 같은 작은 손잡이 막대 */
+.trash-sheet::before {
+  content: '';
+  position: absolute;
+  top: 0.5rem;
+  left: 50%;
+  width: 2.5rem;
+  height: 0.3rem;
+  border-radius: 999px;
+  background: var(--line-strong);
+  transform: translateX(-50%);
+}
+
+.trash-sheet__head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.trash-sheet__art {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 1.1rem;
+  background: linear-gradient(var(--cap-bg), var(--cap-bg)), var(--surface);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cap-fg) 25%, transparent);
+}
+
+/* 종류를 모를 때: 종류 색 없이 옅은 바탕의 접시 그림 */
+.trash-sheet__art--plain {
+  background: var(--soft);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.trash-sheet__art-icon {
+  width: 2.1rem;
+  height: 2.1rem;
+}
+
+.trash-sheet__title {
+  min-width: 0;
+}
+
+.sheet__name {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+
+.trash-sheet__ask {
+  margin: 0.125rem 0 0;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.trash-sheet__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* 행동 카드: 그림 · 이름과 설명 · 화살표. 다 먹음 초록 · 버림 붉은색 · 삭제 회색(이름만 붉은색) */
+.trash-action {
+  --a-tint: rgba(120, 120, 135, 0.12);
+  --a-strong: #8a8aa0;
+  --a-ink: var(--text);
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  min-height: 4rem;
+  padding: 0.5rem 0.875rem 0.5rem 0.625rem;
+  border: 1.5px solid color-mix(in srgb, var(--a-strong) 40%, var(--line));
+  border-radius: 1.1rem;
+  background: linear-gradient(var(--a-tint), var(--a-tint)), var(--surface);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.12s;
+}
+
+.trash-action:active {
+  transform: scale(0.98);
+}
+
+.trash-action:focus-visible {
+  outline: 3px solid var(--btn);
+  outline-offset: 2px;
+}
+
+.trash-action--eaten {
+  --a-tint: rgba(47, 182, 122, 0.14);
+  --a-strong: #2fb67a;
+  --a-ink: #1c6b45;
+}
+
+.trash-action--discarded {
+  --a-tint: rgba(224, 69, 74, 0.1);
+  --a-strong: #e0454a;
+  --a-ink: #a93036;
+}
+
+.trash-action--delete {
+  --a-ink: var(--danger);
+}
+
+:root[data-tone='dark'] .trash-action--eaten {
+  --a-tint: rgba(47, 182, 122, 0.2);
+  --a-ink: #7ee09a;
+}
+
+:root[data-tone='dark'] .trash-action--discarded {
+  --a-tint: rgba(224, 69, 74, 0.2);
+  --a-ink: #ff9aa0;
+}
+
+.trash-action__art {
+  display: grid;
+  place-items: center;
+}
+
+.trash-action__icon {
+  width: 2.75rem;
+  height: 2.75rem;
+}
+
+/* 목록이 길 수 있는 행동 카드 안의 그림은 움직이지 않게 한다 */
+.trash-action .record-icon__sparkle {
+  animation: none;
+}
+
+.trash-action__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.trash-action__text strong {
+  color: var(--a-ink);
+  font-size: 1.0625rem;
+  font-weight: 900;
+}
+
+.trash-action__text small {
+  color: var(--muted);
+  font-size: 0.8125rem;
+}
+
+.trash-action__chev {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-top: 2px solid var(--muted);
+  border-right: 2px solid var(--muted);
+  transform: rotate(45deg);
+}
+
+.trash-sheet__cancel {
+  margin-top: 0.5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trash-action {
+    transition: none;
+  }
+}

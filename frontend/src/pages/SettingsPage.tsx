@@ -1,7 +1,10 @@
 import { useRef, useState } from 'react'
 import { withdraw } from '../api/account'
+import AppearanceSettings from '../components/AppearanceSettings'
+import { AccountIcon, ExitIcon, ShieldIcon } from '../components/SettingsIcons'
 import WithdrawDialog from '../components/WithdrawDialog'
 import '../components/Register.css'
+import '../components/Settings.css'
 
 interface Props {
   onWithdrawn: () => void // 탈퇴 성공 → 로그인 화면 (D-129)
@@ -19,7 +22,8 @@ const PRIVACY_ITEMS = [
   '탈퇴하면 계정과 식품이 모두 삭제돼요.',
 ]
 
-// 설정 화면 (US-023 ~ US-025, SCREEN-SPEC 9절): 개인정보 안내 + [계정 탈퇴]. 그 밖의 설정은 없다 (PRD 5-3).
+// 설정 화면 (US-023 ~ US-025, SCREEN-SPEC 9절): 화면 모양(밝기 · 포인트 색 · 글자 크기) + 개인정보 안내 + [계정 탈퇴].
+// 기한 기준 조절 같은 다른 설정은 없다 (PRD 5-3).
 export default function SettingsPage({ onWithdrawn }: Props) {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -60,8 +64,15 @@ export default function SettingsPage({ onWithdrawn }: Props) {
         <h1 className="register__title">설정</h1>
       </header>
 
+      <AppearanceSettings />
+
       <details className="settings__privacy">
-        <summary className="settings__summary">개인정보 안내</summary>
+        <summary className="settings__summary">
+          <span className="set-head__badge" aria-hidden="true">
+            <ShieldIcon className="set-head__icon" />
+          </span>
+          개인정보 안내
+        </summary>
         <ul className="settings__list">
           {PRIVACY_ITEMS.map((text) => (
             <li key={text}>{text}</li>
@@ -69,9 +80,22 @@ export default function SettingsPage({ onWithdrawn }: Props) {
         </ul>
       </details>
 
-      <button type="button" className="button button--wide settings__withdraw" onClick={openDialog}>
-        계정 탈퇴
-      </button>
+      {/* 계정 칸: 탈퇴는 붉은 계열로 따로 둔다. 안내 한 줄은 개인정보 안내의 마지막 항목과 같은 확정 문구다 */}
+      <section className="settings__account" aria-labelledby="account-heading">
+        <div className="set-head">
+          <span className="set-head__badge" aria-hidden="true">
+            <AccountIcon className="set-head__icon" />
+          </span>
+          <h2 id="account-heading" className="appearance__heading">
+            계정
+          </h2>
+        </div>
+        <p className="settings__account-note">{PRIVACY_ITEMS[PRIVACY_ITEMS.length - 1]}</p>
+        <button type="button" className="button button--wide settings__withdraw" onClick={openDialog}>
+          <ExitIcon className="settings__withdraw-icon" />
+          계정 탈퇴
+        </button>
+      </section>
 
       <WithdrawDialog
         open={dialogOpen}

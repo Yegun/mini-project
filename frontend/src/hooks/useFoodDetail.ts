@@ -32,5 +32,10 @@ export function useFoodDetail(id: string) {
     setAttempt((n) => n + 1)
   }, [])
 
-  return { result, reload }
+  // '불러오는 중' 표시 없이 조용히 다시 불러온다 (정보 고치기를 저장한 뒤 상세에 새 값이 보이게 할 때)
+  const refresh = useCallback(() => {
+    setAttempt((n) => n + 1)
+  }, [])
+
+  return { result, reload, refresh }
 }

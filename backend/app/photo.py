@@ -2,7 +2,7 @@
 
 사진은 메모리에만 두고 AI 에게 보낸 뒤 버린다. 저장하는 것은 읽은 결과(글)뿐이다 (D-102).
 AI 의 답은 믿지 않고 서버가 검사한다. 규칙에 안 맞는 줄은 그 줄만 빼고 (ARCHITECTURE 3-1), 규칙표에 같은 이름이 있으면
-AI 값을 버리고 규칙표 값으로 바꾼다 (D-135).
+AI 값을 버리고 규칙표 값으로 바꾼다 (D-135). 위험 여부·이유·종류도 같다 (D-190, D-191).
 """
 from datetime import date
 
@@ -11,7 +11,7 @@ import psycopg
 from app import ai
 from app.db import photo_analyses_repo, rules_repo
 from app.errors import ApiError
-from app.validation import ValidationError
+from app.validation import CATEGORIES, ValidationError
 
 PHOTO_MAX_BYTES = 5 * 1024 * 1024  # 5MB (D-101)
 STORAGES = ("room", "fridge", "freezer")
@@ -49,7 +49,9 @@ def _clean_item(raw) -> dict | None:
     """AI 가 준 한 줄이 규칙(V-26)에 맞으면 {"name", "recommended_storage", "storages"} 를, 아니면 None 을 돌려준다.
 
     규칙: 이름이 있고, 보관 방법 세 가지가 한 번씩 있고, 가능한 방법은 최대 일수가 0보다 큰 정수, 불가는 비어 있고,
-    권장 보관 방법은 가능한 방법이다.
+    권장 보관 방법은 가능한 방법이다. 그리고 위험 여부(danger)는 참 또는 거짓이어야 하고, 위험이면 이유 한 줄이
+    비어 있지 않아야 한다 (V-36). 위험 여부가 없거나 알아볼 수 없으면 그 줄을 뺀다 (D-191).
+    종류(category)는 다섯 값 중 하나다. 알아볼 수 없으면 other 로 둔다.
     """
     if not isinstance(raw, dict) or not isinstance(raw.get("name"), str) or not raw["name"].strip():
         return None
@@ -67,10 +69,24 @@ def _clean_item(raw) -> dict | None:
     recommended = raw.get("recommended_storage")
     if recommended not in STORAGES or not by_storage[recommended]["allowed"]:
         return None
+    danger = raw.get("danger")
+    if not isinstance(danger, bool):
+        return None  # 위험 여부가 없거나 알아볼 수 없다 (V-36)
+    note = raw.get("danger_note")
+    if danger:
+        if not isinstance(note, str) or not note.strip():
+            return None  # 위험인데 이유 한 줄이 없다 (V-36)
+        note = note.strip()
+    else:
+        note = None  # 위험이 아니면 이유는 비운다
+    category = raw.get("category")
     return {
         "name": raw["name"].strip(),
         "recommended_storage": recommended,
         "storages": [by_storage[s] for s in STORAGES],  # 상온 · 냉장 · 냉동 순
+        "is_danger": danger,
+        "danger_note": note,
+        "category": category if category in CATEGORIES else "other",
     }
 
 
@@ -89,6 +105,7 @@ def build_items(conn: psycopg.Connection, answer, today: date) -> list[dict]:
 
     답 모양이 틀리면 ai_failed 다. 일부 줄만 규칙에 안 맞으면 그 줄만 뺀다.
     이름이 규칙표에 있으면(이름 또는 별칭이 글자 그대로 같을 때) AI 값을 버리고 규칙표 값을 쓴다 (D-135).
+    AI 가 준 칸 이름 danger 는 응답에서 is_danger 로 바꿔 돌려준다 (API-SPEC 5절 49번).
     """
     if not isinstance(answer, dict) or not isinstance(answer.get("items"), list):
         raise ApiError("ai_failed")
@@ -104,6 +121,10 @@ def build_items(conn: psycopg.Connection, answer, today: date) -> list[dict]:
                 "name": rule["name"],
                 "recommended_storage": rule["default_storage"],
                 "storages": [dict(info) for info in rule["storages"]],
+                # 위험 여부·이유·종류도 AI 값을 버리고 규칙표 값을 쓴다 (D-190, D-191)
+                "is_danger": rule["is_danger"],
+                "danger_note": rule["danger_note"] if rule["is_danger"] else None,
+                "category": rule["category"],
             }
         items.append(
             {
@@ -113,6 +134,9 @@ def build_items(conn: psycopg.Connection, answer, today: date) -> list[dict]:
                 "storages": item["storages"],
                 "purchase_date": purchase_date,
                 "from_rule": rule is not None,
+                "is_danger": item["is_danger"],
+                "danger_note": item["danger_note"],
+                "category": item["category"],
             }
         )
     return items

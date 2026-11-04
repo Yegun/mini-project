@@ -9,7 +9,7 @@
 import type { BulkInput, BulkResult } from '../types/bulk'
 import type { FieldName } from '../types/register'
 import { send } from './http'
-import foodsMock from '../mocks/foods.json'
+import { foodsMock } from '../mocks/foodsMock'
 import { addMockFood } from '../mocks/createdFoods'
 
 const MOCK_MODE = import.meta.env.VITE_USE_MOCK

@@ -15,13 +15,22 @@
 }
 
 .notice--error {
-  background: #fdeaea;
-  color: #7a1f1f;
+  background: var(--danger-bg);
+  color: var(--danger-ink);
 }
 
 .notice--empty {
-  background: #fff;
-  border: 1px solid #d9e3df;
+  gap: 0.875rem;
+  padding: 1.75rem 1rem;
+  border-radius: 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+
+/* 빈 홈 그림: 빈 냉장고 */
+.notice__art {
+  width: 4.5rem;
+  height: auto;
 }
 
 .notice__button {
@@ -37,7 +46,7 @@
 }
 
 .notice__button--primary {
-  border-color: #0f7a52;
-  background: #0f7a52;
-  color: #fff;
+  border-color: var(--btn);
+  background: var(--btn);
+  color: var(--btn-fg);
 }

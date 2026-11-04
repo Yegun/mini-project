@@ -1,0 +1,235 @@
+/* 식품 등록의 첫 단계들: 등록 방법 고르기 · 사진 올리기 · 이름 검색 (RegisterChoice · PhotoUpload · RuleSearch).
+   입력칸과 일반 버튼은 Register.css 의 것을 그대로 쓴다. 움직임은 누를 때 살짝 눌리는 것뿐이고 "움직임 줄이기"를 켜면 멈춘다. */
+
+/* ───────── 등록 방법 고르기: 큰 카드 두 개 ───────── */
+.register-choice {
+  gap: 0.75rem;
+}
+
+.register-choice__ask {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 900;
+}
+
+.choice-card {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.875rem;
+  width: 100%;
+  min-height: 7.5rem;
+  padding: 1rem 1rem 1rem 0.75rem;
+  border: 2px solid var(--line);
+  border-radius: 1.5rem;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.12s;
+}
+
+.choice-card:active {
+  transform: scale(0.985);
+}
+
+.choice-card:focus-visible {
+  outline: 3px solid var(--btn);
+  outline-offset: 2px;
+}
+
+/* 사진으로 등록: 홈 띠와 같은 그라데이션으로 눈에 띄게 (주 방법) */
+.choice-card--photo {
+  border-color: transparent;
+  background: linear-gradient(160deg, var(--hero-1), var(--hero-2));
+  color: #202020; /* 띠는 어두운색에서도 어두운 그라데이션이라 글자는 밝게 */
+  box-shadow: 0 3px 12px color-mix(in srgb, var(--acc) 25%, transparent);
+}
+
+:root[data-tone='dark'] .choice-card--photo {
+  color: #f4f4f4;
+}
+
+.choice-card--manual {
+  background:
+    radial-gradient(circle at 0% 100%, color-mix(in srgb, var(--acc) 14%, transparent), transparent 60%),
+    var(--surface);
+}
+
+.choice-card__art {
+  display: grid;
+  place-items: center;
+  width: 5.25rem;
+  height: 5.25rem;
+  border-radius: 1.25rem;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+:root[data-tone='dark'] .choice-card--photo .choice-card__art {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.choice-card--manual .choice-card__art {
+  background: color-mix(in srgb, var(--acc) 14%, var(--surface));
+}
+
+.choice-card__art-svg {
+  width: 4.5rem;
+  height: auto;
+}
+
+.choice-card__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.choice-card__title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 900;
+}
+
+.choice-card__tag {
+  padding: 0 0.5rem;
+  border-radius: 999px;
+  background: #202020;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 800;
+  line-height: 1.5;
+}
+
+:root[data-tone='dark'] .choice-card__tag {
+  background: #ffd23f;
+  color: #202020;
+}
+
+.choice-card__sub {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.4;
+  opacity: 0.8;
+  word-break: keep-all;
+}
+
+.choice-card--manual .choice-card__sub {
+  color: var(--muted);
+  opacity: 1;
+}
+
+.choice-card__chev {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-top: 2.5px solid currentColor;
+  border-right: 2.5px solid currentColor;
+  opacity: 0.55;
+  transform: rotate(45deg);
+}
+
+/* ───────── 사진 올리기: 사진 고르는 칸 + 미리보기 ───────── */
+.photo-drop {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.25rem 1rem;
+  border: 2px dashed var(--line-strong);
+  border-radius: 1.5rem;
+  background: color-mix(in srgb, var(--acc) 8%, var(--surface));
+  cursor: pointer;
+}
+
+.photo-drop:has(.photo-upload__input:focus-visible) {
+  outline: 3px solid var(--btn);
+  outline-offset: 2px;
+}
+
+.photo-drop[aria-disabled='true'] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.photo-drop__art {
+  width: 7rem;
+  height: auto;
+}
+
+/* 고른 사진 미리보기: 칸 안에 꽉 차게 보이되 잘리지 않게 */
+.photo-drop__img {
+  width: 100%;
+  max-height: 16rem;
+  border-radius: 1rem;
+  background: var(--soft);
+  object-fit: contain;
+}
+
+.photo-drop__label {
+  padding: 0.375rem 1rem;
+  border-radius: 999px;
+  background: var(--btn);
+  color: var(--btn-fg);
+  font-size: 0.9375rem;
+  font-weight: 800;
+}
+
+/* ───────── 이름 검색: 검색창 + 결과 카드 ───────── */
+.search-box {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-width: 0;
+}
+
+.search-box__icon {
+  position: absolute;
+  top: 50%;
+  left: 0.875rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--muted);
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+.search-box__input {
+  flex: 1;
+  min-width: 0;
+  padding-left: 2.5rem;
+  border-radius: 999px;
+}
+
+/* 결과 카드: 이름 + 규칙표가 정한 기본 보관 방법 캡슐 + 화살표 */
+.rule-list__item {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.rule-list__name {
+  flex: 1;
+  min-width: 0;
+  font-size: 1.0625rem;
+  overflow-wrap: anywhere;
+}
+
+.rule-list__chev {
+  flex: none;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-top: 2px solid var(--muted);
+  border-right: 2px solid var(--muted);
+  transform: rotate(45deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .choice-card {
+    transition: none;
+  }
+}

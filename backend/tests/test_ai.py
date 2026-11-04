@@ -209,3 +209,91 @@ def test_text_without_a_json_object_is_ai_failed(fake, reply):
     fake(reply=reply)
     with pytest.raises(ApiError):
         ask()
+
+
+# ---- 기록 조언 · 일반 조언 (v0.5.0, D-156 ~ D-163, V-30) ------------------------------------------------
+MATERIAL = {
+    "active": [{"name": "달걀", "status": "soon", "days_left": 1}],
+    "processed": [{"name": "우유", "result": "discarded", "processed_date": "2026-10-29", "expiry_date": "2026-10-20"}],
+}
+
+
+def test_advice_returns_the_parsed_json_answer_and_sends_only_the_material(fake):
+    messages = fake(reply='{"advice": ["우유는 기한 전에 먹어요."]}')
+    assert ai.give_advice(MATERIAL) == {"advice": ["우유는 기한 전에 먹어요."]}
+    call = messages.calls[0]
+    assert json.loads(call["messages"][0]["content"]) == MATERIAL  # 이름·상태·날짜뿐이다 (D-163)
+    assert call["system"] == ai.ADVICE_SYSTEM and "달걀" not in call["system"]  # 자료는 지시문에 섞지 않는다 (D-118)
+
+
+def test_advice_instruction_covers_the_rules_of_the_documents():
+    text = ai.ADVICE_SYSTEM
+    for word in ("processed", "active", "eaten", "discarded", "덜 버리", "기한이 지난 뒤", "먼저 먹어야", "JSON"):
+        assert word in text, word
+
+
+def test_advice_waits_30_seconds_and_does_not_retry_by_itself(monkeypatch):
+    seen = {}
+
+    class Recorder:
+        def __init__(self, **kwargs):
+            seen.update(kwargs)
+            self.messages = FakeMessages(reply='{"advice": ["조언"]}')
+
+    monkeypatch.setattr(ai.anthropic, "Anthropic", Recorder)
+    monkeypatch.setattr(ai, "env_value", lambda name: "secret-key")
+    ai.give_advice(MATERIAL)
+    assert seen["timeout"] == 30 and seen["max_retries"] == 0  # V-30
+
+
+def test_tips_return_the_parsed_json_answer_and_send_no_personal_data(fake):
+    messages = fake(reply='{"tips": ["냉장고는 70%만 채워요."]}')
+    assert ai.make_tips() == {"tips": ["냉장고는 70%만 채워요."]}
+    call = messages.calls[0]
+    assert call["system"] == ai.TIPS_SYSTEM
+    assert "@" not in call["messages"][0]["content"] and "kim" not in call["messages"][0]["content"]  # 개인 정보 없이 요청만 (D-156)
+
+
+def test_tips_instruction_asks_for_short_unbranded_general_tips():
+    for word in ("일반적인", "한 문장", "광고하지 않는다", "JSON", str(ai.TIPS_WANTED)):
+        assert word in ai.TIPS_SYSTEM, word
+
+
+def test_tips_wait_30_seconds_and_do_not_retry_by_itself(monkeypatch):
+    seen = {}
+
+    class Recorder:
+        def __init__(self, **kwargs):
+            seen.update(kwargs)
+            self.messages = FakeMessages(reply='{"tips": ["조언"]}')
+
+    monkeypatch.setattr(ai.anthropic, "Anthropic", Recorder)
+    monkeypatch.setattr(ai, "env_value", lambda name: "secret-key")
+    ai.make_tips()
+    assert seen["timeout"] == 30 and seen["max_retries"] == 0  # V-30
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"reply": "조언이에요"},  # JSON 이 아니다
+        {"reply": '{"advice": []}', "stop_reason": "refusal"},
+        {"reply": '{"advice": [', "stop_reason": "max_tokens"},
+        {"error": TimeoutError("30초 초과")},
+        {"error": ConnectionError("연결 실패")},
+        {"error": RuntimeError("AI 오류")},
+    ],
+)
+def test_advice_and_tips_failures_are_ai_failed(fake, kwargs):
+    fake(**kwargs)
+    for call in (lambda: ai.give_advice(MATERIAL), ai.make_tips):
+        with pytest.raises(ApiError) as info:
+            call()
+        assert info.value.reason == "ai_failed" and info.value.status_code == 502
+
+
+def test_advice_failure_log_does_not_contain_the_answer(fake, caplog):
+    fake(reply="이메일 kim@example.com 카드번호 1234")  # JSON 이 아니라 실패한다
+    with caplog.at_level("WARNING"), pytest.raises(ApiError):
+        ai.give_advice(MATERIAL)
+    assert "kim@example.com" not in caplog.text and "1234" not in caplog.text  # 답 원문은 로그에 남기지 않는다 (D-102)

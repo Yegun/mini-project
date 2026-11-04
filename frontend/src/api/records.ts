@@ -10,8 +10,7 @@ import type { ActionResult } from '../types/foodDetail'
 import type { ProcessedFoods, RecordsData, RecordSummary } from '../types/records'
 import { readMessage } from './errors'
 import { send } from './http'
-import foodsMock from '../mocks/foods.json'
-import foodsEmptyMock from '../mocks/foods.empty.json'
+import { foodsEmptyMock, foodsMock } from '../mocks/foodsMock'
 import { getMockRecords, restoreMockFood } from '../mocks/createdFoods'
 
 const MOCK_MODE = import.meta.env.VITE_USE_MOCK

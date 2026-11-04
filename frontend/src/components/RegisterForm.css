@@ -1,0 +1,277 @@
+/* 식품 등록 폼의 새 모양 (RuleRegisterForm · ManualRegisterForm).
+   공용 입력 부품(FormField · StoragePicker · QuantityUnitDateFields)은 사진 확인 화면 · 정보 고치기 창도 쓰므로,
+   바뀌는 모양은 .register-form--fancy 안쪽과 새 클래스에만 적용한다. 움직임은 누를 때 살짝 눌리는 것뿐이다. */
+
+/* ───────── 고른 식품 카드 (규칙표 등록) ───────── */
+.picked-card {
+  display: flex;
+  flex-wrap: wrap; /* 아주 좁은 화면에서는 "다른 식품 고르기"가 아래 줄로 내려간다 */
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem;
+  border: 1px solid var(--line);
+  border-radius: 1.25rem;
+  background:
+    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--acc) 20%, transparent), transparent 60%),
+    var(--surface);
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--acc) 10%, transparent);
+}
+
+.picked-card__art {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 1.1rem;
+  background: var(--soft);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.picked-card__art-icon {
+  width: 2.25rem;
+  height: 2.25rem;
+}
+
+.picked-card__text {
+  display: flex;
+  flex: 1 1 8rem;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.picked-card__name {
+  font-size: 1.25rem;
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+
+.picked-card__sub {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  color: var(--muted);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  white-space: nowrap; /* "기본 보관"이 글자 중간에서 꺾이지 않게 */
+}
+
+.picked-card__change {
+  flex: none;
+  margin-left: auto; /* 아래 줄로 내려가도 오른쪽에 붙는다 */
+  min-height: 2.25rem;
+  padding: 0 0.75rem;
+  border: 1.5px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.picked-card__change:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ───────── 번호가 붙은 입력 카드 ───────── */
+.form-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 1.25rem;
+  background: var(--surface);
+}
+
+.form-card__title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 1.0625rem;
+  font-weight: 900;
+}
+
+.form-card__num {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 1.625rem;
+  height: 1.625rem;
+  border-radius: 50%;
+  background: var(--btn);
+  color: var(--btn-fg);
+  font-size: 0.8125rem;
+  font-weight: 900;
+}
+
+/* 카드 안 입력칸: 조금 더 크고 둥글게, 눌렀을 때 포인트 색 테두리 */
+.register-form--fancy .field__label {
+  color: var(--muted);
+  font-size: 0.8125rem;
+  font-weight: 800;
+}
+
+.register-form--fancy .input {
+  min-height: 3rem;
+  border: 2px solid var(--line);
+  border-radius: 0.875rem;
+  background: var(--soft);
+}
+
+.register-form--fancy .input[aria-invalid='true'] {
+  border-color: var(--danger);
+}
+
+.register-form--fancy .input:focus-visible {
+  border-color: var(--btn);
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--acc) 40%, transparent);
+}
+
+/* ───────── 보관 방법 타일: 그림 + 이름 (+ 최대 일수) ───────── */
+.storage-tiles {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+
+.storage-tile {
+  --tile-tint: var(--cap-bg, rgba(120, 120, 135, 0.2));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  min-height: 5.25rem;
+  padding: 0.625rem 0.25rem;
+  border: 2px solid var(--line);
+  border-radius: 1.1rem;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+  transition: transform 0.12s;
+}
+
+/* 보관 방법마다 옅은 색: 상온 살구 · 냉장 청록 · 냉동 남보라 (홈 캡슐과 같은 색) */
+.storage-tile--room {
+  --tile-tint: rgba(255, 171, 128, 0.34);
+}
+
+.storage-tile--fridge {
+  --tile-tint: rgba(20, 184, 166, 0.26);
+}
+
+.storage-tile--freezer {
+  --tile-tint: rgba(99, 102, 241, 0.24);
+}
+
+.storage-tile:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.storage-tile__icon {
+  width: 2rem;
+  height: 2rem;
+}
+
+.storage-tile__label {
+  font-size: 0.9375rem;
+  font-weight: 800;
+}
+
+.storage-tile--selected {
+  border-color: var(--btn);
+  background: linear-gradient(var(--tile-tint), var(--tile-tint)), var(--surface);
+}
+
+/* 불가: 숨기지 않고 흐리게 + 점선, 누를 수 없다 (D-005) */
+.storage-tile--dim {
+  border-style: dashed;
+  background: var(--soft);
+  color: var(--faint);
+  cursor: not-allowed;
+}
+
+.storage-tile--dim .storage-tile__icon {
+  opacity: 0.35;
+  filter: grayscale(1);
+}
+
+.storage-tile:focus-visible {
+  outline: 3px solid var(--btn);
+  outline-offset: 2px;
+}
+
+.storage-tile:disabled {
+  opacity: 0.6;
+}
+
+/* ───────── 단위 · 기한 빠른 선택 알약 ───────── */
+.unit-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.unit-chip {
+  min-height: 2.25rem;
+  padding: 0 0.875rem;
+  border: 1.5px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.unit-chip--on {
+  border-color: var(--btn);
+  background: var(--btn);
+  color: var(--btn-fg);
+}
+
+.unit-chip:focus-visible {
+  outline: 3px solid var(--btn);
+  outline-offset: 2px;
+}
+
+.unit-chip:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ───────── 기한 고르기: 둥근 두 칸 스위치 ───────── */
+.choice-group--segmented {
+  padding: 0.25rem;
+  border-radius: 999px;
+  background: var(--soft);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.choice-group--segmented .choice {
+  border: none;
+  border-radius: 999px;
+  background: none;
+  color: var(--muted);
+}
+
+.choice-group--segmented .choice--selected {
+  background: var(--btn);
+  color: var(--btn-fg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .storage-tile {
+    transition: none;
+  }
+}

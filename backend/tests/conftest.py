@@ -98,6 +98,8 @@ def food_args(**over):
         purchase_date="2026-10-30", expiry_date="2026-11-29", source="rule",
     )
     data.update(over)
+    if data["source"] == "manual" and "category" not in data:
+        data["category"] = "other"  # 직접 등록 식품은 종류가 꼭 있어야 한다 (DATA-MODEL 2절)
     return data
 
 

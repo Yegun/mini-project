@@ -1,4 +1,4 @@
-/* 식품 등록 화면. 색은 홈과 같은 값을 쓴다 (#0f7a52 초록, #d9e3df 테두리). */
+/* 식품 등록 화면. 색은 index.css 의 색 변수를 쓴다. */
 .register {
   display: flex;
   flex-direction: column;
@@ -26,6 +26,7 @@
 .register__title {
   margin: 0;
   font-size: 1.5rem;
+  font-weight: 900; /* 제목은 본문보다 확실히 굵게 (예전 기본 700) */
 }
 
 .register__section,
@@ -45,7 +46,7 @@
 /* AI 안내: 작고 연한 글씨 (D-105) */
 .register-choice__hint {
   margin: 0;
-  color: #8a9691;
+  color: var(--faint);
   font-size: 0.8125rem;
   text-align: center;
 }
@@ -66,26 +67,46 @@
   gap: 0.75rem;
 }
 
+.review__intro {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.review__summary {
+  margin: 0;
+  font-size: 1.0625rem;
+  font-weight: 700;
+}
+
+.review__summary strong {
+  color: var(--btn);
+}
+
 .review-card {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  padding: 0.75rem 1rem 1rem;
-  border: 1px solid #d9e3df;
-  border-radius: 0.75rem;
-  background: #fff;
+  padding: 0.875rem 1.125rem 1.125rem;
+  border: 1px solid var(--line);
+  border-radius: 1.25rem;
+  background: var(--surface);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 /* 뺀 줄은 흐리게 (다시 넣을 수 있다) */
 .review-card--off {
   opacity: 0.55;
-  background: #f4faf7;
+  background: var(--soft);
 }
 
 .review-card__head {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 0.5rem;
+  padding-bottom: 0.625rem;
+  border-bottom: 1px solid var(--line);
 }
 
 .review-card__body {
@@ -108,7 +129,7 @@
 }
 
 .photo-upload__pick:has(.photo-upload__input:focus-visible) {
-  outline: 3px solid #0f7a52;
+  outline: 3px solid var(--btn);
   outline-offset: 2px;
 }
 
@@ -122,32 +143,6 @@
   inset: 0;
   opacity: 0;
   cursor: pointer;
-}
-
-/* 설정 */
-.settings__privacy {
-  border: 1px solid #d9e3df;
-  border-radius: 0.75rem;
-  background: #fff;
-}
-
-.settings__summary {
-  min-height: 3rem;
-  padding: 0.75rem 1rem;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.settings__list {
-  margin: 0;
-  padding: 0 1rem 1rem 2.25rem;
-  line-height: 1.6;
-  word-break: keep-all;
-}
-
-.settings__withdraw {
-  border-color: #b3261e;
-  color: #b3261e;
 }
 
 /* 검색 */
@@ -174,29 +169,13 @@
   width: 100%;
   min-height: 3rem;
   padding: 0.75rem 1rem;
-  border: 1px solid #d9e3df;
+  border: 1px solid var(--line);
   border-radius: 0.75rem;
-  background: #fff;
+  background: var(--surface);
   font: inherit;
   font-weight: 700;
   text-align: left;
   cursor: pointer;
-}
-
-.picked-food {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  border: 1px solid #d9e3df;
-  border-radius: 0.75rem;
-  background: #fff;
-}
-
-.picked-food__name {
-  font-size: 1.125rem;
-  overflow-wrap: anywhere;
 }
 
 /* 입력칸 */
@@ -218,12 +197,12 @@
 }
 
 .field__hint {
-  color: #5d6670;
+  color: var(--muted);
   font-size: 0.875rem;
 }
 
 .field__error {
-  color: #b3261e;
+  color: var(--danger);
   font-size: 0.875rem;
   word-break: keep-all;
 }
@@ -232,19 +211,19 @@
   width: 100%;
   min-height: 2.75rem;
   padding: 0 0.75rem;
-  border: 1px solid #b9c9c3;
+  border: 1px solid var(--line-strong);
   border-radius: 0.75rem;
-  background: #fff;
+  background: var(--surface);
   font: inherit; /* 16px 이상이어야 휴대폰에서 확대되지 않는다 */
   color: inherit;
 }
 
 .input[aria-invalid='true'] {
-  border-color: #b3261e;
+  border-color: var(--danger);
 }
 
 .input:focus-visible {
-  outline: 3px solid #0f7a52;
+  outline: 3px solid var(--btn);
   outline-offset: 2px;
 }
 
@@ -264,13 +243,22 @@
   gap: 0.5rem;
 }
 
+/* 고를 것이 많으면 줄을 바꿔 이어 간다 (설정의 글자 크기 · 포인트 색). 예전에는 Recommend.css 에 있었다 */
+.choice-group--wrap {
+  flex-wrap: wrap;
+}
+
+.choice-group--wrap .choice {
+  flex: 1 1 28%;
+}
+
 .choice {
   flex: 1;
   min-height: 2.75rem;
   padding: 0 0.5rem;
-  border: 1px solid #b9c9c3;
+  border: 1px solid var(--line-strong);
   border-radius: 0.75rem;
-  background: #fff;
+  background: var(--surface);
   font: inherit;
   font-weight: 700;
   cursor: pointer;
@@ -284,16 +272,16 @@
 }
 
 .choice--selected {
-  border-color: #0f7a52;
-  background: #0f7a52;
-  color: #fff;
+  border-color: var(--btn);
+  background: var(--btn);
+  color: var(--btn-fg);
 }
 
 /* 불가: 숨기지 않고 흐리게 (D-005) */
 .choice--dim {
   border-style: dashed;
-  background: #f4faf7;
-  color: #8a9691;
+  background: var(--soft);
+  color: var(--faint);
   cursor: not-allowed;
 }
 
@@ -307,18 +295,18 @@
 .button {
   min-height: 2.75rem;
   padding: 0 1.25rem;
-  border: 1px solid #0f7a52;
+  border: 1px solid var(--btn);
   border-radius: 999px;
-  background: #fff;
-  color: #0f7a52;
+  background: var(--surface);
+  color: var(--btn);
   font: inherit;
   font-weight: 700;
   cursor: pointer;
 }
 
 .button--primary {
-  background: #0f7a52;
-  color: #fff;
+  background: var(--btn);
+  color: var(--btn-fg);
 }
 
 .button--wide {
@@ -331,4 +319,86 @@
   border: none;
   background: none;
   text-decoration: underline;
+}
+
+/* 화면 아래에 고정되는 버튼 줄 (등록 · 한꺼번에 등록). 아래 탭 바로 위에 붙어 스크롤해도 제자리에 있고,
+   목록 · 입력칸의 맨 아래가 가려지지 않도록 위로 그라데이션을 둔다 (SCREEN-SPEC 0절 고정 버튼, D-151) */
+.sticky-action {
+  position: sticky;
+  bottom: calc(var(--tabs-h) + env(safe-area-inset-bottom));
+  z-index: 5;
+  padding: 0.75rem 0 1rem;
+  background: linear-gradient(to bottom, transparent, var(--bg) 30%);
+}
+
+/* 확인 화면 카드 제목 줄: 제목 옆에 위험 표시 */
+.review-card__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  font-size: 1.125rem;
+}
+
+.review-card__no {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  background: var(--btn);
+  color: var(--btn-fg);
+  font-size: 0.8125rem;
+  font-weight: 800;
+}
+
+.review-card__name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* 위험 식품 안내 상자: 빨간 안내 (SCREEN-SPEC 16.2). 위험 ⚠ 는 늘 빨강이다 */
+.danger-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--danger);
+  border-radius: 0.75rem;
+  background: var(--danger-bg);
+  color: var(--danger-ink);
+}
+
+.danger-box__title {
+  font-size: 0.9375rem;
+}
+
+.danger-box__text {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  word-break: keep-all;
+}
+/* 가입 규칙 안내: 입력하는 동안 규칙마다 지켜졌는지 바로 보인다 (SCREEN-SPEC 3.2) */
+.rules {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.rules__item--ok {
+  color: var(--text);
+  font-weight: 700;
+}
+
+
+/* 확인 화면 맨 위 안내: 제목 줄과 왼쪽을 맞춘다 */
+.review__intro .register-choice__hint {
+  text-align: left;
 }

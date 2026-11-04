@@ -1,0 +1,21 @@
+/* 정보 고치기 창: 휴지통 선택창(TrashSheet.css 의 .sheet)과 같은 아래에서 올라오는 창이고, 입력칸이 많아 높게 열리며 안에서 스크롤된다. */
+.sheet--edit {
+  max-height: 88svh;
+  padding: 0; /* 어두운 바탕을 눌렀는지 알아내려고 창 안쪽 여백은 안쪽 상자(.sheet__inner)가 갖는다 */
+  overflow: auto;
+}
+
+.sheet__inner {
+  padding: 1.25rem 1rem calc(1rem + env(safe-area-inset-bottom));
+}
+
+.edit-form__title {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.edit-form__buttons {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 0.5rem;
+}

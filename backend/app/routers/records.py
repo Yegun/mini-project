@@ -28,6 +28,7 @@ def records_summary(conn: Conn, user_id: UserId, today: Today):
         "discarded": counted["discarded"],
         "food_kinds": counted["food_kinds"],
         "by_storage": counted["by_storage"],
+        "by_category": counted["by_category"],
         "by_status": by_status,
     }
 

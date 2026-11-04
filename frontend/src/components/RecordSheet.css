@@ -1,0 +1,299 @@
+/* 기록 화면 팝업: 화면 맨 아래에서 올라오는 창 (components/RecordSheet.tsx). 모양은 TrashSheet.css 와 같은 방식이다.
+   종류 색(먹은 식품 초록 · 버린 식품 붉은색)은 카드(Records.css)와 같은 값을 쓴다. */
+.record-sheet {
+  width: min(40rem, 100%);
+  max-width: 100%;
+  max-height: min(80dvh, 40rem);
+  margin: auto auto 0; /* 화면 아래에 붙인다 */
+  padding: 0;
+  border: none;
+  border-radius: 1.25rem 1.25rem 0 0;
+  background: var(--surface);
+  color: var(--text);
+  overflow: hidden;
+}
+
+.record-sheet[open] {
+  display: flex;
+  flex-direction: column;
+  animation: record-sheet-up 0.3s ease;
+}
+
+.record-sheet::backdrop {
+  background: var(--overlay);
+}
+
+@keyframes record-sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .record-sheet[open] {
+    animation: none;
+  }
+}
+
+.record-sheet[data-kind='eaten'] {
+  --k-tint: rgba(47, 182, 122, 0.14);
+  --k-strong: #2fb67a;
+  --k-ink: #1c6b45;
+}
+
+.record-sheet[data-kind='discarded'] {
+  --k-tint: rgba(224, 69, 74, 0.1);
+  --k-strong: #e0454a;
+  --k-ink: #a93036;
+}
+
+:root[data-tone='dark'] .record-sheet[data-kind='eaten'] {
+  --k-tint: rgba(47, 182, 122, 0.2);
+  --k-ink: #7ee09a;
+}
+
+:root[data-tone='dark'] .record-sheet[data-kind='discarded'] {
+  --k-tint: rgba(224, 69, 74, 0.2);
+  --k-ink: #ff9aa0;
+}
+
+/* 위쪽: 종류 색 바탕 + 위로 끌어올릴 수 있을 것 같은 작은 막대 + 제목 + 닫기 */
+.record-sheet__head {
+  position: relative;
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1.5rem 0.5rem 0.75rem 1rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--k-strong) 35%, var(--line));
+  background: linear-gradient(var(--k-tint), var(--k-tint)), var(--surface);
+}
+
+.record-sheet__head::before {
+  content: '';
+  position: absolute;
+  top: 0.5rem;
+  left: 50%;
+  width: 2.5rem;
+  height: 0.3rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--k-strong) 45%, var(--line-strong));
+  transform: translateX(-50%);
+}
+
+.record-sheet__title {
+  margin: 0;
+  color: var(--k-ink);
+  font-size: 1.25rem;
+  font-weight: 900;
+}
+
+.record-sheet__close {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 1.25rem;
+  cursor: pointer;
+}
+
+.record-sheet__close:focus-visible {
+  outline: 3px solid var(--btn);
+  outline-offset: 2px;
+}
+
+/* 아래쪽: 식품 목록. 길면 이 안에서만 스크롤된다 */
+.record-sheet__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 1rem 1rem calc(1rem + env(safe-area-inset-bottom));
+}
+
+/* 제목 옆에 개수 알약 */
+.record-sheet__heading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.record-sheet__count {
+  padding: 0.125rem 0.625rem;
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--k-ink);
+  font-size: 0.875rem;
+  font-weight: 800;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--k-strong) 40%, transparent);
+}
+
+/* 처리한 날짜별 묶음: 날짜 이름표 + 가는 선 */
+.rs-group + .rs-group {
+  margin-top: 1.25rem;
+}
+
+.rs-group__date {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.5rem;
+  color: var(--muted);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.rs-group__date::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: color-mix(in srgb, var(--k-strong) 25%, var(--line));
+}
+
+.rs-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* 식품 카드: 종류 색이 아주 옅게 깔리고, 왼쪽에 이름 첫 글자 동그라미 */
+.rs-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--k-strong) 22%, var(--line));
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--k-strong) 7%, var(--surface));
+}
+
+/* 식품 종류 그림 칸: 둥근 네모에 종류 색(cap--* 의 --cap-bg)이 깔리고 안에 종류 그림. 종류를 모르면 종류 색 대신 팝업 색 */
+.rs-item__art {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 1rem;
+  background: linear-gradient(var(--cap-bg), var(--cap-bg)), var(--surface);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cap-fg) 25%, transparent);
+}
+
+.rs-item__art--kind {
+  background: linear-gradient(var(--k-tint), var(--k-tint)), var(--surface);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--k-strong) 30%, transparent);
+}
+
+.rs-item__art-icon {
+  width: 2rem;
+  height: 2rem;
+}
+
+/* 기본 그림(먹은 식품 · 버린 식품)은 목록이 여러 줄이라 움직이지 않게 한다 */
+.rs-item__art .record-icon__sparkle,
+.rs-item__art .record-icon__fly {
+  animation: none;
+}
+
+.rs-item__chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* 종류 이름 알약: 홈의 종류 캡슐과 같은 색 */
+.rs-item__cat {
+  padding: 0 0.5rem;
+  border-radius: 999px;
+  background: linear-gradient(var(--cap-bg), var(--cap-bg)), var(--surface);
+  color: var(--cap-fg);
+  font-size: 0.8125rem;
+  font-weight: 800;
+}
+
+.rs-item__text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.rs-item__name {
+  font-size: 1rem;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.rs-item__qty {
+  padding: 0 0.5rem;
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+/* 되돌리기: 종류 색 테두리의 작은 알약 + 되돌림 화살표 */
+.rs-item__restore {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 0.25rem;
+  height: 2.25rem;
+  padding: 0 0.75rem;
+  border: 1px solid var(--k-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--k-ink);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.rs-item__restore:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.rs-item__restore:focus-visible {
+  outline: 3px solid var(--btn);
+  outline-offset: 2px;
+}
+
+/* 비었을 때: 큰 그림 + 안내 */
+.rs-empty {
+  display: grid;
+  justify-items: center;
+  gap: 0.5rem;
+  padding: 1.5rem 0;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.rs-empty p {
+  margin: 0;
+}
+
+.rs-empty__icon {
+  width: 4.5rem;
+  height: 4.5rem;
+  opacity: 0.85;
+}

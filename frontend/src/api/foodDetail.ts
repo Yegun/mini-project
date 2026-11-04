@@ -9,7 +9,7 @@
 //   VITE_USE_MOCK=slow          저장 · 처리 · 삭제가 2초 걸림 (요청 중 확인용)
 import { readFailure, readMessage } from './errors'
 import { send } from './http'
-import foodsMock from '../mocks/foods.json'
+import { foodsMock } from '../mocks/foodsMock'
 import {
   changeMockStorage,
   getMockFoodDetail,

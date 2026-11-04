@@ -1,0 +1,108 @@
+/* 확인 중 화면 (SCREEN-SPEC 15절). 색은 index.css 의 색 변수를 쓴다. 아래 탭은 App 이 그대로 보인다. */
+.thinking {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100svh - var(--tabs-h) - 4rem);
+  padding: 1rem;
+}
+
+
+
+.thinking__center {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  padding-bottom: 2rem;
+  text-align: center;
+}
+
+/* 그림은 살짝 위아래로 움직이며 기다리는 중임을 알린다. 진행률은 보이지 않는다 (D-155) */
+.thinking__art {
+  width: 9rem;
+  height: 7.8rem;
+  animation: thinking-bob 1.6s ease-in-out infinite;
+}
+
+@keyframes thinking-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-0.5rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .thinking__art {
+    animation: none;
+  }
+}
+
+.thinking__message {
+  font-size: 1.25rem;
+  font-weight: 800;
+  word-break: keep-all;
+}
+
+/* 일반 조언 하나 */
+.thinking__tip {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  max-width: 24rem;
+  padding: 1rem 1.125rem;
+  border-radius: 1rem;
+  background: var(--soft);
+}
+
+.thinking__tip-text {
+  line-height: 1.5;
+  word-break: keep-all;
+}
+
+.thinking__tip-note {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+/* 취소: 엄지가 닿는 아래쪽 가운데의 알약 버튼. 조용한 색이라 기다리는 화면을 방해하지 않는다 (D-154) */
+.thinking__cancel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-height: 2.75rem;
+  margin-top: 0.75rem;
+  padding: 0 1.25rem 0 1rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s, transform 0.1s;
+}
+
+.thinking__cancel svg {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
+.thinking__cancel:hover {
+  background: var(--soft);
+  color: var(--text);
+}
+
+.thinking__cancel:active {
+  transform: scale(0.96);
+}
+
+.thinking__cancel:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--acc) 50%, transparent);
+  outline-offset: 2px;
+}

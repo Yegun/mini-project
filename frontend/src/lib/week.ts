@@ -28,7 +28,18 @@ function fromDayNumber(n: number): string {
   return new Date(n * DAY_MS).toISOString().slice(0, 10)
 }
 
-// 오늘이 속한 주(일요일 시작)의 7일
+// date 에 n 일을 더한 날짜 (n 은 음수도 된다). 이전 · 다음 주로 넘길 때 7일씩 더한다 (D-192).
+export function addDays(date: string, n: number): string {
+  return fromDayNumber(toDayNumber(date) + n)
+}
+
+// 한 주(7일)에서 달력 위쪽에 보일 연 · 월. 일~토 가운데 날(수요일)이 속한 달을 쓴다 (주가 두 달에 걸칠 때 더 많은 쪽).
+export function weekMonthLabel(days: WeekDay[]): string {
+  const mid = days[3].date
+  return `${mid.slice(0, 4)}년 ${Number(mid.slice(5, 7))}월`
+}
+
+// 날짜가 들어 있는 주(일요일 시작)의 7일. 오늘이 속한 주를 구할 때도, 다른 주를 구할 때도 쓴다.
 export function getWeekDays(today: string): WeekDay[] {
   const todayNum = toDayNumber(today)
   const sunday = todayNum - getWeekday(today)

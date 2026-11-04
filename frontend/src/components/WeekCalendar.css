@@ -1,13 +1,145 @@
-/* 왼쪽 이름 칸 + 요일 7칸. 머리글과 식품 줄이 같은 열 폭을 쓴다. */
+/* 막대 달력 카드 (SCREEN-SPEC 4.7). 왼쪽 이름 칸 + 요일 7칸 + 오른쪽 남은 날 말풍선 칸. 머리글과 식품 줄이 같은 열 폭을 쓴다. */
 .week-calendar {
-  --week-label-w: clamp(4.25rem, 22vw, 5.5rem); /* 좁은 화면에서 7칸이 찌그러지지 않게 */
-  --today-color: #0f7a52;
+  --week-label-w: clamp(6.5rem, 25vw, 7.5rem); /* 이름 칸. 이름만 들어가고 "수제 요거트" 같은 긴 이름도 한 줄에 들어가게 넓게 */
+  --week-storage-w: clamp(3.25rem, 13vw, 3.75rem); /* 보관 방법 칸 (칸 사이 틈까지 포함한 폭) */
+  --week-bubble-w: clamp(3.5rem, 14vw, 4.25rem); /* 남은 날 칸 (+3일 · -2일). 줄마다 같은 자리 (칸 사이 틈까지 포함한 폭) */
+  --today-color: var(--btn);
 }
 
 .week-grid {
   display: grid;
-  grid-template-columns: var(--week-label-w) repeat(7, minmax(0, 1fr));
+  grid-template-columns: var(--week-label-w) repeat(7, minmax(0, 1fr)) var(--week-storage-w) var(--week-bubble-w);
   align-items: center;
+}
+
+/* 위쪽: 이전 주 · (연 · 월  >  오늘) · 다음 주 */
+.week-calendar__nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.week-calendar__arrow {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 1.75rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.week-calendar__title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  min-width: 0;
+}
+
+.week-calendar__month {
+  padding: 0.25rem 0.125rem;
+  border: none;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 1.0625rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+/* 연 · 월 옆 동그란 `>` : 전체 달력 열기 */
+.week-calendar__full {
+  display: grid;
+  place-items: center;
+  width: 1.625rem;
+  height: 1.625rem;
+  border: none;
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 1.125rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+/* 이번 주로 돌아오는 작은 '오늘' 버튼 */
+.week-calendar__today {
+  height: 1.625rem;
+  padding: 0 0.625rem;
+  border: none;
+  border-radius: 999px;
+  background: var(--btn);
+  color: var(--btn-fg);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* 이미 이번 주면 흐리게 (눌러도 아무 일도 없다) */
+.week-calendar__today--here {
+  opacity: 0.45;
+}
+
+.week-calendar__arrow:focus-visible,
+.week-calendar__month:focus-visible,
+.week-calendar__full:focus-visible,
+.week-calendar__today:focus-visible {
+  outline: 3px solid var(--btn);
+  outline-offset: 2px;
+}
+
+/* 주를 넘길 때 달력이 옆으로 스르륵 옮겨 간다. 다음 주는 오른쪽에서, 이전 주는 왼쪽에서 들어온다 (D-186 ~ D-188) */
+.week-calendar__viewport {
+  overflow: hidden;
+}
+
+.week-calendar__slide--next {
+  animation: week-in-from-right 0.3s ease;
+}
+
+.week-calendar__slide--prev {
+  animation: week-in-from-left 0.3s ease;
+}
+
+@keyframes week-in-from-right {
+  from {
+    opacity: 0;
+    transform: translateX(2.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes week-in-from-left {
+  from {
+    opacity: 0;
+    transform: translateX(-2.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .week-calendar__slide--next,
+  .week-calendar__slide--prev {
+    animation: none;
+  }
 }
 
 .week-calendar__day {
@@ -20,14 +152,35 @@
 }
 
 .week-calendar__weekday {
-  color: #5d6670;
+  color: var(--muted);
+}
+
+/* 일요일은 빨간 글자, 토요일은 파란 글자 (요일 글자와 날짜 숫자). 오늘 날짜 동그라미 안의 글자는 동그라미 색에 맞춘다 */
+.week-calendar {
+  --sun-color: #e0454a;
+  --sat-color: #3b82f6;
+}
+
+:root[data-tone='dark'] .week-calendar {
+  --sun-color: #ff8a8f;
+  --sat-color: #7fb0ff;
+}
+
+.week-calendar__day--sun .week-calendar__weekday,
+.week-calendar__day--sun .week-calendar__date:not(.week-calendar__date--today) {
+  color: var(--sun-color);
+}
+
+.week-calendar__day--sat .week-calendar__weekday,
+.week-calendar__day--sat .week-calendar__date:not(.week-calendar__date--today) {
+  color: var(--sat-color);
 }
 
 .week-calendar__date {
   display: grid;
   place-items: center;
-  width: 1.75rem;
-  height: 1.75rem;
+  width: 1.625rem; /* 이름 칸이 넓어진 만큼 요일 칸이 좁아져서 날짜 동그라미를 조금 줄인다 */
+  height: 1.625rem;
   border-radius: 50%;
   font-weight: 700;
   font-size: 0.9375rem;
@@ -35,22 +188,48 @@
 
 .week-calendar__date--today {
   background: var(--today-color);
-  color: #fff;
+  color: var(--btn-fg);
 }
 
 .week-calendar__body {
   position: relative;
 }
 
-/* 오늘 칸의 가운데를 지나는 세로 점선. 7칸 영역(이름 칸 제외) 안에서 위치를 잡는다. */
+/* 오늘 칸의 가운데를 지나는 세로 점선. 오늘이 있는 주에서만 보인다. 7칸 영역(이름 칸 · 말풍선 칸 제외) 안에서 위치를 잡는다. */
 .week-calendar__today-line {
   position: absolute;
   top: 0;
   bottom: 0;
   left: calc(
-    var(--week-label-w) + (100% - var(--week-label-w)) * (var(--today-col) + 0.5) / 7
+    var(--week-label-w) + (100% - var(--week-label-w) - var(--week-storage-w) - var(--week-bubble-w)) * (var(--today-col) + 0.5) / 7
   );
   border-left: 2px dashed var(--today-color);
   pointer-events: none;
   z-index: 1;
+}
+
+.week-calendar__empty {
+  padding: 1rem 0;
+  color: var(--muted);
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+/* 좁은 폰(360px 이하): 이름 · 보관 · 남은 날 칸을 줄여 요일 칸이 숫자 하나씩 들어가게 한다 */
+@media (max-width: 360px) {
+  .week-calendar {
+    --week-label-w: 5.25rem;
+    --week-storage-w: 2.75rem;
+    --week-bubble-w: 3rem;
+  }
+
+  .week-calendar__day {
+    font-size: 0.6875rem;
+  }
+
+  .week-calendar__date {
+    width: 1.25rem;
+    height: 1.25rem;
+    font-size: 0.6875rem;
+  }
 }

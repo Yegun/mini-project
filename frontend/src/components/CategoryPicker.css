@@ -1,0 +1,43 @@
+/* 식품 종류 고르기 (SCREEN-SPEC 5.2). 색 변수(--cap-bg · --cap-fg)는 FoodCapsules.css 의 .cap--* 에서 온다. */
+.cat-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.cat-picker__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-height: 2.75rem;
+  padding: 0 0.875rem 0 0.625rem;
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: linear-gradient(var(--cap-bg), var(--cap-bg)), var(--surface);
+  color: var(--cap-fg);
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.cat-picker__icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  flex: none;
+}
+
+/* 고른 종류는 굵은 테두리로 */
+.cat-picker__item--on {
+  border-color: var(--cap-fg);
+}
+
+.cat-picker__item:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.cat-picker__item:focus-visible {
+  outline: 3px solid var(--btn);
+  outline-offset: 2px;
+}

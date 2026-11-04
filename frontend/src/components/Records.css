@@ -1,13 +1,26 @@
-/* 기록 화면. 색은 홈과 같은 값을 쓴다 (#0f7a52 초록, #d9e3df 테두리). */
+/* 기록 화면. 색은 index.css 의 색 변수를 쓴다. */
 .records__section {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
 }
 
+/* 칸 제목: 앞에 작은 포인트 막대 */
 .records__heading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   margin: 0;
   font-size: 1.125rem;
+  font-weight: 900;
+}
+
+.records__heading::before {
+  content: '';
+  width: 0.25rem;
+  height: 1.1em;
+  border-radius: 999px;
+  background: var(--acc);
 }
 
 .records__cards {
@@ -16,104 +29,322 @@
   gap: 0.75rem;
 }
 
+/* 카드는 버튼이다: 누르면 아래에서 처리한 식품 팝업이 올라온다 (RecordsPage 의 CountCard, components/RecordSheet.tsx).
+   안쪽 간격은 예전 글자 단락(p)일 때와 같게 맞췄다. */
+/* 먹은 식품 = 연한 초록 · 버린 식품 = 연한 붉은색. 카드 · 팝업 · 제목 글자가 같은 색 계열로 이어진다.
+   색은 변수로만 정하므로 다른 색으로 바꿀 때는 이 값(--k-*)만 고치면 된다. 팝업(RecordSheet.css)에도 같은 값이 있다.
+   (초록 · 빨강은 홈의 상태 색(여유 · 임박)과 비슷한 계열이라, 연한 바탕으로만 쓰고 막대 색과는 구분한다) */
+.records__card[data-kind='eaten'] {
+  --k-tint: rgba(47, 182, 122, 0.14);
+  --k-strong: #2fb67a;
+  --k-ink: #1c6b45;
+}
+
+.records__card[data-kind='discarded'] {
+  --k-tint: rgba(224, 69, 74, 0.1);
+  --k-strong: #e0454a;
+  --k-ink: #a93036;
+}
+
+:root[data-tone='dark'] .records__card[data-kind='eaten'] {
+  --k-tint: rgba(47, 182, 122, 0.2);
+  --k-ink: #7ee09a;
+}
+
+:root[data-tone='dark'] .records__card[data-kind='discarded'] {
+  --k-tint: rgba(224, 69, 74, 0.2);
+  --k-ink: #ff9aa0;
+}
+
+/* 카드 한 장: 위에 제목과 큰 그림, 가운데에 "이번 달" 수를 크게, 아래에 올해 수와 "목록 ⌃".
+   배경은 오른쪽 위에서 번지는 종류 색 + 옅은 종류 색 바탕이고, 누르면 살짝 눌린다. */
 .records__card {
-  padding: 1rem;
-  border: 1px solid #d9e3df;
-  border-radius: 1rem;
-  background: #fff;
-}
-
-.records__card-title {
-  font-weight: 700;
-  margin-bottom: 0.25rem;
-}
-
-.records__table {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 0.5rem 1rem;
-  margin: 0;
-  padding: 1rem;
-  border: 1px solid #d9e3df;
-  border-radius: 1rem;
-  background: #fff;
-}
-
-.records__table dt {
-  color: #5d6670;
-}
-
-.records__table dd {
-  margin: 0;
-  font-weight: 700;
-}
-
-.records__statuses {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem 0.75rem;
-}
-
-.records__status {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-}
-
-.records__dot {
-  width: 0.75rem;
-  height: 0.75rem;
-  border-radius: 50%;
-}
-
-.records__group {
+  position: relative;
   display: flex;
   flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+  min-height: 10.5rem;
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, var(--k-strong) 35%, var(--line));
+  border-radius: 1.25rem;
+  background:
+    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--k-strong) 28%, transparent), transparent 58%),
+    linear-gradient(var(--k-tint), var(--k-tint)),
+    var(--surface);
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--k-strong) 14%, transparent);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.12s;
+}
+
+.records__card:active {
+  transform: scale(0.98);
+}
+
+.records__card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
   gap: 0.5rem;
 }
 
-.records__group-title {
-  margin: 0;
-  font-size: 1rem;
-  color: #5d6670;
-}
-
-.records__list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.records__card-hero {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  align-items: flex-start;
+  gap: 0.25rem;
 }
 
-.records__item {
+/* "이번 달" 이름표 */
+.records__card-period {
+  padding: 0 0.5rem;
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--k-ink);
+  font-size: 0.75rem;
+  font-weight: 800;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--k-strong) 40%, transparent);
+}
+
+.records__card-big {
+  display: flex;
+  align-items: baseline;
+  gap: 0.125rem;
+  color: var(--k-ink);
+}
+
+.records__card-num {
+  font-size: 2.75rem;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.records__card-unit {
+  font-size: 1.125rem;
+  font-weight: 800;
+}
+
+/* 아래 줄: 올해 수 + 목록 열기 안내 */
+.records__card-foot {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  border: 1px solid #d9e3df;
-  border-radius: 0.75rem;
-  background: #fff;
+  gap: 0.5rem;
+  margin-top: auto;
+  padding-top: 0.625rem;
+  border-top: 1px dashed color-mix(in srgb, var(--k-strong) 40%, transparent);
+  color: var(--muted);
+  font-size: 0.8125rem;
 }
 
-.records__item-text {
+.records__card-year strong {
+  color: var(--text);
+}
+
+.records__card-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--k-ink);
+  font-weight: 800;
+}
+
+/* 위쪽 화살표(⌃): 누르면 아래에서 팝업이 올라온다는 표시 */
+.records__card-chev {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: translateY(0.12rem) rotate(225deg);
+}
+
+.records__card:focus-visible {
+  outline: 3px solid var(--btn);
+  outline-offset: 2px;
+}
+
+.records__card-icon {
+  flex: none;
+  width: 3.5rem;
+  height: 3.5rem;
+}
+
+.records__card-title {
+  color: var(--k-ink);
+  font-size: 1.0625rem;
+  font-weight: 900;
+}
+
+/* ───────── 지금 냉장고: 큰 숫자 + 보관 상태 타일 + (종류 알약) + 상태 알약 ───────── */
+.rn {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 1.25rem;
+  background: var(--surface);
+}
+
+.rn__total {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 1rem;
+  background: linear-gradient(135deg, var(--hero-1), var(--hero-2));
+  color: #202020; /* 띠는 어두운색에서도 어두운 그라데이션이라 글자는 밝게 (홈 띠와 같다) */
+}
+
+:root[data-tone='dark'] .rn__total {
+  color: #f4f4f4;
+}
+
+.rn__total-icon {
+  flex: none;
+  width: 2.75rem;
+  height: 2.75rem;
+}
+
+.rn__total-text {
   display: flex;
   flex-direction: column;
   min-width: 0;
 }
 
-.records__item-name {
+.rn__total-label {
+  font-size: 0.8125rem;
   font-weight: 700;
-  overflow-wrap: anywhere;
+  opacity: 0.85;
 }
 
-.records__item-meta {
-  color: #5d6670;
+.rn__total-num {
+  font-size: 1.125rem;
+  font-weight: 800;
+}
+
+.rn__total-num strong {
+  margin-right: 0.125rem;
+  font-size: 2rem;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.rn__block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.rn__sub {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.8125rem;
+  font-weight: 800;
+}
+
+/* 보관 상태 타일: 보관 방법 색(cap--* 의 --cap-bg · --cap-fg) 바탕에 그림 · 이름 · 수 */
+.rn__tiles {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rn__tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.125rem;
+  padding: 0.75rem 0.25rem;
+  border-radius: 1rem;
+  background: linear-gradient(var(--cap-bg), var(--cap-bg)), var(--surface);
+  color: var(--cap-fg);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cap-fg) 25%, transparent);
+}
+
+.rn__tile-icon {
+  width: 2rem;
+  height: 2rem;
+}
+
+.rn__tile-label {
+  font-size: 0.8125rem;
+  font-weight: 800;
+}
+
+.rn__tile-num {
   font-size: 0.875rem;
+  font-weight: 800;
 }
 
-.records__empty {
-  color: #5d6670;
+.rn__tile-num strong {
+  font-size: 1.5rem;
+  font-weight: 900;
+}
+
+/* 식품 상태 알약: 상태 색(--sc)이 옅게 깔리고 점이 그 색 */
+.rn__stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rn__stat {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--sc) 14%, var(--surface));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sc) 30%, transparent);
+  font-weight: 700;
+}
+
+.rn__stat-dot {
+  flex: none;
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  background: var(--sc);
+  /* 바깥 고리 + 어두운색에서 지남(검정)이 묻히지 않게 옅은 테두리(--status-ring, D-180) */
+  box-shadow:
+    0 0 0 2px var(--surface),
+    0 0 0 3px color-mix(in srgb, var(--sc) 45%, transparent),
+    inset 0 0 0 1px var(--status-ring);
+}
+
+.rn__stat-label {
+  flex: 1;
+}
+
+.rn__stat-num {
+  font-size: 1.125rem;
+  font-weight: 900;
+}
+
+/* 식품 종류별: 홈의 종류 캡슐(색 · 그림 · 글자)에 수를 붙인 모양. 0 개인 종류는 흐리게 */
+.records__kinds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.records__kind--zero {
+  opacity: 0.45;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .records__card {
+    transition: none;
+  }
 }
