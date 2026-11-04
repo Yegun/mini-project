@@ -16,6 +16,33 @@
   padding: 1rem 1rem 0;
 }
 
+/* 홈 오른쪽 위 로그아웃 (사용자 결정) */
+.home__top {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0.5rem 1rem 0;
+}
+
+.home__logout {
+  min-height: 2.75rem;
+  padding: 0 0.75rem;
+  border: none;
+  background: none;
+  color: #5d6670;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.home__logout:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.home__top-notice {
+  padding: 0 1rem;
+}
+
 /* 달력 카드 */
 .week-calendar {
   padding: 1rem 0.75rem;

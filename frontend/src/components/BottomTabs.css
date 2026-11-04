@@ -6,7 +6,7 @@
   transform: translateX(-50%);
   z-index: 10;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: 1fr 1fr;
   width: 100%;
   max-width: 40rem;
   height: calc(var(--tabs-h) + env(safe-area-inset-bottom));
@@ -23,7 +23,7 @@
   cursor: pointer;
 }
 
-/* 지금 있는 탭은 눈에 띄게 (D-124) */
+/* 지금 있는 탭은 눈에 띄게 (D-079) */
 .tabs__item--active {
   color: #0f7a52;
   font-weight: 700;
