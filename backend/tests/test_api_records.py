@@ -29,7 +29,7 @@ def shape(response):
 
 
 def add(client, name="수제청", storage="room", expiry="2026-12-01", purchase="2026-10-30", **over):
-    body = dict(name=name, quantity=1, unit="개", purchase_date=purchase, storage=storage, expiry_date=expiry)
+    body = dict(name=name, quantity=1, unit="개", purchase_date=purchase, storage=storage, expiry_date=expiry, category="other")
     body.update(over)
     response = client.post("/foods/manual", json=body)
     assert response.status_code == 201, response.text
@@ -47,8 +47,8 @@ def process(client, food, status, on=None, pg=None):
 def insert_raw(pg, name, purchase, expiry, storage="room", email="kim@example.com"):
     """과거 기한 식품은 등록으로 만들 수 없어서 표에 바로 넣는다."""
     pg.execute(
-        "INSERT INTO foods (user_id, name, storage, quantity, unit, purchase_date, expiry_date, source)"
-        " SELECT id, %s, %s, 1, '개', %s, %s, 'manual' FROM users WHERE email = %s",
+        "INSERT INTO foods (user_id, name, storage, quantity, unit, purchase_date, expiry_date, source, category)"
+        " SELECT id, %s, %s, 1, '개', %s, %s, 'manual', 'other' FROM users WHERE email = %s",
         (name, storage, purchase, expiry, email),
     )
     pg.commit()

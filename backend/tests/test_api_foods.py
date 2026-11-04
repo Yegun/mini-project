@@ -35,7 +35,7 @@ def rule_food(**over):
 
 
 def manual_food(**over):
-    data = dict(name="수제청", quantity=1, unit="병", purchase_date="2026-10-30", storage="room", expiry_date="2026-12-01")
+    data = dict(name="수제청", quantity=1, unit="병", purchase_date="2026-10-30", storage="room", expiry_date="2026-12-01", category="other")
     data.update(over)
     return data
 
@@ -58,7 +58,7 @@ def count(pg, table="foods"):
 
 FOOD_KEYS = {
     "id", "name", "storage", "quantity", "unit", "purchase_date", "expiry_date", "source", "status",
-    "processed_date", "expiry_status", "days_left", "show_on_calendar",
+    "processed_date", "expiry_status", "days_left", "show_on_calendar", "is_danger", "danger_note", "category",
 }
 
 # ---- 로그인이 필요하다 (모든 🔒 창구) ---------------------------------------------------------------
@@ -279,8 +279,8 @@ def test_a1_computed_fields_and_expired_foods_stay_in_the_list(me, pg):
         add_manual(me, name=name, purchase_date="2026-10-30", expiry_date=expiry)
     for name, purchase, expiry in [("old1", "2026-10-01", "2026-10-29"), ("old4", "2026-10-01", "2026-10-26")]:
         pg.execute(  # 과거 기한은 등록으로 만들 수 없어서 시험에서는 표에 직접 넣는다
-            "INSERT INTO foods (user_id, name, storage, quantity, unit, purchase_date, expiry_date, source)"
-            " SELECT id, %s, 'room', 1, '개', %s, %s, 'manual' FROM users WHERE email = 'kim@example.com'",
+            "INSERT INTO foods (user_id, name, storage, quantity, unit, purchase_date, expiry_date, source, category)"
+            " SELECT id, %s, 'room', 1, '개', %s, %s, 'manual', 'other' FROM users WHERE email = 'kim@example.com'",
             (name, purchase, expiry),
         )
     pg.commit()
@@ -460,3 +460,97 @@ def test_db_rule_hit_is_server_error_not_input_error(me, pg, monkeypatch):
     monkeypatch.setattr(foods_repo, "create_food", lambda conn, user_id, **kw: real(conn, user_id, **{**kw, "quantity": 0}))
     assert shape(me.post("/foods", json=rule_food())) == (500, None, "server_error")
     assert count(pg) == 0
+
+
+# ---- 위험 식품·식품 종류 (v0.5.0, API-SPEC 0-1절, A3, V-35, V-36, V-41) ----------------------------------
+NOTE_OF_CHICKEN = "닭고기는 덜 익혀 먹으면 살모넬라 같은 식중독의 위험이 있어요"
+
+
+def test_rule_food_gets_danger_and_category_from_the_rule_table(me):
+    danger = add_rule(me, name="닭고기", storage="fridge")
+    assert (danger["is_danger"], danger["danger_note"], danger["category"]) == (True, NOTE_OF_CHICKEN, "meat")
+    safe = add_rule(me, name="양파")
+    assert (safe["is_danger"], safe["danger_note"], safe["category"]) == (False, None, "vegetable")
+    egg = add_rule(me, name="달걀", storage="fridge")
+    assert (egg["is_danger"], egg["danger_note"], egg["category"]) == (False, None, "other")  # 달걀은 위험이 아니다
+
+
+def test_alias_registration_shows_the_formal_names_danger(me):
+    food = add_rule(me, name="쇠고기", storage="fridge")  # 소고기의 별칭
+    assert (food["name"], food["is_danger"], food["category"]) == ("소고기", True, "meat")
+
+
+def test_manual_food_is_never_danger_and_keeps_the_chosen_category(me):
+    for category in ("vegetable", "fruit", "meat", "seafood", "other"):
+        food = add_manual(me, category=category)
+        assert (food["is_danger"], food["danger_note"], food["category"]) == (False, None, category)
+
+
+@pytest.mark.parametrize("category", [None, "", "snack", "채소", 1, True])
+def test_a3_category_is_required_and_must_be_one_of_five(me, pg, category):
+    assert shape(me.post("/foods/manual", json=manual_food(category=category))) == (422, "category", "invalid_category")
+    assert count(pg) == 0
+
+
+def test_a3_missing_category_key_is_invalid_category(me):
+    body = manual_food()
+    del body["category"]
+    assert shape(me.post("/foods/manual", json=body)) == (422, "category", "invalid_category")
+
+
+def test_a3_error_order_expiry_date_shape_then_category_then_expiry_input(me):
+    # 기한 날짜 모양 → 종류 → 기한 입력(둘 중 하나) 순서 (API-SPEC A3 실패 표)
+    assert shape(me.post("/foods/manual", json=manual_food(expiry_date="2026-13-40", category="snack")))[2] == "invalid_date"
+    assert shape(me.post("/foods/manual", json=manual_food(expiry_date=None, expiry_in_days=None, category="snack")))[2] == (
+        "invalid_category"
+    )
+    assert shape(me.post("/foods/manual", json=manual_food(expiry_date=None, expiry_in_days=None)))[2] == "expiry_input_invalid"
+
+
+def test_a3_basic_field_errors_come_before_category(me):
+    assert shape(me.post("/foods/manual", json=manual_food(name=" ", category="snack")))[2] == "required"
+    assert shape(me.post("/foods/manual", json=manual_food(storage="x", category="snack")))[2] == "invalid_storage"
+
+
+def test_a1_list_and_a4_detail_carry_the_three_fields(me):
+    add_rule(me, name="고등어", storage="fridge")
+    add_manual(me, name="수제청", category="fruit")
+    items = {f["name"]: f for f in me.get("/foods").json()["items"]}
+    assert (items["고등어"]["is_danger"], items["고등어"]["category"]) == (True, "seafood")
+    assert items["고등어"]["danger_note"].startswith("고등어는")
+    assert (items["수제청"]["is_danger"], items["수제청"]["danger_note"], items["수제청"]["category"]) == (False, None, "fruit")
+    detail = me.get(f"/foods/{items['고등어']['id']}").json()
+    assert (detail["is_danger"], detail["category"]) == (True, "seafood")
+
+
+def test_processed_food_keeps_danger_and_category_while_computed_fields_are_null(me):
+    food = add_rule(me, name="새우", storage="fridge")
+    done = me.patch(f"/foods/{food['id']}/process", json={"status": "eaten"}).json()
+    assert (done["expiry_status"], done["days_left"], done["show_on_calendar"]) == (None, None, None)
+    assert (done["is_danger"], done["category"]) == (True, "seafood")  # 계산 칸이 아니다 (API-SPEC 0-1절)
+    back = me.patch(f"/foods/{food['id']}/restore").json()
+    assert (back["is_danger"], back["category"], back["expiry_status"] is not None) == (True, "seafood", True)
+
+
+def test_rule_food_whose_name_left_the_rule_table_is_not_danger_and_has_no_category(me, pg):
+    food = add_rule(me, name="닭고기", storage="fridge")
+    pg.execute("DELETE FROM rules WHERE name = '닭고기'")
+    pg.commit()
+    got = me.get(f"/foods/{food['id']}").json()
+    assert (got["is_danger"], got["danger_note"], got["category"]) == (False, None, None)  # API-SPEC 0-1절
+
+
+def test_rule_change_shows_up_immediately_because_values_are_not_copied(me, pg):
+    food = add_rule(me, name="양파")
+    pg.execute("UPDATE rules SET is_danger = true, danger_note = '새 이유', category = 'other' WHERE name = '양파'")
+    pg.commit()
+    got = me.get(f"/foods/{food['id']}").json()
+    assert (got["is_danger"], got["danger_note"], got["category"]) == (True, "새 이유", "other")  # D-164
+
+
+def test_danger_is_not_copied_into_the_foods_table(pg, me):
+    food = add_rule(me, name="닭고기", storage="fridge")
+    row = pg.execute("SELECT category FROM foods WHERE id = %s", (food["id"],)).fetchone()
+    assert row["category"] is None  # 규칙표 식품은 종류를 저장하지 않는다 (DATA-MODEL 2절)
+    manual = add_manual(me, category="meat")
+    assert pg.execute("SELECT category FROM foods WHERE id = %s", (manual["id"],)).fetchone()["category"] == "meat"

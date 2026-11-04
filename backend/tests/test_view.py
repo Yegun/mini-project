@@ -7,7 +7,7 @@ TODAY = date(2026, 10, 30)
 
 KEYS = {
     "id", "name", "storage", "quantity", "unit", "purchase_date", "expiry_date", "source", "status",
-    "processed_date", "expiry_status", "days_left", "show_on_calendar",
+    "processed_date", "expiry_status", "days_left", "show_on_calendar", "is_danger", "danger_note", "category",
 }
 
 
@@ -15,7 +15,7 @@ def food(**over):
     data = dict(
         id="0b0e0b8e-3f4b-4f43-9f0a-5d5b0d9b3b11", user_id="ignored", name="우유", storage="fridge",
         quantity=1.5, unit="L", purchase_date="2026-10-28", expiry_date="2026-11-04", source="rule",
-        status="none", processed_date=None,
+        status="none", processed_date=None, is_danger=False, danger_note=None, category="other",
     )
     data.update(over)
     return data
@@ -55,3 +55,16 @@ def test_processed_food_has_null_computed_fields_and_keeps_date():
         r = food_json(food(status=status, processed_date="2026-10-30"), TODAY)
         assert (r["expiry_status"], r["days_left"], r["show_on_calendar"]) == (None, None, None)
         assert r["processed_date"] == "2026-10-30" and r["status"] == status
+
+
+def test_danger_note_and_category_are_passed_through_as_the_repository_read_them():
+    result = food_json(food(name="닭고기", is_danger=True, danger_note="덜 익히면 위험해요", category="meat"), TODAY)
+    assert (result["is_danger"], result["danger_note"], result["category"]) == (True, "덜 익히면 위험해요", "meat")
+
+
+def test_danger_and_category_stay_on_processed_foods():
+    result = food_json(
+        food(status="eaten", processed_date="2026-10-29", is_danger=True, danger_note="이유", category="seafood"), TODAY
+    )
+    assert result["expiry_status"] is None and result["days_left"] is None and result["show_on_calendar"] is None
+    assert (result["is_danger"], result["danger_note"], result["category"]) == (True, "이유", "seafood")  # 계산 칸이 아니다

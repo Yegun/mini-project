@@ -73,11 +73,21 @@ def _plan_line(conn: psycopg.Connection, raw: dict, read: dict, today: date) -> 
             name=name,
             expiry_date=expiry,
             source="rule",
-            add_rule={"name": name, "default_storage": read["recommended_storage"], "storages": read["storages"]},
+            add_rule={
+                "name": name,
+                "default_storage": read["recommended_storage"],
+                "storages": read["storages"],
+                # 위험 여부·이유·종류도 서버가 보관한 AI 결과에서만 가져온다 (V-26, V-36, D-165).
+                # 이 버전 이전에 보관된 결과(30분 안)에는 칸이 없을 수 있어 위험 아님, other 로 둔다.
+                "is_danger": bool(read.get("is_danger", False)),
+                "danger_note": read.get("danger_note"),
+                "category": read.get("category") or "other",
+            },
         )
     else:
         expiry = resolve_manual_expiry(purchase_date, raw.get("expiry_date"), raw.get("expiry_in_days"), today)
-        plan.update(name=name, expiry_date=expiry, source="manual")
+        # 종류는 서버가 보관한 읽기 결과에서 가져온다. 화면이 보낸 값은 쓰지 않는다 (API-SPEC 5절 50번)
+        plan.update(name=name, expiry_date=expiry, source="manual", category=read.get("category") or "other")
     return plan
 
 
@@ -114,6 +124,7 @@ def apply_plans(conn: psycopg.Connection, user_id: str, analysis_id: str, plans:
             purchase_date=plan["purchase_date"].isoformat(),
             expiry_date=plan["expiry_date"].isoformat(),
             source=plan["source"],
+            category=plan.get("category"),
         )
         for plan in plans
     ]

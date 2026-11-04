@@ -5,7 +5,8 @@
   규칙표에 없는 식품을 더하기 위해서다 (D-136). 이미 있는 줄을 고치거나 지우는 것은 못 한다.
 - 별칭(rule_aliases): 읽기만 (SELECT). 사진 등록으로 더해지는 식품은 별칭이 없다 (ARCHITECTURE 4-3).
 - 표 만들기·규칙표 채우기·기한 다시 계산은 이 계정으로 못 한다. 개발자 계정(DATABASE_ADMIN_URL)을 쓴다.
-- 표 8개에 RLS(줄 단위 보안)가 켜져 있고 정책은 없다 (알렘빅 0008, Q-33). 앱 계정은 RLS 를 건너뛰는 속성(BYPASSRLS)을 받아야
+- 오늘의 일반 조언(daily_tips): 읽기와 더하기 (SELECT, INSERT). 하루 한 줄을 더하고, 있는 줄을 고치거나 지우지 않는다 (DATA-MODEL 6-1).
+- 표 9개에 RLS(줄 단위 보안)가 켜져 있고 정책은 없다 (알렘빅 0008, 0009, Q-33). 앱 계정은 RLS 를 건너뛰는 속성(BYPASSRLS)을 받아야
   읽고 쓸 수 있다. "내 식품만"은 API 가 user_id 조건으로 지킨다 (D-061).
 
 비밀번호는 .env 에서만 읽는다 (Git 과 채팅에 쓰지 않는다).
@@ -23,7 +24,7 @@ from psycopg import sql
 from app.db.connection import connect_admin, env_value
 
 READ_WRITE = ("users", "sessions", "foods", "legacy_migration", "photo_analyses")
-READ_ADD = ("rules", "rule_storage")  # 읽기 + 더하기 (Q-27)
+READ_ADD = ("rules", "rule_storage", "daily_tips")  # 읽기 + 더하기 (Q-27, 오늘의 일반 조언은 하루 한 줄을 더한다)
 READ_ONLY = ("rule_aliases",)
 
 
