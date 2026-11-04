@@ -7,20 +7,33 @@
   gap: 0.5rem;
 }
 
+/* 줄. 줄 전체를 덮는 .food-list__open 버튼이 뒤에 있고, 그 위의 내용은 마우스 · 손가락이 통과한다.
+   ⚠ 와 휴지통만 따로 눌린다. (버튼 안에 버튼을 넣을 수 없어서 이렇게 겹친다) */
 .food-list__item {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  width: 100%;
-  padding: 0.75rem 1rem 0.75rem 0.875rem;
+  position: relative;
   border: 1px solid var(--line);
   border-radius: 0.75rem;
   background-color: var(--surface);
   background-image: linear-gradient(var(--tc, transparent), var(--tc, transparent)); /* 종류 색 배경 (FoodCapsules.css) */
-  font: inherit;
-  text-align: left;
+}
+
+.food-list__open {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  border: none;
+  border-radius: inherit;
+  background: none;
   cursor: pointer;
-  overflow: hidden;
+}
+
+.food-list__content {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.625rem 0.25rem 0.625rem 0.875rem;
+  pointer-events: none;
 }
 
 /* 상태 색 막대: 줄 가장자리에 붙이지 않고 안쪽에 둥글게 띄운다 (줄 모서리와 종류 색 배경과 부딪히지 않게) */
@@ -43,6 +56,21 @@
 .food-list__name {
   font-weight: 700;
   overflow-wrap: anywhere;
+}
+
+/* 휴지통: 손가락으로 누르기 쉽게 크게 (줄 끝에 있어 스크롤하다 잘못 누르기 쉽다 → 선택창 + 확인 창, D-144) */
+.food-list__trash {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 2.75rem;
+  height: 2.75rem;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  pointer-events: auto;
 }
 
 .visually-hidden {

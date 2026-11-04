@@ -1,0 +1,48 @@
+/* 휴지통 선택창: 화면 맨 아래에서 올라오는 창 (SCREEN-SPEC 4.8) */
+.sheet {
+  width: min(40rem, 100%);
+  max-width: 100%;
+  margin: auto auto 0; /* 화면 아래에 붙인다 */
+  padding: 1.25rem 1rem calc(1rem + env(safe-area-inset-bottom));
+  border: none;
+  border-radius: 1.25rem 1.25rem 0 0;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.sheet[open] {
+  animation: sheet-up 0.3s ease;
+}
+
+.sheet::backdrop {
+  background: var(--overlay);
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet[open] {
+    animation: none;
+  }
+}
+
+.sheet__name {
+  margin-bottom: 0.75rem;
+  font-size: 1.125rem;
+  font-weight: 700;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.sheet__buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}

@@ -1,0 +1,155 @@
+/* 거르기 드롭다운 (SCREEN-SPEC 4.6). 알약을 누르면 그 밑으로 같은 크기의 알약 선택지들이 차례로(차라락) 펼쳐진다.
+   선택지는 상자 안의 목록이 아니라 알약 하나하나가 따로 놓인다. */
+.dd {
+  position: relative;
+  display: inline-flex;
+  height: var(--pill-h, 2rem);
+  /* 안 고른 상태의 바탕색: 보관 방법은 청록 계열, 식품 종류는 포인트 색 계열 */
+  --dd-bg: var(--tint);
+  --dd-fg: var(--text);
+}
+
+.dd--storage {
+  --dd-bg: rgba(20, 184, 166, 0.2);
+}
+
+/* 값을 고르면 그 값의 캡슐 색 (FoodCapsules.css 의 --cap-bg · --cap-fg) 으로 채워진다 */
+.dd--chosen {
+  --dd-bg: var(--cap-bg);
+  --dd-fg: var(--cap-fg);
+}
+
+.dd__trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 100%;
+  padding: 0 0.75rem;
+  border: none; /* 색이 채워진 알약이라 테두리는 두지 않는다 */
+  border-radius: 999px;
+  background: linear-gradient(var(--dd-bg), var(--dd-bg)), var(--surface);
+  color: var(--dd-fg);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+/* 화살표 */
+.dd__trigger::after {
+  content: '';
+  width: 0.4375rem;
+  height: 0.4375rem;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: translateY(-2px) rotate(45deg);
+}
+
+.dd__trigger[aria-expanded='true']::after {
+  transform: translateY(1px) rotate(-135deg);
+}
+
+.dd__trigger:focus-visible {
+  outline: 3px solid var(--btn);
+  outline-offset: 2px;
+}
+
+/* 선택지 묶음: 알약 바로 밑에서 세로로 쌓인다. 상자 모양은 없다 */
+.dd__list {
+  position: absolute;
+  top: calc(100% + 0.375rem);
+  left: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  min-width: 100%;
+  width: max-content; /* 가장 긴 선택지에 맞춰 모두 같은 폭 */
+  max-width: calc(100vw - 1.5rem);
+}
+
+.dd__list--right {
+  left: auto;
+  right: 0;
+}
+
+/* 알약 하나하나. 알약과 같은 높이. 위에서 아래로 차례로(45ms 간격) 튀어나온다 */
+.dd__option {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--pill-h, 2rem);
+  padding: 0 1.5rem; /* 양쪽을 같게 비워 글자가 가운데에 오고 ✓ 자리도 확보 */
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(var(--soft), var(--soft)), var(--surface); /* '전체' 줄 (색 없음) */
+  /* 뒤의 달력과 겹쳐 보이지 않게: 바탕색 테를 한 겹 두르고 그 밖으로 뚜렷한 그림자를 깐다 */
+  box-shadow:
+    0 0 0 2px var(--surface),
+    0 6px 14px rgba(0, 0, 0, 0.32);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  animation: dd-pop 0.22s ease both;
+  animation-delay: calc(var(--i, 0) * 45ms);
+}
+
+@keyframes dd-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-0.625rem) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dd__option {
+    animation: none;
+  }
+}
+
+.dd__option:hover,
+.dd__option:focus-visible {
+  filter: brightness(0.95);
+  outline: none;
+}
+
+.dd__option:focus-visible {
+  outline: 3px solid var(--btn);
+  outline-offset: 2px;
+}
+
+/* 값마다 알약 전체를 그 값의 캡슐 색으로 채운다 */
+.dd__option--color {
+  background: linear-gradient(var(--cap-bg), var(--cap-bg)), var(--surface);
+  color: var(--cap-fg);
+}
+
+.dd__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.dd__icon {
+  width: 1.125rem;
+  height: 1.125rem;
+  flex: none;
+}
+
+/* 지금 고른 선택지는 오른쪽에 ✓ */
+.dd__check {
+  position: absolute;
+  right: 0.625rem;
+  font-weight: 900;
+}

@@ -1,0 +1,63 @@
+/* 상태 알약 + 드롭다운 (SCREEN-SPEC 4.6). 알약과 드롭다운은 같은 줄에, 같은 높이의 둥근 모양으로 이어진다. */
+.filters {
+  --pill-h: 2rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3125rem;
+  height: var(--pill-h);
+  padding: 0 0.625rem;
+  border: none; /* 색이 채워진 알약이라 테두리는 두지 않는다 */
+  border-radius: 999px;
+  background: var(--soft);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.pill__dot {
+  width: 0.4375rem;
+  height: 0.4375rem;
+  border-radius: 50%;
+  flex: none;
+}
+
+.pill__count {
+  font-weight: 700;
+}
+
+/* 알약마다 상태 색의 옅은 바탕 (전체는 기본 색) */
+.pill--fresh {
+  background: linear-gradient(rgba(47, 182, 122, 0.16), rgba(47, 182, 122, 0.16)), var(--surface);
+}
+.pill--warning {
+  background: linear-gradient(rgba(232, 176, 74, 0.2), rgba(232, 176, 74, 0.2)), var(--surface);
+}
+.pill--soon {
+  background: linear-gradient(rgba(224, 69, 74, 0.14), rgba(224, 69, 74, 0.14)), var(--surface);
+}
+.pill--expired {
+  background: linear-gradient(rgba(31, 35, 40, 0.1), rgba(31, 35, 40, 0.1)), var(--surface);
+}
+
+/* 누른 알약은 눈에 띄게 (주 버튼과 같은 색) */
+.pill--selected {
+  background: var(--btn);
+  color: var(--btn-fg);
+  font-weight: 700;
+}
+
+/* 수가 0 이면 흐리게. 눌러서 안내는 볼 수 있다 */
+.pill--zero:not(.pill--selected) {
+  opacity: 0.5;
+}

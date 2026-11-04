@@ -1,0 +1,37 @@
+/* 위험 식품 표시. ⚠ 는 밝은색 · 어두운색, 어느 포인트 색에서도 항상 빨강이다 (SCREEN-SPEC 16.2, 13.1 의 35번). */
+.danger {
+  position: relative;
+  display: inline-flex;
+}
+
+.danger__mark {
+  padding: 0.125rem 0.375rem;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: #e0212a; /* 늘 빨강 */
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 900;
+  cursor: pointer;
+  pointer-events: auto; /* 줄 전체를 덮는 버튼 위에서도 눌린다 */
+}
+
+.danger__tip {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  left: 0;
+  z-index: 20;
+  width: max-content;
+  max-width: min(16rem, 70vw);
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.75rem;
+  background: var(--surface);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+  color: var(--text);
+  font-size: 0.8125rem;
+  font-weight: 400;
+  line-height: 1.4;
+  word-break: keep-all;
+}
