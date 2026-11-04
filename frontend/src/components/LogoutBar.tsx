@@ -35,7 +35,11 @@ export default function LogoutBar({ onLoggedOut }: Props) {
     <>
       <div className="logout-bar">
         <button type="button" className="logout-bar__button" disabled={loggingOut} onClick={() => void run()}>
-          {loggingOut ? '나가는 중…' : '나가기'}
+          <svg className="logout-bar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+            <path d="M9 4H6.5A1.5 1.5 0 0 0 5 5.5v13A1.5 1.5 0 0 0 6.5 20H9" />
+            <path d="M14 8l4 4-4 4M18 12H9.5" />
+          </svg>
+          {loggingOut ? '로그아웃 중…' : '로그아웃'}
         </button>
       </div>
       {error && (

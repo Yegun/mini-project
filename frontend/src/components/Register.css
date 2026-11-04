@@ -397,3 +397,8 @@
   font-weight: 700;
 }
 
+
+/* 확인 화면 맨 위 안내: 제목 줄과 왼쪽을 맞춘다 */
+.review__intro .register-choice__hint {
+  text-align: left;
+}

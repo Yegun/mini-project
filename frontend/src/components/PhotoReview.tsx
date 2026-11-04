@@ -19,6 +19,7 @@ import ExpiryRewriteField from './ExpiryRewriteField'
 import FormField from './FormField'
 import QuantityUnitDateFields from './QuantityUnitDateFields'
 import StoragePicker from './StoragePicker'
+import './RegisterForm.css'
 
 interface Props {
   analysis: AnalyzeData // analysis_id 가 있는 읽기 결과
@@ -177,7 +178,7 @@ export default function PhotoReview({ analysis, onDone, onReupload, onDirtyChang
 
   return (
     <form
-      className="register__form"
+      className="register__form register-form--fancy"
       noValidate
       onSubmit={(e) => {
         e.preventDefault()
@@ -309,17 +310,19 @@ function ReviewCard({ index, line, disabled, onToggle, onName, onNameBlur, onVal
 
         <QuantityUnitDateFields
           idPrefix={p}
+          unitChips
           values={valuesOf(line)}
           errors={line.errors}
           onChange={onValues}
         />
 
-        <FormField label="보관 방법" id={`${p}storage`} error={line.errors.storage}>
+        <FormField label="보관" id={`${p}storage`} error={line.errors.storage}>
           <StoragePicker
             id={`${p}storage`}
             value={line.storage}
             options={options}
             maxDays={maxDays}
+            variant="tiles"
             onChange={onStorage}
           />
         </FormField>

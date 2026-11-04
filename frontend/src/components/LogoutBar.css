@@ -1,19 +1,49 @@
-/* 모든 화면 맨 위 오른쪽의 로그아웃 (D-130) */
+/* 모든 화면 맨 위 오른쪽의 로그아웃 (D-130): 흰 알약 안에 포인트 색 동그라미 그림 + 글자 */
 .logout-bar {
   display: flex;
   justify-content: flex-end;
-  padding: 0.5rem 1rem 0;
+  padding: 0.625rem 1rem 0;
 }
 
 .logout-bar__button {
-  min-height: 2.75rem;
-  padding: 0 0.75rem;
-  border: none;
-  background: none;
-  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.5rem;
+  padding: 0.25rem 0.875rem 0.25rem 0.3125rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--acc) 14%, transparent);
+  color: var(--text);
   font: inherit;
-  text-decoration: underline;
+  font-size: 0.875rem;
+  font-weight: 800;
   cursor: pointer;
+  transition: box-shadow 0.15s, transform 0.1s;
+}
+
+.logout-bar__button:hover:not(:disabled) {
+  box-shadow: 0 3px 12px color-mix(in srgb, var(--acc) 28%, transparent);
+}
+
+.logout-bar__button:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.logout-bar__button:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--acc) 50%, transparent);
+  outline-offset: 2px;
+}
+
+.logout-bar__icon {
+  box-sizing: content-box;
+  width: 1rem;
+  height: 1rem;
+  padding: 0.3125rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--acc) 30%, var(--surface));
+  color: var(--btn);
 }
 
 .logout-bar__button:disabled {

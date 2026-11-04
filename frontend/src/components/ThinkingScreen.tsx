@@ -20,7 +20,7 @@ function pickTip(tips: Tip[]): Tip | null {
 }
 
 // 확인 중 화면 (SCREEN-SPEC 15절, D-153 ~ D-158): 사진 읽기 · 음식 추천을 기다리는 동안 보인다.
-// 맨 위 왼쪽 취소, 그림과 안내 한 줄, 그 아래 냉장고 · 식품 관리 일반 조언 하나. 단계 목록과 진행률은 없다 (D-155).
+// 그림과 안내 한 줄, 그 아래 냉장고 · 식품 관리 일반 조언 하나, 맨 아래 가운데 취소(엄지가 닿는 곳). 단계 목록과 진행률은 없다 (D-155).
 // 열릴 때 오늘의 일반 조언(J1)을 받아 하나를 보인다. 받지 못해도 오류를 보이지 않고 조언 칸만 비운다.
 export default function ThinkingScreen({ message, onCancel }: Props) {
   const [tip, setTip] = useState<Tip | null>(null)
@@ -37,12 +37,6 @@ export default function ThinkingScreen({ message, onCancel }: Props) {
 
   return (
     <main className="thinking">
-      <header className="thinking__top">
-        <button type="button" className="button button--link thinking__cancel" onClick={onCancel}>
-          취소
-        </button>
-      </header>
-
       <div className="thinking__center">
         <svg className="thinking__art" viewBox="0 0 120 104" aria-hidden="true" focusable="false">
           <ellipse cx="62" cy="94" rx="46" ry="7" fill="rgba(0,0,0,.12)" />
@@ -67,6 +61,13 @@ export default function ThinkingScreen({ message, onCancel }: Props) {
             {tip.from_ai && <small className="thinking__tip-note">AI 가 알려 준 일반적인 조언이에요</small>}
           </aside>
         )}
+
+        <button type="button" className="thinking__cancel" onClick={onCancel}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true" focusable="false">
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+          취소
+        </button>
       </div>
     </main>
   )
