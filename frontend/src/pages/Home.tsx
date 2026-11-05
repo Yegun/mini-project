@@ -7,7 +7,7 @@ import FoodFilters, {
   type StorageFilter,
 } from '../components/FoodFilters'
 import FoodList from '../components/FoodList'
-import HeroBand, { type HeroTone } from '../components/HeroBand'
+import HeroBand from '../components/HeroBand'
 import WeekCalendar from '../components/WeekCalendar'
 import type { FoodsResult } from '../hooks/useFoods'
 import type { ExpiryStatus, Food } from '../types/food'
@@ -51,7 +51,7 @@ export default function Home({ result, onRetry, onSelectFood, onAddFood, onTrash
   if (foods.length === 0) {
     return (
       <main className="home">
-        <HeroBand today={today} />
+        <HeroBand />
         <EmptyHome onAdd={onAddFood} />
       </main>
     )
@@ -71,11 +71,10 @@ export default function Home({ result, onRetry, onSelectFood, onAddFood, onTrash
   )
   const noneInStatus = status !== 'all' && counts[status] === 0 // 수가 0 인 알약을 눌렀을 때의 안내
   const noneDanger = danger && dangerCount === 0 // 위험 식품이 하나도 없을 때 위험 알약을 눌렀을 때의 안내
-  const hero = heroNote(foods, counts) // 위쪽 띠의 상황 요약 (전체 식품 기준)
 
   return (
     <main className="home">
-      <HeroBand today={today} note={hero.text} noteTone={hero.tone} />
+      <HeroBand />
       <FoodFilters
         counts={counts}
         status={status}
@@ -108,19 +107,4 @@ export default function Home({ result, onRetry, onSelectFood, onAddFood, onTrash
       </div>
     </main>
   )
-}
-
-// 위쪽 띠의 한 줄 상황 요약. 서버가 판정한 상태(임박 · 지남 · 주의)를 읽어 문장으로 바꿀 뿐 판정은 하지 않는다 (D-009).
-// 이름은 API 가 준 순서에서 처음 나오는 그 상태의 식품이다. 문구는 임시 문구다 (OQ-03).
-// tone 은 문장 앞 점의 색이다(임박 빨강 · 지남 검정 · 주의 노랑 · 여유 초록).
-function heroNote(foods: Food[], counts: Record<ExpiryStatus, number>): { text: string; tone: HeroTone } {
-  const first = (status: ExpiryStatus) => foods.find((f) => f.expiry_status === status)
-  if (counts.soon > 0) {
-    const name = first('soon')?.name ?? ''
-    const text = counts.soon === 1 ? `곧 기한: ${name}` : `곧 기한: ${name} 외 ${counts.soon - 1}개`
-    return { text, tone: 'soon' }
-  }
-  if (counts.expired > 0) return { text: `기한이 지난 식품이 ${counts.expired}개 있어요`, tone: 'expired' }
-  if (counts.warning > 0) return { text: `곧 챙길 식품이 ${counts.warning}개 있어요`, tone: 'warning' }
-  return { text: '냉장고가 여유로워요', tone: 'ok' }
 }

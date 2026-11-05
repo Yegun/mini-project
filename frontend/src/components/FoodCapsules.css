@@ -116,32 +116,11 @@
   gap: 0.25rem;
 }
 
-/* 그림이 붙은 보관 방법 캡슐(식품 목록): 그림 뒤에 보관 방법마다 다른 은은한 빛이 퍼진다. 움직임은 없다(목록이 길어도 산만하지 않게).
-   움직이는 것은 막대 달력 오른쪽 보관 칸(.food-row__storage-box)뿐이다. 글자는 그대로 남는다. 그림 가운데는 왼쪽에서 약 0.95rem 이다 */
-/* 윤곽선(.cap 의 box-shadow)은 없앤다. 그림 뒤의 빛과 칸 색만으로 구분한다 */
+/* 그림이 붙은 보관 방법 캡슐(식품 목록): 배경은 칸 색 한 가지(그라데이션 없음). 움직임도 없다(목록이 길어도 산만하지 않게).
+   움직이는 것은 막대 달력 오른쪽 보관 칸(.food-row__storage-box)뿐이다. 글자는 그대로 남는다 */
+/* 윤곽선(.cap 의 box-shadow)은 없앤다. 칸 색만으로 구분한다 */
 .cap.cap--icon {
   box-shadow: none;
-}
-
-.cap.cap--icon.cap--room {
-  background:
-    radial-gradient(circle at 0.95rem 50%, rgba(255, 228, 110, 0.75), rgba(255, 228, 110, 0) 1.5rem),
-    linear-gradient(var(--cap-bg), var(--cap-bg)),
-    var(--surface);
-}
-
-.cap.cap--icon.cap--fridge {
-  background:
-    radial-gradient(circle at 0.95rem 50%, rgba(110, 225, 210, 0.7), rgba(110, 225, 210, 0) 1.5rem),
-    linear-gradient(var(--cap-bg), var(--cap-bg)),
-    var(--surface);
-}
-
-.cap.cap--icon.cap--freezer {
-  background:
-    radial-gradient(circle at 0.95rem 50%, rgba(225, 245, 255, 0.85), rgba(225, 245, 255, 0) 1.5rem),
-    linear-gradient(var(--cap-bg), var(--cap-bg)),
-    var(--surface);
 }
 
 /* 막대 달력 오른쪽 보관 칸(.food-row__storage-box)의 움직임: 상온은 햇살이 내리쬐고 냉동은 눈이 내리며 냉장은 문이 열릴 때 찬 바람이 나온다.

@@ -86,29 +86,6 @@
   height: 1.375rem;
 }
 
-/* 보관 방법 칸의 은은한 빛: 그림 뒤에 보관 방법마다 다른 빛이 퍼진다. 기본 칸 색 위에 겹쳐 깐다 */
-.food-row__storage-box.cap--room {
-  background:
-    radial-gradient(circle at 50% 55%, rgba(255, 228, 110, 0.75), rgba(255, 228, 110, 0) 68%),
-    linear-gradient(var(--cap-bg), var(--cap-bg)),
-    var(--surface);
-}
-
-.food-row__storage-box.cap--fridge {
-  background:
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0) 50%),
-    radial-gradient(circle at 50% 55%, rgba(110, 225, 210, 0.7), rgba(110, 225, 210, 0) 68%),
-    linear-gradient(var(--cap-bg), var(--cap-bg)),
-    var(--surface);
-}
-
-.food-row__storage-box.cap--freezer {
-  background:
-    radial-gradient(circle at 50% 55%, rgba(225, 245, 255, 0.85), rgba(225, 245, 255, 0) 68%),
-    linear-gradient(var(--cap-bg), var(--cap-bg)),
-    var(--surface);
-}
-
 /* 보관 방법 칸의 움직임: 배경은 상온 햇살 · 냉동 눈 · 냉장 찬 바람, 그림은 해와 눈꽃이 천천히 돌고 냉장고 문이 열렸다 닫힌다 (움직임 정의는 FoodCapsules.css) */
 .food-row__storage-box.cap--room .food-row__storage-icon {
   animation: storage-spin 24s linear infinite;
