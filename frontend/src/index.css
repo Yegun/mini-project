@@ -4,14 +4,14 @@
 /* 휴대폰 화면 우선. 넓은 화면에서는 같은 폭의 한 열을 가운데에 둔다 (SCREEN-SPEC 0절). */
 
 /* ───────── 색 변수 (SCREEN-SPEC 0절, 9.5) ─────────
-   밝기(data-tone: light / dark)와 포인트 색(data-accent: butter / carrot / berry)은 lib/appearance.ts 가
+   밝기(data-tone: light / dark)와 포인트 색(data-accent: butter / carrot / berry / leaf)은 lib/appearance.ts 가
    문서 맨 위 요소(html)에 속성으로 붙인다. 아래 변수를 쓰는 곳은 색을 직접 적지 않는다.
    상태 색(여유 · 주의 · 임박 · 지남, lib/statusColor.ts)과 위험 ⚠ 빨강은 어떤 색에서도 바뀌지 않는다 (D-180).
    값은 비교용 시안에서 가져온 임시 값이다. */
 :root {
   /* 밝은색 + 버터 옐로 (처음 값) */
-  --bg: #fffbf0; /* 화면 바탕 */
-  --surface: #fff; /* 카드 · 입력칸 바탕 */
+  --bg: #f9f4e6; /* 화면 바탕. 너무 밝지 않게 낮춘 크림. 카드(--surface)보다 덜 물들어서 카드가 바탕에서 구분된다 */
+  --surface: color-mix(in srgb, #fff 22%, var(--soft)); /* 카드 · 입력칸 바탕. 순백은 눈부셔서 포인트 색의 연한 바탕색을 섞은 부드러운 아이보리다 (어두운색은 아래에서 따로 정한다) */
   --soft: #fff6d6; /* 연한 포인트 바탕 (입력칸 · 달력 카드 · 흐린 칸) */
   --line: #ececec; /* 테두리 */
   --line-strong: #cfcfcf; /* 입력칸 테두리 */
@@ -45,8 +45,8 @@
 }
 
 :root[data-accent='carrot'] {
-  --bg: #fff8f0;
-  --soft: #fff0e0;
+  --bg: #faf1e7;
+  --soft: #ffe9cf;
   --acc: #e8590c;
   --tint: rgba(255, 169, 90, 0.45);
   --hero-1: #ffe6cc;
@@ -54,12 +54,23 @@
 }
 
 :root[data-accent='berry'] {
-  --bg: #faf8ff;
-  --soft: #f3efff;
+  --bg: #f6f3fc;
+  --soft: #e8e0ff;
   --acc: #ee6a92;
   --tint: rgba(185, 165, 255, 0.45);
   --hero-1: #ece5ff;
   --hero-2: #b9a5ff;
+}
+
+/* 밝은색 + 상추 그린: 막 딴 상추처럼 밝고 싱싱한 초록(노란 기가 도는 선명한 연두 ~ 풀색).
+   상태 색 '여유'의 초록(#2db87e, 푸른 기가 도는 초록)과 헷갈리지 않게 노란 기가 도는 초록으로 둔다 */
+:root[data-accent='leaf'] {
+  --bg: #f3f8e8;
+  --soft: #edf9cc;
+  --acc: #45b81e;
+  --tint: rgba(170, 240, 100, 0.55);
+  --hero-1: #eefdd0;
+  --hero-2: #a8f060;
 }
 
 /* 어두운색 + 버터 옐로 */
@@ -82,7 +93,7 @@
   --danger-bg: #3a1f21;
   --danger-ink: #ffb4b8;
   --warn-ink: #f2c864;
-  --status-ring: rgba(255, 255, 255, 0.45);
+  --status-ring: #1f2328; /* 지남(검정, lib/statusColor.ts)과 같은 검은색. 테두리가 따로 보이지 않고 검정 요소와 하나로 보인다 */
   --overlay: rgba(0, 0, 0, 0.6);
   color-scheme: dark;
 }
@@ -117,6 +128,24 @@
   --hero-2: #262040;
   --btn: #b9a5ff;
   --btn-fg: #1f1c27;
+}
+
+/* 어두운색 + 상추 그린: 노란 기가 도는 연두를 어두운 바탕에 쓰면 형광빛이 돌아 눈이 아프다.
+   그래서 어두운색에서는 형광빛이 없는 자연스러운 풀초록을 쓰고, 바탕 · 띠 · 버튼을 모두 더 밝게 둔다 */
+:root[data-tone='dark'][data-accent='leaf'] {
+  --bg: #243026;
+  --surface: #2f3d32;
+  --soft: #3b5841;
+  --line: #455b4a;
+  --line-strong: #62806a;
+  --text: #f3faf3;
+  --muted: #b2c6b5;
+  --acc: #9fe89a;
+  --tint: rgba(140, 230, 140, 0.26);
+  --hero-1: #62b45c;
+  --hero-2: #32663b;
+  --btn: #90e68a;
+  --btn-fg: #112016;
 }
 
 /* 글자 크기 5단계 (설정 > 글자 크기). 가운데가 처음 값 '보통' (SCREEN-SPEC 9.6) */

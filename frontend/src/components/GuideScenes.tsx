@@ -1,11 +1,16 @@
 import type { CSSProperties, ReactNode } from 'react'
 import { BasketArt, CameraArt, ReceiptArt, TrashLineIcon } from './RegisterIcons'
+import CategoryIcon from './CategoryIcon'
+import DangerIcon from './DangerIcon'
+import DaysLeftBubble from './DaysLeftBubble'
+import { CategoryCapsule, StorageCapsule } from './FoodCapsules'
 import { STATUS_COLOR } from '../lib/statusColor'
+import { CATEGORIES, CATEGORY_LABEL } from '../types/food'
 import './GuideScenes.css'
 
-// 사용 설명서 장면 9장의 그림 (US-046, SCREEN-SPEC 17.2, D-199, D-200, D-205).
+// 사용 설명서 장면 10장의 그림 (US-046, SCREEN-SPEC 17.2, D-199, D-200, D-205).
 // 화면 코드(CSS · SVG)로 그려서 밝은색 · 어두운색 · 포인트 색을 그대로 따른다. 움직이는 것은 눌러야 할 곳을 가리키는 동그라미(.gs-ring),
-// 장면 안의 막대 · 줄 · 창이 나타나는 모습, 이어지는 화면을 차례로 보여 주는 장면(2장 · 5장 · 6장), 1장의 냉장고 문이다.
+// 장면 안의 막대 · 줄 · 창이 나타나는 모습, 이어지는 화면을 차례로 보여 주는 장면(2장 · 6장 · 7장), 1장의 냉장고 문이다.
 // "움직임 줄이기"를 켜면 모두 멈춘 그림으로 보이고, 이어지는 화면은 한꺼번에 위아래로 펼쳐 보인다 (GuideScenes.css 맨 아래, D-188).
 // 그림 속 식품 이름과 숫자는 모두 예시다. 장면마다 오른쪽 위에 "예시" 표시가 붙는다.
 
@@ -15,9 +20,9 @@ function Ring({ style }: { style?: CSSProperties }) {
 }
 
 // 장면 그림의 바깥 상자. 오른쪽 위에 "예시" 표시
-function Frame({ children }: { children: ReactNode }) {
+function Frame({ children, wide }: { children: ReactNode; wide?: boolean }) {
   return (
-    <div className="gs" aria-hidden="true">
+    <div className={wide ? 'gs gs--wide' : 'gs'} aria-hidden="true">
       <span className="gs__tag">예시</span>
       {children}
     </div>
@@ -165,7 +170,125 @@ export function SceneReview() {
   )
 }
 
-// 4장: 색으로 한눈에 봐요 — 막대 달력의 색과 양쪽 끝의 ‹ ›(이전 주 · 다음 주)
+// 상태 낱말 "여유 주의 임박 지남": 낱말마다 앞에 상태 색의 작은 원을 붙인다 (색은 앱의 상태 색과 같다, D-180).
+// 지남(검정)은 어두운 바탕에 묻히지 않게 원에 옅은 테두리를 둔다
+const STATUS_WORDS: readonly { text: string; color: string; black?: boolean }[] = [
+  { text: '여유', color: STATUS_COLOR.fresh },
+  { text: '주의', color: STATUS_COLOR.warning },
+  { text: '임박', color: STATUS_COLOR.soon },
+  { text: '지남', color: STATUS_COLOR.expired, black: true },
+]
+
+// block: 한 줄을 통째로 쓴다(설명 글 맨 앞에 따로 놓을 때)
+export function StatusWords({ block }: { block?: boolean }) {
+  return (
+    <span className={block ? 'gs-sw gs-sw--block' : 'gs-sw'}>
+      {STATUS_WORDS.map((w) => (
+        <span key={w.text} className="gs-sw__item">
+          <i className={w.black ? 'gs-sw__dot gs-sw__dot--black' : 'gs-sw__dot'} style={{ background: w.color }} />
+          {w.text}
+        </span>
+      ))}
+    </span>
+  )
+}
+
+// 식품 종류 낱말 "채소 · 과일 · 육류 · 수산 · 기타": 낱말마다 앞에 목록 줄에 쓰는 종류 그림을 붙인다
+export function CategoryWords() {
+  return (
+    <span className="gs-sw">
+      {CATEGORIES.map((c) => (
+        <span key={c} className="gs-sw__item">
+          <CategoryIcon category={c} className="gs-cw__icon" />
+          {CATEGORY_LABEL[c]}
+        </span>
+      ))}
+    </span>
+  )
+}
+
+// 번호 표시: 목록 줄의 각 부분에 붙여서 아래 설명과 짝을 맞춘다. 번호 순서대로 하나씩 나타난다
+function Mark({ n, left }: { n: number; left?: boolean }) {
+  return (
+    <b className={left ? 'gs-mk gs-mk--left' : 'gs-mk'} style={{ '--n': n } as CSSProperties}>
+      {n}
+    </b>
+  )
+}
+
+// 4장: 식품 목록, 이렇게 읽어요 — 홈의 목록 줄(색 막대 · 이름 · 보관 방법 · 식품 종류 · 남은 날 · 휴지통)을 번호로 짚어 준다.
+// 줄은 앱이 쓰는 같은 부품(목록 줄 모양 · 캡슐 · 남은 날 말풍선)을 그대로 가져다 써서 실제 화면과 같다
+export function SceneList() {
+  const legend: readonly { n: number; label: string; detail: ReactNode }[] = [
+    { n: 1, label: '색 막대', detail: <StatusWords /> },
+    {
+      n: 2,
+      label: '이름',
+      detail: (
+        <>
+          위험하면 <DangerIcon className="gs-inline-danger" /> 위험이 붙어요
+        </>
+      ),
+    },
+    { n: 3, label: '보관 방법', detail: '냉장 · 상온 · 냉동' },
+    { n: 4, label: '식품 종류', detail: <CategoryWords /> },
+    { n: 5, label: '남은 날', detail: '며칠 남았는지, 며칠 지났는지' },
+    { n: 6, label: '휴지통', detail: '다 먹음 · 버림 · 지우기' },
+  ]
+  return (
+    <Frame wide>
+      <div className="food-list__item tint tint--seafood gs-listrow">
+        <div className="food-list__content">
+          <span className="food-list__strip gs-pos" style={{ background: STATUS_COLOR.soon }}>
+            <Mark n={1} left />
+          </span>
+          <span className="food-list__art cap--seafood">
+            <CategoryIcon category="seafood" className="food-list__art-icon" />
+          </span>
+          <span className="food-list__main">
+            <span className="food-list__name gs-pos">
+              고등어
+              <Mark n={2} />
+            </span>
+            <span className="gs-danger">
+              <DangerIcon className="gs-danger__icon" />
+              위험
+            </span>
+            <span className="caps">
+              <span className="gs-pos">
+                <StorageCapsule storage="fridge" withIcon />
+                <Mark n={3} />
+              </span>
+              <span className="gs-pos">
+                <CategoryCapsule category="seafood" />
+                <Mark n={4} />
+              </span>
+            </span>
+          </span>
+          <span className="gs-pos">
+            <DaysLeftBubble status="soon" daysLeft={1} />
+            <Mark n={5} />
+          </span>
+          <span className="food-list__trash gs-pos">
+            <TrashLineIcon className="gs-trash__icon" />
+            <Mark n={6} />
+          </span>
+        </div>
+      </div>
+      <ol className="gs-legend">
+        {legend.map((item) => (
+          <li key={item.n} style={{ '--n': item.n } as CSSProperties}>
+            <b className="gs-mk gs-mk--inline">{item.n}</b>
+            <b className="gs-legend__label">{item.label}</b>
+            <span className="gs-legend__detail">{item.detail}</span>
+          </li>
+        ))}
+      </ol>
+    </Frame>
+  )
+}
+
+// 5장: 색으로 한눈에 봐요 — 막대 달력의 색과 양쪽 끝의 ‹ ›(이전 주 · 다음 주)
 export function SceneColors() {
   const bars = [
     { name: '상추', color: STATUS_COLOR.expired, left: 0, width: 34 },
@@ -249,7 +372,7 @@ function MonthGrid({ ringDay }: { ringDay?: number }) {
   )
 }
 
-// 5장: 전체 달력으로 한 달을 봐요 — 1. 막대 달력의 연 · 월 옆 ›를 누르면 2. 한 달 달력이 열린다
+// 6장: 전체 달력으로 한 달을 봐요 — 1. 막대 달력의 연 · 월 옆 ›를 누르면 2. 한 달 달력이 열린다
 export function SceneFullCalendar() {
   return (
     <Frame>
@@ -287,7 +410,7 @@ export function SceneFullCalendar() {
   )
 }
 
-// 6장: 날짜를 누르면 그날의 식품이 떠요 — 1. 전체 달력에서 날짜를 누르면 2. 아래에서 목록 창이 올라오고 3. 위로 끌어올리면 그날 남아 있는 식품까지 보인다
+// 7장: 날짜를 누르면 그날의 식품이 떠요 — 1. 전체 달력에서 날짜를 누르면 2. 아래에서 목록 창이 올라오고 3. 위로 끌어올리면 그날 남아 있는 식품까지 보인다
 export function SceneDateSheet() {
   return (
     <Frame>
@@ -335,7 +458,7 @@ export function SceneDateSheet() {
   )
 }
 
-// 7장: 다 먹으면 휴지통으로 — 휴지통 버튼을 누르면 다 먹음 · 버림 · 지우기 선택창
+// 8장: 다 먹으면 휴지통으로 — 휴지통 버튼을 누르면 다 먹음 · 버림 · 지우기 선택창
 export function SceneTrash() {
   return (
     <Frame>
@@ -363,7 +486,7 @@ export function SceneTrash() {
   )
 }
 
-// 8장: 뭐 먹지? — 끼니와 음식 종류를 고르고 「추천받기」
+// 9장: 뭐 먹지? — 끼니와 음식 종류를 고르고 「추천받기」
 export function SceneRecommend() {
   return (
     <Frame>
@@ -389,7 +512,7 @@ export function SceneRecommend() {
   )
 }
 
-// 9장: 기록을 보고 조언받아요 — 기록 탭에서 「조언 받기」
+// 10장: 기록을 보고 조언받아요 — 기록 탭에서 「조언 받기」
 export function SceneAdvice() {
   return (
     <Frame>

@@ -1,4 +1,4 @@
-import { useRef, useState, type ComponentType } from 'react'
+import { useRef, useState, type ComponentType, type ReactNode } from 'react'
 import {
   SceneAdvice,
   SceneColors,
@@ -6,9 +6,11 @@ import {
   SceneFullCalendar,
   ScenePhoto,
   SceneIntro,
+  SceneList,
   SceneRecommend,
   SceneReview,
   SceneTrash,
+  StatusWords,
 } from './GuideScenes'
 import './Register.css'
 import './Guide.css'
@@ -20,11 +22,11 @@ interface Props {
 
 interface Scene {
   title: string
-  text: string
+  text: ReactNode
   Art: ComponentType
 }
 
-// 장면 9장 (SCREEN-SPEC 17.2, D-199, D-200). 첫 장은 앱 소개(앱의 목적)이고 나머지 8장은 사용법이다. 문구는 쉬운 말로 적었다.
+// 장면 10장 (SCREEN-SPEC 17.2, D-199, D-200). 첫 장은 앱 소개(앱의 목적)이고 나머지 9장은 사용법이다. 문구는 쉬운 말로 적었다.
 // 로그인과 가입 방법은 담지 않는다. 사용법의 이름은 앱 화면의 글자와 같게 적었다 (아래 탭 '뭐 먹지?' 등).
 const SCENES: readonly Scene[] = [
   {
@@ -43,8 +45,18 @@ const SCENES: readonly Scene[] = [
     Art: SceneReview,
   },
   {
+    title: '식품 목록, 이렇게 읽어요',
+    text: '줄마다 상태 색, 보관 방법, 식품 종류, 남은 날이 보여요. 번호를 따라 하나씩 읽어 보세요.',
+    Art: SceneList,
+  },
+  {
     title: '색으로 한눈에 봐요',
-    text: "초록 여유 · 노랑 주의 · 빨강 임박 · 검정 지남이에요. 막대 달력 양쪽 끝의 '‹' '›'로 이전 주와 다음 주를 봐요.",
+    text: (
+      <>
+        <StatusWords block />
+        색으로 상태를 구분해요. 막대 달력 양쪽 끝의 '‹' '›'로 이전 주와 다음 주를 봐요.
+      </>
+    ),
     Art: SceneColors,
   },
   {

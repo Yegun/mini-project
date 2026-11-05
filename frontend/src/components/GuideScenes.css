@@ -533,7 +533,7 @@
   opacity: 0.55;
 }
 
-/* ───────── 4장: 막대 달력 · 5장: 달력 머리 ───────── */
+/* ───────── 5장: 막대 달력 · 6장: 달력 머리 ───────── */
 .gs-cal__head {
   display: flex;
   align-items: center;
@@ -618,7 +618,7 @@
   font-weight: 900;
 }
 
-/* ───────── 5장 · 6장: 한 달 달력 ───────── */
+/* ───────── 6장 · 7장: 한 달 달력 ───────── */
 .gs-month {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -672,7 +672,7 @@
   height: 0.5625rem;
 }
 
-/* ───────── 6장: 날짜를 누르면 뜨는 창 ───────── */
+/* ───────── 7장: 날짜를 누르면 뜨는 창 ───────── */
 .gs-sheet {
   display: flex;
   flex-direction: column;
@@ -733,7 +733,7 @@
   font-weight: 900;
 }
 
-/* ───────── 7장: 휴지통과 선택창 ───────── */
+/* ───────── 8장: 휴지통과 선택창 ───────── */
 .gs-trash {
   position: relative;
   display: grid;
@@ -764,7 +764,7 @@
   font-weight: 700;
 }
 
-/* ───────── 8장 · 9장: 결과 상자 ───────── */
+/* ───────── 9장 · 10장: 결과 상자 ───────── */
 .gs-result {
   display: flex;
   flex-direction: column;
@@ -827,6 +827,192 @@
   font-weight: 900;
 }
 
+/* ───────── 4장: 식품 목록, 이렇게 읽어요 ───────── */
+.gs--wide {
+  max-width: 24rem;
+}
+
+/* 실제 목록 줄 부품을 그대로 쓰되 좁은 상자에 들어가게 조금 줄인다 */
+.gs-listrow {
+  margin-top: 0.25rem;
+}
+
+.gs-listrow .food-list__content {
+  gap: 0.5rem;
+  padding: 0.625rem 0.125rem 0.625rem 0.75rem;
+}
+
+.gs-listrow .food-list__art {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.75rem;
+}
+
+.gs-listrow .food-list__art-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.gs-listrow .food-list__trash {
+  width: 2rem;
+  height: 2rem;
+}
+
+.gs-listrow .bubble {
+  font-size: 0.75rem;
+}
+
+/* 위험 표시: 목록의 "(!) 위험" 과 같은 모양의 정지 그림 (누르는 말풍선은 없다) */
+.gs-danger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.0625rem 0.5rem 0.0625rem 0.25rem;
+  border: 1px solid var(--danger);
+  border-radius: 999px;
+  color: var(--danger);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.gs-danger__icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* 번호 표시를 붙일 자리 */
+.gs-pos {
+  position: relative;
+}
+
+.gs-mk {
+  position: absolute;
+  top: -0.9375rem; /* 글자 위쪽 바깥에 붙어서 이름 · 캡슐 글자를 가리지 않는다 */
+  right: -0.625rem;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 1.375rem;
+  height: 1.375rem;
+  border-radius: 50%;
+  background: var(--btn);
+  color: var(--btn-fg);
+  font-size: 0.8125rem;
+  font-weight: 900;
+  line-height: 1;
+  animation: gs-pop 0.4s ease-out both;
+  animation-delay: calc(var(--n) * 0.7s);
+}
+
+.gs-mk--left {
+  top: -0.9375rem;
+  right: auto;
+  left: -0.5rem;
+}
+
+.gs-mk--inline {
+  position: static;
+  flex: none;
+}
+
+/* 아래 설명: 번호 순서대로 하나씩 나타나고, 줄 위의 번호도 같은 때에 나타난다 */
+.gs-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3125rem;
+  margin: 0.25rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gs-legend li {
+  display: grid;
+  grid-template-columns: 1.375rem 5.5rem 1fr; /* 번호 · 제목 · 내용 세 칸으로 나눠서 제목과 내용이 이어져 읽히지 않게 한다 */
+  align-items: center;
+  gap: 0.5rem;
+  line-height: 1.35;
+  word-break: keep-all;
+  animation: gs-rise 0.4s ease-out both;
+  animation-delay: calc(var(--n) * 0.7s);
+}
+
+/* 제목: 알약 모양 칩 (굵고 진하게) */
+.gs-legend__label {
+  justify-self: start;
+  padding: 0.1875rem 0.625rem;
+  border-radius: 999px;
+  background: var(--soft);
+  font-size: 0.9375rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+/* 내용: 보통 굵기, 제목보다 한 단계 옅게 */
+.gs-legend__detail {
+  min-width: 0; /* 칸 밖으로 넘치지 않고 줄을 바꾼다 */
+  color: color-mix(in srgb, var(--text) 82%, transparent);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+@keyframes gs-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* 상태 낱말(여유 · 주의 · 임박 · 지남): 낱말 앞에 상태 색의 작은 원 */
+.gs-sw--block {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-weight: 900;
+}
+
+/* 낱말은 중간에서 끊기지 않고, 낱말 사이는 간격으로 띄운다. 줄이 넘치면 낱말 단위로 아래로 내려간다 */
+.gs-sw__item {
+  display: inline-block;
+  margin-right: 0.75rem;
+  white-space: nowrap;
+}
+
+.gs-sw__item:last-child {
+  margin-right: 0;
+}
+
+.gs-sw__dot {
+  display: inline-block;
+  width: 0.625rem;
+  height: 0.625rem;
+  margin-right: 0.3125rem;
+  border-radius: 50%;
+  vertical-align: 0.0625rem;
+}
+
+/* 지남(검정): 어두운 바탕에서도 원이 보이게 옅은 회색 테두리 */
+.gs-sw__dot--black {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--text) 45%, transparent);
+}
+
+/* 식품 종류 낱말 앞의 그림 */
+.gs-cw__icon {
+  width: 1.125rem;
+  height: 1.125rem;
+  margin-right: 0.1875rem;
+  vertical-align: -0.25rem;
+}
+
+/* 설명 글 안의 빨간 느낌표(위험 표시) */
+.gs-inline-danger {
+  width: 1.125rem;
+  height: 1.125rem;
+  vertical-align: -0.25rem;
+}
+
 /* ───────── 공통 움직임 ───────── */
 @keyframes gs-rise {
   from {
@@ -863,6 +1049,8 @@
    이어지는 화면(.gs-seq)은 차례로 바뀌지 않으니 한꺼번에 위아래로 펼쳐 보인다 (D-188, D-205) */
 @media (prefers-reduced-motion: reduce) {
   .gs-ring,
+  .gs-mk,
+  .gs-legend li,
   .gs-row,
   .gs-bar__fill,
   .gs-sheet,
