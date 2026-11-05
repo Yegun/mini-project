@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { login, signup } from '../api/auth'
 import ErrorNotice from '../components/ErrorNotice'
-import { AuthArt, EyeIcon, LockIcon, MailIcon } from '../components/AuthIcons'
+import { AppIcon, AuthArt, EyeIcon, LockIcon, MailIcon } from '../components/AuthIcons'
 import FormField from '../components/FormField'
 import { checkSignup, signupRules, type AuthErrors } from '../lib/authForm'
 import '../components/Register.css'
@@ -64,12 +64,26 @@ export default function LoginPage({ onLoggedIn }: Props) {
 
   return (
     <main className="register auth">
-      {/* 위쪽 띠: 앱 이름 · 소개 문장 · 냉장고 그림. 제목(h1)은 예전과 같은 "로그인" / "새 계정 만들기"다.
-          로그인 화면에만 앱을 소개하는 아주 짧은 문장 한 줄이 있고, 가입 화면에는 더하지 않는다 (US-045, D-198) */}
+      {/* 위쪽 띠: 앱 이름 · 제목 · 소개 문장 · 냉장고 그림.
+          로그인 화면의 제목은 앱이 건네는 짧은 한마디이고, 아래 소개 문장이 그 설명이다 (US-045, D-198).
+          "로그인"은 눈에 안 보이게 제목 앞에 남겨 두어, 화면을 읽어 주는 프로그램이 이 화면의 이름을 알 수 있게 한다.
+          가입 화면의 제목은 예전과 같은 "새 계정 만들기"이고 소개 문장은 더하지 않는다 */}
       <header className="auth__hero">
         <div className="auth__hero-text">
-          <p className="auth__brand">냉장고 관리</p>
-          <h1 className="auth__title">{isSignup ? '새 계정 만들기' : '로그인'}</h1>
+          {/* 로그인 · 가입 화면 맨 위: 앱 아이콘과 "냉장고앱" */}
+          <p className="auth__logo">
+            <AppIcon className="auth__logo-icon" />
+            냉장고앱
+          </p>
+          {isSignup ? (
+            <h1 className="auth__title">새 계정 만들기</h1>
+          ) : (
+            <h1 className="auth__title auth__title--headline">
+              <span className="visually-hidden">로그인. </span>
+              <span className="auth__hl-key">유통기한,</span>
+              <span className="auth__hl-rest">제가 챙길게요</span>
+            </h1>
+          )}
           <p className={isSignup ? 'auth__sub' : 'auth__sub auth__sub--tagline'}>{isSignup ? '계정을 만들고 시작해 보세요' : (
               <>
                 <span className="auth__em auth__em--cool">냉장고</span> 앱과 함께{' '}

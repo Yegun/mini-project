@@ -63,3 +63,17 @@ export function AuthArt({ className }: IconProps) {
     </svg>
   )
 }
+
+// 로그인 화면 위쪽의 앱 아이콘: 둥근 흰 바탕 위의 작은 냉장고. 그림(AuthArt)과 같은 색을 쓴다. 장식이라 스크린 리더는 건너뛰고 옆의 "냉장고앱" 글자가 읽힌다.
+export function AppIcon({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 36 36" aria-hidden="true" focusable="false">
+      <rect x="1" y="1" width="34" height="34" rx="10" fill="#fff" />
+      <rect x="10.5" y="6" width="15" height="24" rx="4" fill="#eaf3fb" stroke="#b7cadb" strokeWidth="1.6" />
+      <path d="M10.5 15.5h15" stroke="#b7cadb" strokeWidth="1.6" />
+      <rect x="13" y="9" width="1.8" height="4" rx="0.9" fill="#8fa7bd" />
+      <rect x="13" y="18.5" width="1.8" height="7" rx="0.9" fill="#8fa7bd" />
+      <circle cx="21.5" cy="10" r="1.3" fill="#4aa3df" />
+    </svg>
+  )
+}

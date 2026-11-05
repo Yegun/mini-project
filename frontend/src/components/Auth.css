@@ -48,18 +48,21 @@
   max-width: calc(100% - 7rem);
 }
 
-.auth__brand {
-  display: inline-block;
-  margin: 0 0 0.5rem;
-  padding: 0.125rem 0.625rem;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.6);
-  font-size: 0.8125rem;
-  font-weight: 800;
+/* 로그인 · 가입 화면 맨 위의 앱 아이콘과 "냉장고앱" */
+.auth__logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.625rem;
+  font-size: 1.0625rem;
+  font-weight: 900;
 }
 
-:root[data-tone='dark'] .auth__brand {
-  background: rgba(255, 255, 255, 0.18);
+.auth__logo-icon {
+  flex: none;
+  width: 2.25rem;
+  height: 2.25rem;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.18));
 }
 
 .auth__title {
@@ -68,6 +71,28 @@
   font-weight: 900;
   line-height: 1.2;
   word-break: keep-all;
+}
+
+/* 로그인 화면의 제목: 눈에 확 들어오는 짧은 한마디("유통기한, 제가 챙길게요"). 두 줄로 보인다 */
+.auth__title--headline {
+  font-size: 1.75rem;
+  line-height: 1.25;
+}
+
+/* 첫 줄 "유통기한,": 가장 크고 다른 색(따뜻한 주황빛)으로 눈에 띄게. 밝은색에서는 띠가 밝아서 어둡게, 어두운색에서는 밝게 한다 */
+.auth__hl-key {
+  display: block;
+  color: #c2410c;
+}
+
+:root[data-tone='dark'] .auth__hl-key {
+  color: #ffb27a;
+}
+
+/* 둘째 줄 "제가 챙길게요": 첫 줄보다 조금 작게 */
+.auth__hl-rest {
+  display: block;
+  font-size: 1.4375rem;
 }
 
 .auth__sub {

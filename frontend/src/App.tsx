@@ -256,6 +256,8 @@ function App() {
       {/* 전체 달력은 홈에서 여는 달력이라 로그아웃 버튼을 따로 두지 않는다 (13.2 의 2번) */}
       {screen.name !== 'calendar' && (
         <LogoutBar
+          showLogo={activeTab !== null} // 앱 아이콘과 이름은 네 탭 화면(홈 · 기록 · 뭐 먹지? · 설정)에서만 보인다
+          onLogoClick={() => pressTab('home')} // 누르면 홈으로 (홈에서는 아무 일도 없다)
           onLoggedOut={() => {
             markLoggedOut() // 이 기기에 지금 로그인한 계정이 없다
             go({ name: 'login' })

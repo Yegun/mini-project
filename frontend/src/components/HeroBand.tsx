@@ -47,17 +47,34 @@ export default function HeroBand({ today, note, noteTone = 'ok' }: Props) {
       <svg className="hero__spark hero__spark--2" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
         <path d="M12 2.5l2 6.5 6.5 2-6.5 2-2 6.5-2-6.5-6.5-2 6.5-2z" fill="#fff" opacity="0.7" />
       </svg>
+      {/* 이 앱이 뭔지 한눈에: 그림에서 나오는 말풍선(가로 한 줄). 통통 튀어나왔다가 둥실거린다 */}
+      <p className="hero__bubble">
+        <span className="hero__bubble-key">유통기한,</span> 제가 챙길게요!
+      </p>
+      {/* 말하는 냉장고 그림 (임시 평면 그림). 눈 · 미소가 있어 말풍선의 주인으로 보인다 */}
       <svg className="hero__art" viewBox="0 0 120 104" aria-hidden="true" focusable="false">
-        <ellipse cx="62" cy="94" rx="46" ry="7" fill="rgba(0,0,0,.12)" />
-        <path d="M82 40c18 2 26 20 18 38-6 12-22 14-30 6-10-10-6-40 12-44z" fill="#7a4fa8" />
-        <path d="M80 38c-2-8 4-14 10-14 0 8-4 12-10 14z" fill="#3f9a4c" />
-        <path d="M34 36c20-8 38 6 36 30-2 22-22 28-34 18-14-12-14-40-2-48z" fill="#e0454a" />
-        <path d="M42 34c0-8 6-12 12-10-2 8-6 12-12 10z" fill="#3f9a4c" />
-        <circle cx="22" cy="74" r="12" fill="#43b05c" />
-        <circle cx="34" cy="68" r="10" fill="#56c46d" />
-        <circle cx="14" cy="64" r="8" fill="#3da556" />
-        <rect x="20" y="78" width="8" height="12" rx="3" fill="#8bc47a" />
-        <circle cx="104" cy="30" r="9" fill="#ffd23f" />
+        <ellipse cx="62" cy="95" rx="40" ry="6" fill="rgba(0,0,0,.14)" />
+        <rect x="34" y="10" width="54" height="82" rx="13" fill="#cdd8e3" />
+        <rect x="38" y="14" width="46" height="74" rx="10" fill="#f2f8fd" />
+        <path d="M38 40h46" stroke="#b7cadb" strokeWidth="2.4" />
+        <rect x="43" y="20" width="3.6" height="14" rx="1.8" fill="#8fa7bd" />
+        <rect x="43" y="47" width="3.6" height="22" rx="1.8" fill="#8fa7bd" />
+        <circle cx="56" cy="27" r="3.2" fill="#2b3a4a" />
+        <circle cx="72" cy="27" r="3.2" fill="#2b3a4a" />
+        <circle cx="57" cy="26" r="1" fill="#fff" />
+        <circle cx="73" cy="26" r="1" fill="#fff" />
+        <path d="M58 33q5 5 10 0" fill="none" stroke="#2b3a4a" strokeWidth="2" strokeLinecap="round" />
+        <circle cx="51" cy="32" r="2.6" fill="#f6a5a8" opacity="0.8" />
+        <circle cx="77" cy="32" r="2.6" fill="#f6a5a8" opacity="0.8" />
+        <path d="M61 62c0-4 6-4 6 0 0 3-3 5-3 7 0-2-3-4-3-7z" fill="#e0454a" />
+        <path d="M54 76h22" stroke="#b7cadb" strokeWidth="2.4" strokeLinecap="round" />
+        <rect x="86" y="46" width="6" height="22" rx="3" fill="#8fa7bd" />
+        <circle cx="98" cy="80" r="11" fill="#e0454a" />
+        <path d="M98 69c0-5 3-8 8-7-1 5-3 7-8 7z" fill="#3f9a4c" />
+        <circle cx="25" cy="80" r="9" fill="#43b05c" />
+        <circle cx="33" cy="76" r="7" fill="#56c46d" />
+        <rect x="23" y="84" width="6" height="8" rx="3" fill="#8bc47a" />
+        <path d="M16 30l1.2 3 3 1.2-3 1.2L16 38.4l-1.2-3-3-1.2 3-1.2z" fill="#fff" opacity="0.75" />
       </svg>
     </header>
   )
