@@ -29,6 +29,13 @@
   font-weight: 900; /* 제목은 본문보다 확실히 굵게 (예전 기본 700) */
 }
 
+/* 제목 왼쪽의 그림: 고른 등록 방법(사진으로 넣기 · 직접 넣기)의 그림 */
+.register__title-art {
+  flex: none;
+  width: 2.75rem;
+  height: auto;
+}
+
 .register__section,
 .register__form {
   display: flex;
