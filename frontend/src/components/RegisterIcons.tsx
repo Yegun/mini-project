@@ -40,14 +40,30 @@ export function PencilArt({ className }: IconProps) {
   )
 }
 
-// 사진을 고르기 전 빈 칸 그림: 사진 틀과 산 · 해
-export function PhotoArt({ className }: IconProps) {
+// 사진 올리기 칸의 그림 두 개: 영수증과 장바구니(어떤 사진을 넣으면 되는지 알려 준다, US-047, D-204).
+// 다른 그림들처럼 흰 종이 · 옅은 윤곽 · 바닥 그림자의 임시 평면 그림이라 밝은색 · 어두운색 · 포인트 색 모두에서 같게 보인다.
+export function ReceiptArt({ className }: IconProps) {
   return (
-    <svg className={className} viewBox="0 0 64 56" aria-hidden="true" focusable="false">
-      <rect x="6" y="8" width="52" height="38" rx="7" fill="#eaf3fb" stroke="#b7cadb" strokeWidth="2" strokeDasharray="4 3" />
-      <circle cx="21" cy="21" r="5" fill="#ffd23f" />
-      <path d="M10 42l15-15 9 9 8-8 12 14z" fill="#9ccf7a" />
-      <path d="M33 42l9-9 12 9z" fill="#56a26a" />
+    <svg className={className} viewBox="0 0 44 52" aria-hidden="true" focusable="false">
+      <ellipse cx="22" cy="49" rx="15" ry="2.6" fill="rgba(0,0,0,.12)" />
+      <path d="M7 3h30v41l-3.75-2.5L29.5 44l-3.75-2.5L22 44l-3.75-2.5L14.5 44l-3.75-2.5L7 44z" fill="#fff" stroke="#c7ced6" strokeWidth="1.5" strokeLinejoin="round" />
+      <path d="M13 12h18M13 19h13M13 26h18M13 33h9" stroke="#c7ced6" strokeWidth="2.2" strokeLinecap="round" />
+      <path d="M34 8l1.2 2.8 2.8 1.2-2.8 1.2L34 16l-1.2-2.8L30 12l2.8-1.2z" fill="#ffd23f" />
+    </svg>
+  )
+}
+
+export function BasketArt({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 44 52" aria-hidden="true" focusable="false">
+      <ellipse cx="22" cy="49" rx="17" ry="2.6" fill="rgba(0,0,0,.12)" />
+      {/* 손잡이는 채소 · 토마토 뒤에 둔다 */}
+      <path d="M11 24c0-14 22-14 22 0" fill="none" stroke="#c98a2e" strokeWidth="2.6" strokeLinecap="round" />
+      <circle cx="16" cy="22" r="6.5" fill="#43b05c" />
+      <circle cx="28" cy="23" r="6.5" fill="#e0454a" />
+      <path d="M28 16.5l-1.8-3.4M28 16.5l2.2-3" stroke="#3a8a46" strokeWidth="1.9" strokeLinecap="round" />
+      <path d="M4 26h36l-4.2 22H8.2z" fill="#f0b45c" stroke="#c98a2e" strokeWidth="1.5" strokeLinejoin="round" />
+      <path d="M5.6 33h32.8M6.8 40h30.4" stroke="#c98a2e" strokeWidth="1.5" strokeLinecap="round" />
     </svg>
   )
 }

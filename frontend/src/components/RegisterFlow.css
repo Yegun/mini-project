@@ -139,7 +139,7 @@
   align-items: center;
   gap: 0.5rem;
   padding: 1.25rem 1rem;
-  border: 2px dashed var(--line-strong);
+  border: 2px dashed var(--line-strong); /* 영수증 · 장바구니 칸과 사진 고르기 버튼을 모두 감싸는 점선 박스 */
   border-radius: 1.5rem;
   background: color-mix(in srgb, var(--acc) 8%, var(--surface));
   cursor: pointer;
@@ -155,9 +155,65 @@
   cursor: not-allowed;
 }
 
-.photo-drop__art {
-  width: 7rem;
+/* 사진 올리기 안내: 한 문장처럼 이어 보이지 않게 줄마다 점을 찍어 따로 읽히게 한다.
+   색 · 글자 크기 · 흐림은 .register-choice__hint 그대로다 (D-181, D-182, D-204) */
+.photo-hints {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  padding: 0 0.25rem;
+  list-style: none;
+  text-align: left;
+}
+
+.photo-hints li {
+  position: relative;
+  padding-left: 0.875rem;
+}
+
+.photo-hints li::before {
+  content: '·';
+  position: absolute;
+  left: 0.125rem;
+  font-weight: 900;
+}
+
+/* 어떤 사진을 넣는지 알려 주는 점선 칸 두 개(영수증 · 장바구니). 그림 아래에 설명이 있다 (US-047) */
+.photo-drop__tiles {
+  display: flex;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.photo-drop__tile {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 0;
+  padding: 0.875rem 0.5rem 0.75rem;
+  border: 2px dashed var(--line-strong);
+  border-radius: 1.125rem;
+  background: var(--surface);
+  text-align: center;
+}
+
+.photo-drop__tile-art {
+  width: 3.75rem;
   height: auto;
+}
+
+.photo-drop__tile-title {
+  font-size: 0.9375rem;
+  font-weight: 800;
+}
+
+.photo-drop__tile-sub {
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.3;
+  word-break: keep-all;
 }
 
 /* 고른 사진 미리보기: 칸 안에 꽉 차게 보이되 잘리지 않게 */

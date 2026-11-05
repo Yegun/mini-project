@@ -78,6 +78,38 @@
   word-break: keep-all;
 }
 
+/* 로그인 화면의 앱 소개 문장: 더 크고 진하고 또렷하게 (US-045, D-198) */
+.auth__sub--tagline {
+  font-size: 1.125rem;
+  font-weight: 800;
+  line-height: 1.4;
+  opacity: 1;
+  text-wrap: balance; /* 두 줄로 꺾일 때 한 단어만 따로 남지 않게 한다 */
+}
+
+/* 소개 문장 안의 핵심 단어는 뜻에 맞는 색으로 칠한다: 냉장고 = 시원한 청록, 신선식품 = 신선한 초록(앱의 '여유' 초록과 같다).
+   밝은색에서는 띠가 밝아서 색을 어둡게 눌러 글자가 읽히게 하고, 어두운색에서는 밝은 색을 쓴다 */
+.auth__em {
+  font-weight: 900; /* 색을 입힌 단어는 더 굵고 크게 해서 도드라지게 한다 */
+  font-size: 1.12em;
+}
+
+.auth__em--cool {
+  color: #0b6f86;
+}
+
+.auth__em--fresh {
+  color: #157a4d;
+}
+
+:root[data-tone='dark'] .auth__em--cool {
+  color: #5fd0e6;
+}
+
+:root[data-tone='dark'] .auth__em--fresh {
+  color: #3fe0a0;
+}
+
 .auth__art {
   position: relative;
   flex: none;

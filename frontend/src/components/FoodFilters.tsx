@@ -114,7 +114,7 @@ export default function FoodFilters({
 
       <FilterDropdown
         id="filter-storage"
-        label="보관"
+        label="보관 방법"
         allText="전체"
         value={storage}
         options={STORAGE_OPTIONS}
@@ -123,7 +123,7 @@ export default function FoodFilters({
       />
       <FilterDropdown
         id="filter-category"
-        label="종류"
+        label="식품 종류"
         allText="전체"
         value={category}
         options={CATEGORY_OPTIONS}

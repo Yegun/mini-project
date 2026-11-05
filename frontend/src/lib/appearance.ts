@@ -3,7 +3,7 @@
 // 기준 문서: SCREEN-SPEC 9.5, 9.6 · ARCHITECTURE 9절 36번. 값을 바꾸면 이 파일과 index.css 의 색 변수만 고친다.
 
 export type Tone = 'light' | 'dark' // 밝은색 / 어두운색
-export type Accent = 'butter' | 'carrot' | 'berry' // 버터 옐로 / 당근 오렌지 / 블루베리 보라
+export type Accent = 'butter' | 'carrot' | 'berry' | 'leaf' // 버터 옐로 / 당근 오렌지 / 블루베리 보라 / 상추 그린
 export type FontStep = 1 | 2 | 3 | 4 | 5 // 아주 작게 · 작게 · 보통 · 크게 · 아주 크게
 
 export const TONES: readonly { value: Tone; label: string }[] = [
@@ -16,6 +16,7 @@ export const ACCENTS: readonly { value: Accent; label: string; dots: readonly [s
   { value: 'butter', label: '버터 옐로', dots: ['#fdd664', '#ff9034'] },
   { value: 'carrot', label: '당근 오렌지', dots: ['#ffa95a', '#e8590c'] },
   { value: 'berry', label: '블루베리 보라', dots: ['#b9a5ff', '#ee6a92'] },
+  { value: 'leaf', label: '상추 그린', dots: ['#c3f58a', '#5fd135'] },
 ]
 
 export const FONT_STEPS: readonly { value: FontStep; label: string }[] = [
@@ -62,7 +63,7 @@ function isTone(v: string | null): v is Tone {
 }
 
 function isAccent(v: string | null): v is Accent {
-  return v === 'butter' || v === 'carrot' || v === 'berry'
+  return v === 'butter' || v === 'carrot' || v === 'berry' || v === 'leaf'
 }
 
 function toFontStep(v: string | null): FontStep | null {

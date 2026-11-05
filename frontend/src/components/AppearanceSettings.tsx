@@ -74,7 +74,7 @@ export default function AppearanceSettings() {
 
       <fieldset className="appearance__group">
         <legend className="appearance__legend">포인트 색</legend>
-        <div className="appearance__tiles appearance__tiles--3">
+        <div className="appearance__tiles appearance__tiles--2">
           {ACCENTS.map(({ value, label, dots }) => (
             <label key={value} className={tileClass(appearance.accent === value)}>
               <input

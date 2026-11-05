@@ -8,7 +8,9 @@ import '../components/Register.css'
 import '../components/Auth.css'
 
 interface Props {
-  onLoggedIn: () => void // 로그인 · 가입 성공 → 홈 (D-081)
+  // 로그인 · 가입 성공. 가입이면 사용 설명서, 로그인이면 홈으로 간다 (D-081, D-199, D-201).
+  // 서버에 "지금 누구냐"고 묻는 창구가 없어서 입력한 이메일을 함께 넘긴다 (설명서를 볼 차례인 계정인지 맞춰 보는 데 쓴다, D-206)
+  onLoggedIn: (info: { email: string; signup: boolean }) => void
 }
 
 type Mode = 'login' | 'signup'
@@ -50,7 +52,7 @@ export default function LoginPage({ onLoggedIn }: Props) {
     const res = mode === 'signup' ? await signup(email.trim(), password) : await login(email.trim(), password)
     lock.current = false
     if (res.status === 'ok') {
-      onLoggedIn()
+      onLoggedIn({ email: email.trim(), signup: mode === 'signup' })
       return
     }
     setBusy(false) // 입력값은 그대로 둔다
@@ -62,12 +64,18 @@ export default function LoginPage({ onLoggedIn }: Props) {
 
   return (
     <main className="register auth">
-      {/* 위쪽 띠: 앱 이름 · 인사 · 냉장고 그림. 제목(h1)은 예전과 같은 "로그인" / "새 계정 만들기"다 */}
+      {/* 위쪽 띠: 앱 이름 · 소개 문장 · 냉장고 그림. 제목(h1)은 예전과 같은 "로그인" / "새 계정 만들기"다.
+          로그인 화면에만 앱을 소개하는 아주 짧은 문장 한 줄이 있고, 가입 화면에는 더하지 않는다 (US-045, D-198) */}
       <header className="auth__hero">
         <div className="auth__hero-text">
           <p className="auth__brand">냉장고 관리</p>
           <h1 className="auth__title">{isSignup ? '새 계정 만들기' : '로그인'}</h1>
-          <p className="auth__sub">{isSignup ? '계정을 만들고 시작해 보세요' : '내 냉장고를 보러 가요'}</p>
+          <p className={isSignup ? 'auth__sub' : 'auth__sub auth__sub--tagline'}>{isSignup ? '계정을 만들고 시작해 보세요' : (
+              <>
+                <span className="auth__em auth__em--cool">냉장고</span> 앱과 함께{' '}
+                <span className="auth__em auth__em--fresh">신선식품</span>을 관리해 보세요
+              </>
+            )}</p>
         </div>
         <AuthArt className="auth__art" />
       </header>

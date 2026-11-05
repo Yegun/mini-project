@@ -45,6 +45,17 @@ export function AccountIcon({ className }: IconProps) {
   )
 }
 
+// 사용 설명서: 펼친 책
+export function GuideIcon({ className }: IconProps) {
+  return (
+    <svg className={className} {...SVG}>
+      <path d="M12 6.2C10.2 4.7 7.6 4.2 4 4.4v13.4c3.6-.2 6.2.3 8 1.8 1.8-1.5 4.4-2 8-1.8V4.4c-3.6-.2-6.2.3-8 1.8z" fill="#ffd9a0" stroke="#e0a050" strokeWidth="1.1" strokeLinejoin="round" />
+      <path d="M12 6.2v13.4" stroke="#e0a050" strokeWidth="1.1" />
+      <path d="M6.4 8.4c1.2 0 2.4.2 3.4.7M6.4 11.4c1.2 0 2.4.2 3.4.7M17.6 8.4c-1.2 0-2.4.2-3.4.7M17.6 11.4c-1.2 0-2.4.2-3.4.7" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" fill="none" />
+    </svg>
+  )
+}
+
 // 탈퇴 버튼 앞: 문을 나가는 화살표
 export function ExitIcon({ className }: IconProps) {
   return (

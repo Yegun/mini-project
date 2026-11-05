@@ -31,6 +31,7 @@
   bottom: calc(var(--tabs-h) + env(safe-area-inset-bottom));
   padding: 0.75rem 0 1rem;
   background: linear-gradient(to bottom, transparent, var(--bg) 30%);
+  z-index: 2; /* 막대 달력의 오늘 세로 점선(z-index 1)이 버튼 글자를 가리지 않게 점선보다 위에 둔다. 아래 탭(10)보다는 아래다 */
 }
 
 .home__add-button {

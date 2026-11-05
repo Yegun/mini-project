@@ -8,6 +8,7 @@ import PhotoReview from '../components/PhotoReview'
 import PhotoUpload from '../components/PhotoUpload'
 import RuleRegisterForm from '../components/RuleRegisterForm'
 import RegisterChoice from '../components/RegisterChoice'
+import { CameraArt, PencilArt } from '../components/RegisterIcons'
 import RuleSearch from '../components/RuleSearch'
 import ThinkingScreen from '../components/ThinkingScreen'
 import {
@@ -218,13 +219,24 @@ export default function RegisterPage({ today, onBack, onDone, onDirtyChange }: P
   // 사진을 읽는 동안에는 확인 중 화면이 화면 전체를 쓴다 (SCREEN-SPEC 15절). 끝나면 확인 화면, 실패하면 이 화면에 오류가 보인다
   if (analyzing) return <ThinkingScreen message="지금 사진을 분석하고 있어요" onCancel={cancelAnalysis} />
 
+  // 제목: 등록 선택 화면은 "냉장고에 넣기", 고른 방법의 화면은 그 버튼의 이름과 그림을 제목 왼쪽에 보인다.
+  // 사진 올리기와 확인 화면은 '사진으로 넣기', 이름 검색과 입력 화면은 '직접 넣기'다.
+  const viaPhoto = step === 'photo' || step === 'review'
+  const title = step === 'choose' ? '냉장고에 넣기' : viaPhoto ? '사진으로 넣기' : '직접 넣기'
+
   return (
     <main className="register">
       <header className="register__header">
         <button type="button" className="register__back" aria-label="뒤로 가기" onClick={onBack}>
           ‹
         </button>
-        <h1 className="register__title">냉장고에 넣기</h1>
+        {step !== 'choose' &&
+          (viaPhoto ? (
+            <CameraArt className="register__title-art" />
+          ) : (
+            <PencilArt className="register__title-art" />
+          ))}
+        <h1 className="register__title">{title}</h1>
       </header>
 
       {saveError && <ErrorNotice message={saveError} />}

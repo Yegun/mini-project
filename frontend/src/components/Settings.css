@@ -45,6 +45,40 @@
   transform: translateY(0.2rem) rotate(225deg);
 }
 
+/* 사용 설명서 다시 보기: 개인정보 안내와 같은 칸 모양의 버튼. 오른쪽 끝의 화살표(›)는 누르면 다른 화면이 열린다는 뜻이다 */
+.settings__guide {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  width: 100%;
+  min-height: 3.5rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 1.25rem;
+  background: var(--surface);
+  color: inherit;
+  font: inherit;
+  font-size: 1.125rem;
+  font-weight: 900;
+  text-align: left;
+  cursor: pointer;
+}
+
+.settings__guide:focus-visible {
+  outline: 3px solid var(--btn);
+  outline-offset: -3px;
+}
+
+.settings__guide::after {
+  content: '';
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-left: auto;
+  border-top: 2px solid var(--muted);
+  border-right: 2px solid var(--muted);
+  transform: rotate(45deg);
+}
+
 /* 안내 항목: 초록 체크가 붙은 줄 */
 .settings__list {
   display: flex;
