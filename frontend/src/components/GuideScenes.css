@@ -1,0 +1,904 @@
+/* 사용 설명서 장면 그림 (components/GuideScenes.tsx). 색은 앱의 변수(index.css)를 따라 밝은색 · 어두운색 · 포인트 색에 맞게 바뀐다.
+   움직임은 눌러야 할 곳의 동그라미, 장면 안의 막대 · 줄 · 창이 나타나는 것, 이어지는 화면을 차례로 보여 주는 칸(.gs-seq), 1장의 냉장고 문이다.
+   "움직임 줄이기"를 켜면 모두 멈추고, 이어지는 화면은 한꺼번에 위아래로 펼쳐 보인다 (D-188, D-205).
+   글자는 잘 읽히게 크고 굵게 한다. */
+
+/* ───────── 바깥 상자 ───────── */
+.gs {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  width: 100%;
+  max-width: 21rem;
+  min-height: 15.5rem;
+  padding: 1.75rem 0.875rem 0.875rem; /* 위쪽을 넉넉히 비워 오른쪽 위 "예시" 표시가 내용과 겹치지 않게 한다 */
+  border: 1px solid var(--line);
+  border-radius: 1.5rem;
+  background: var(--surface);
+  box-sizing: border-box;
+  text-align: left;
+}
+
+.gs__tag {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.75rem;
+  z-index: 1;
+  padding: 0.0625rem 0.5rem;
+  border-radius: 999px;
+  background: var(--soft);
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.gs__cap {
+  margin: 0;
+  color: color-mix(in srgb, var(--text) 78%, transparent);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  line-height: 1.4;
+  word-break: keep-all;
+}
+
+/* 이어지는 화면의 차례 글: ① ② ③ */
+.gs__step {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 900;
+  line-height: 1.4;
+  word-break: keep-all;
+}
+
+.gs-dot {
+  flex: none;
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 50%;
+}
+
+/* ───────── 눌러야 할 곳을 가리키는 동그라미 ───────── */
+.gs-ring {
+  position: absolute;
+  width: 2.75rem;
+  height: 2.75rem;
+  margin: -1.375rem 0 0 -1.375rem; /* 놓은 자리가 동그라미의 가운데가 되게 */
+  border: 3px solid var(--text);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--text) 18%, transparent);
+  pointer-events: none;
+  animation: gs-ring 1.6s ease-in-out infinite;
+}
+
+@keyframes gs-ring {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+/* ───────── 이어지는 화면을 차례로 보여 주는 칸 ───────── */
+.gs-seq {
+  position: relative;
+  min-height: 14rem;
+}
+
+.gs-seq--3 {
+  min-height: 15rem;
+}
+
+.gs-seq--tall {
+  min-height: 18rem; /* 6장 3단계의 목록 창이 길어서 바깥 상자 밖으로 나가지 않게 */
+}
+
+.gs-seq__panel {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  opacity: 0;
+  animation-duration: 10.5s;
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-in-out;
+}
+
+.gs-seq--2 .gs-seq__panel {
+  animation-duration: 7s;
+}
+
+.gs-seq--3 .gs-seq__panel:nth-child(1) {
+  animation-name: gs-seq3-a;
+}
+.gs-seq--3 .gs-seq__panel:nth-child(2) {
+  animation-name: gs-seq3-b;
+}
+.gs-seq--3 .gs-seq__panel:nth-child(3) {
+  animation-name: gs-seq3-c;
+}
+.gs-seq--2 .gs-seq__panel:nth-child(1) {
+  animation-name: gs-seq2-a;
+}
+.gs-seq--2 .gs-seq__panel:nth-child(2) {
+  animation-name: gs-seq2-b;
+}
+
+@keyframes gs-seq3-a {
+  0%,
+  28% {
+    opacity: 1;
+  }
+  34%,
+  96% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes gs-seq3-b {
+  0%,
+  29% {
+    opacity: 0;
+  }
+  36%,
+  62% {
+    opacity: 1;
+  }
+  68%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes gs-seq3-c {
+  0%,
+  63% {
+    opacity: 0;
+  }
+  70%,
+  94% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes gs-seq2-a {
+  0%,
+  44% {
+    opacity: 1;
+  }
+  52%,
+  96% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes gs-seq2-b {
+  0%,
+  45% {
+    opacity: 0;
+  }
+  54%,
+  92% {
+    opacity: 1;
+  }
+  98%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* ───────── 1장: 앱 소개 — 문이 열렸다 닫히는 냉장고 ───────── */
+.gs-intro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 21rem;
+}
+
+/* 냉장고: 몸통(SVG)은 그대로 두고 문만 입체로 돌린다. 문 자리는 SVG 안쪽 칸(x 26~94, y 12~116 / 120 x 136)과 같다.
+   문 · 손잡이는 그라데이션 없이 단색이다. 입체감은 문의 두께와 문이 돌 때의 원근으로 나타낸다 */
+.gs-fridge {
+  position: relative;
+  width: 10.5rem;
+  aspect-ratio: 120 / 136;
+  perspective: 38rem;
+  perspective-origin: 38% 50%;
+}
+
+.gs-fridge__body {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.gs-fridge__door {
+  position: absolute;
+  top: 8.82%;
+  left: 21.67%;
+  width: 56.67%;
+  height: 76.47%;
+  transform-style: preserve-3d;
+  transform-origin: left center; /* 왼쪽 경첩 */
+  animation: gs-door 5s ease-in-out infinite;
+}
+
+/* 문 앞면 (단색) */
+.gs-fridge__front {
+  position: absolute;
+  inset: 0;
+  border: 2px solid #b7cadb;
+  border-radius: 0.5rem;
+  background: #dbe8f4;
+  box-sizing: border-box;
+}
+
+.gs-fridge__front::before {
+  content: '';
+  position: absolute;
+  top: 32.7%;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #b7cadb;
+}
+
+/* 손잡이: 문 앞면에 붙은 납작한 단색 막대 (원래 자리: 문 오른쪽 안쪽). 문에 붙어서 문과 같이 움직인다 */
+.gs-fridge__handle {
+  position: absolute;
+  right: 6%;
+  width: 6.5%;
+  border-radius: 999px;
+  background: #8fa7bd;
+}
+
+.gs-fridge__handle--top {
+  top: 11.5%;
+  height: 15.4%;
+}
+
+.gs-fridge__handle--bottom {
+  top: 44%;
+  height: 28.8%;
+}
+
+/* 문 옆면(두께, 단색): 열릴 때 문의 두께가 보인다 */
+.gs-fridge__edge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 0.625rem;
+  height: 100%;
+  border-radius: 0 0.5rem 0.5rem 0;
+  background: #9fb2c4;
+  transform-origin: right center;
+  transform: rotateY(-90deg);
+}
+
+/* 냉기: 문이 열리는 때(5초 중 약 25% ~ 80%)에 안쪽 아래에서 하얗게 흘러나와 아래로 퍼지고 사라진다 */
+.gs-fridge__mist {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.gs-fridge__mist span {
+  position: absolute;
+  bottom: 18%;
+  left: calc(24% + var(--i) * 8.5%);
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.95), rgba(165, 218, 246, 0.55) 55%, transparent 74%);
+  filter: blur(5px);
+  opacity: 0;
+  animation: gs-mist 5s ease-out infinite;
+  animation-delay: calc(var(--i) * 0.14s);
+}
+
+@keyframes gs-mist {
+  0%,
+  26% {
+    opacity: 0;
+    transform: translate(0, -3rem) scale(0.45);
+  }
+  42% {
+    opacity: 0.9;
+  }
+  64% {
+    opacity: 0.65;
+    transform: translate(calc(var(--i) * -0.45rem), 1.4rem) scale(1.15);
+  }
+  84%,
+  100% {
+    opacity: 0;
+    transform: translate(calc(var(--i) * -0.9rem), 3.2rem) scale(1.7);
+  }
+}
+
+@keyframes gs-door {
+  0%,
+  12% {
+    transform: rotateY(0deg);
+  }
+  32%,
+  62% {
+    transform: rotateY(-110deg);
+  }
+  82%,
+  100% {
+    transform: rotateY(0deg);
+  }
+}
+
+.gs-intro__brand {
+  margin: 0;
+  padding: 0.3125rem 1rem;
+  border-radius: 999px;
+  background: var(--soft);
+  font-size: 1.0625rem;
+  font-weight: 900;
+}
+
+/* ───────── 2장: 등록 방법 카드 · 사진 고르는 칸 · AI 분석 화면 ───────── */
+.gs-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0.875rem;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: var(--surface);
+  font-size: 1.0625rem;
+}
+
+.gs-card b {
+  font-weight: 900;
+}
+
+.gs-card--hot {
+  border-color: var(--acc);
+  background: color-mix(in srgb, var(--acc) 14%, var(--surface));
+}
+
+.gs-card__art {
+  flex: none;
+  width: 2.75rem;
+  height: 2.5rem;
+}
+
+.gs-card__art--blank {
+  border-radius: 0.625rem;
+  background: var(--soft);
+}
+
+.gs-drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem;
+  border: 2px dashed var(--line-strong);
+  border-radius: 1rem;
+}
+
+.gs-drop__tiles {
+  display: flex;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.gs-tile {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.125rem;
+  padding: 0.5rem 0.25rem;
+  border: 2px dashed var(--line-strong);
+  border-radius: 0.875rem;
+  background: var(--surface);
+  font-size: 0.9375rem;
+  font-weight: 800;
+}
+
+.gs-tile__art {
+  width: 2.5rem;
+  height: auto;
+}
+
+/* 사진 분석 중 화면: 빙글빙글 도는 동그라미와 안내 */
+.gs-think {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.5rem 0.75rem;
+  border-radius: 1rem;
+  background: var(--soft);
+  text-align: center;
+}
+
+.gs-think b {
+  font-size: 1.0625rem;
+  font-weight: 900;
+}
+
+.gs-think small {
+  color: color-mix(in srgb, var(--text) 78%, transparent);
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.gs-spin {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 4px solid var(--line-strong);
+  border-top-color: var(--btn);
+  border-radius: 50%;
+  animation: gs-turn 1s linear infinite;
+}
+
+@keyframes gs-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ───────── 줄(3장 · 7장) ───────── */
+.gs-row {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.875rem;
+  background: var(--soft);
+  font-size: 1.0625rem;
+  animation: gs-rise 0.5s ease-out both;
+  animation-delay: calc(var(--i, 0) * 0.2s);
+}
+
+.gs-row b {
+  flex: 1;
+  font-weight: 900;
+}
+
+.gs-row--off {
+  opacity: 0.55;
+}
+
+.gs-row__note {
+  color: color-mix(in srgb, var(--text) 72%, transparent);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.gs-check {
+  flex: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid var(--line-strong);
+  border-radius: 0.375rem;
+}
+
+.gs-check--on {
+  border-color: var(--btn);
+  background: var(--btn);
+}
+
+/* ───────── 버튼 모양 ───────── */
+.gs-btnwrap {
+  position: relative;
+  margin-top: 0.25rem;
+}
+
+.gs-btnwrap--inline {
+  display: inline-block;
+  margin-top: 0;
+}
+
+.gs-btn {
+  display: block;
+  padding: 0.75rem;
+  border-radius: 999px;
+  background: var(--btn);
+  color: var(--btn-fg);
+  font-size: 1.0625rem;
+  font-weight: 900;
+  text-align: center;
+}
+
+.gs-btn--small {
+  padding: 0.4375rem 1rem;
+  font-size: 0.9375rem;
+}
+
+.gs-btn--dim {
+  opacity: 0.55;
+}
+
+/* ───────── 4장: 막대 달력 · 5장: 달력 머리 ───────── */
+.gs-cal__head {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 1.0625rem;
+  font-weight: 900;
+}
+
+.gs-cal__head--week {
+  justify-content: space-between;
+}
+
+.gs-chev {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 1.875rem;
+  height: 1.875rem;
+  border-radius: 50%;
+  background: var(--soft);
+  font-size: 1.25rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.gs-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9375rem;
+  font-weight: 800;
+}
+
+.gs-bar__name {
+  flex: none;
+  width: 3.25rem;
+}
+
+.gs-bar__lane {
+  display: flex;
+  flex: 1;
+  padding: 0.1875rem 0;
+  border-radius: 0.5rem;
+  background: var(--soft);
+}
+
+.gs-bar__fill {
+  display: block;
+  height: 0.875rem;
+  border-radius: 0.4375rem;
+  transform-origin: left center;
+  animation: gs-grow 0.7s ease-out both;
+  animation-delay: calc(var(--i, 0) * 0.2s);
+}
+
+.gs-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin-top: 0.25rem;
+}
+
+.gs-pills--toggle {
+  margin-top: 0;
+}
+
+.gs-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3125rem;
+  padding: 0.3125rem 0.75rem;
+  border-radius: 999px;
+  background: var(--soft);
+  font-size: 0.9375rem;
+  font-weight: 800;
+}
+
+.gs-pill--on {
+  background: var(--btn);
+  color: var(--btn-fg);
+  font-weight: 900;
+}
+
+/* ───────── 5장 · 6장: 한 달 달력 ───────── */
+.gs-month {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.1875rem;
+}
+
+.gs-month__dow {
+  color: color-mix(in srgb, var(--text) 72%, transparent);
+  font-size: 0.8125rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.gs-month__day {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.125rem;
+  min-height: 2.5rem;
+  padding: 0.1875rem 0;
+  border-radius: 0.5rem;
+  background: var(--soft);
+}
+
+.gs-month__day i {
+  font-size: 0.875rem;
+  font-style: normal;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.gs-month__day--today i {
+  min-width: 1.375rem;
+  border-radius: 999px;
+  background: var(--btn);
+  color: var(--btn-fg);
+  text-align: center;
+}
+
+/* 날짜 칸에는 상태 색 점만 보인다. 이름은 날짜를 눌렀을 때 뜨는 창(6장)에서 보인다 */
+.gs-month__day em {
+  display: flex;
+  justify-content: center;
+  font-size: 0;
+  line-height: 0;
+}
+
+.gs-month__day em .gs-dot {
+  width: 0.5625rem;
+  height: 0.5625rem;
+}
+
+/* ───────── 6장: 날짜를 누르면 뜨는 창 ───────── */
+.gs-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  margin-top: 0.25rem;
+  padding: 0.625rem;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: var(--bg);
+  animation: gs-rise 0.6s ease-out 0.8s both;
+}
+
+.gs-sheet--still {
+  margin-top: 0;
+  animation: none;
+}
+
+.gs-sheet__title {
+  font-size: 1.125rem;
+  font-weight: 900;
+}
+
+/* 창 위쪽의 손잡이. 위로 끌어올릴 수 있다는 뜻으로 위로 오르내린다 */
+.gs-grab {
+  align-self: center;
+  width: 2.75rem;
+  height: 0.3125rem;
+  border-radius: 999px;
+  background: var(--line-strong);
+}
+
+.gs-grab--up {
+  animation: gs-lift 1.1s ease-in-out infinite;
+}
+
+@keyframes gs-lift {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-0.3125rem);
+  }
+}
+
+.gs-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.75rem;
+  background: var(--soft);
+  font-size: 1rem;
+}
+
+.gs-item b {
+  flex: 1;
+  font-weight: 900;
+}
+
+/* ───────── 7장: 휴지통과 선택창 ───────── */
+.gs-trash {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.625rem;
+  background: var(--surface);
+}
+
+.gs-trash__icon {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+.gs-opt {
+  padding: 0.5625rem 0.75rem;
+  border-radius: 0.75rem;
+  background: var(--soft);
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.gs-opt small {
+  margin-left: 0.25rem;
+  color: color-mix(in srgb, var(--text) 72%, transparent);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+/* ───────── 8장 · 9장: 결과 상자 ───────── */
+.gs-result {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  margin-top: 0.25rem;
+  padding: 0.75rem;
+  border-radius: 0.875rem;
+  background: var(--soft);
+  font-size: 1.0625rem;
+  animation: gs-fade 0.6s ease-out 1s both;
+}
+
+.gs-result b {
+  font-weight: 900;
+}
+
+.gs-result small {
+  color: color-mix(in srgb, var(--text) 78%, transparent);
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.5;
+  word-break: keep-all;
+}
+
+.gs-result--advice small {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.gs-advice__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 1.0625rem;
+}
+
+.gs-advice__head b {
+  font-weight: 900;
+}
+
+.gs-counts {
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.9375rem;
+  font-weight: 800;
+  animation: gs-fade 0.6s ease-out 1.4s both;
+}
+
+.gs-counts span {
+  flex: 1;
+  padding: 0.5rem;
+  border-radius: 0.75rem;
+  background: var(--soft);
+  text-align: center;
+}
+
+.gs-counts b {
+  display: block;
+  font-size: 1.1875rem;
+  font-weight: 900;
+}
+
+/* ───────── 공통 움직임 ───────── */
+@keyframes gs-rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes gs-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes gs-grow {
+  from {
+    opacity: 0;
+    transform: scaleX(0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* "움직임 줄이기"를 켜면 모두 멈춘 그림으로 보인다. 냉장고는 문이 열린 모습으로 멈추고, 동그라미는 가리키는 자리를 알 수 있게 또렷하게 둔다.
+   이어지는 화면(.gs-seq)은 차례로 바뀌지 않으니 한꺼번에 위아래로 펼쳐 보인다 (D-188, D-205) */
+@media (prefers-reduced-motion: reduce) {
+  .gs-ring,
+  .gs-row,
+  .gs-bar__fill,
+  .gs-sheet,
+  .gs-result,
+  .gs-counts,
+  .gs-grab--up,
+  .gs-spin,
+  .gs-seq__panel,
+  .gs-fridge__door {
+    animation: none;
+  }
+
+  .gs-ring {
+    opacity: 1;
+  }
+
+  .gs-fridge__door {
+    transform: rotateY(-110deg);
+  }
+
+  .gs-fridge__mist span {
+    animation: none;
+    opacity: 0.5;
+    transform: translate(calc(var(--i) * -0.45rem), 1.4rem) scale(1.15);
+  }
+
+  .gs-seq,
+  .gs-seq--3 {
+    display: flex;
+    flex-direction: column;
+    gap: 0.875rem;
+    min-height: 0;
+  }
+
+  .gs-seq__panel {
+    position: static;
+    opacity: 1;
+  }
+}

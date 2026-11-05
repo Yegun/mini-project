@@ -7,7 +7,9 @@ import BottomTabs, { type Tab } from './components/BottomTabs'
 import ConfirmDialog from './components/ConfirmDialog'
 import ErrorNotice from './components/ErrorNotice'
 import FullCalendar from './components/FullCalendar'
+import Guide from './components/Guide'
 import LogoutBar from './components/LogoutBar'
+import { finishGuide, forgetAccount, markLoggedIn, markLoggedOut, markSignedUp, shouldShowGuide } from './lib/guide'
 import FoodDetailPage from './pages/FoodDetailPage'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
@@ -24,6 +26,7 @@ import type { RecordsData } from './types/records'
 // 등록 · 상세는 하위 화면이라 어느 탭에서 왔는지(from)를 기억해 뒤로 가면 그 화면으로 간다 (D-085).
 type Screen =
   | { name: 'login' }
+  | { name: 'guide'; again: boolean } // 사용 설명서. 아래 탭과 로그아웃 버튼이 없는 전체 화면. again: 설정에서 다시 보는 중 (D-199)
   | { name: 'home'; initial?: FoodListResponse }
   | { name: 'records'; initial?: RecordsData }
   | { name: 'recommend' }
@@ -51,6 +54,9 @@ function apiMessageOf(e: unknown): string | undefined {
 function App() {
   // 앱을 켜면 홈 목록을 불러 보고, 로그인이 필요하면(401 login_required) 로그인 화면으로 간다 (API-SPEC 2-1)
   const [screen, setScreen] = useState<Screen>({ name: 'home' })
+  // 가입한 뒤 설명서를 닫지 않고 나갔다 돌아온 기기에서는, 로그인이 살아 있는지 확인될 때까지 화면을 비워 두었다가 설명서를 보인다 (D-206).
+  // 로그인이 끝났으면(401) 아래 로그인 필요 처리가 로그인 화면으로 보낸다
+  const [checkingGuide, setCheckingGuide] = useState(() => shouldShowGuide())
   const [tabError, setTabError] = useState<{ message?: string } | null>(null)
   const [tabBusy, setTabBusy] = useState(false)
   const [leavingTo, setLeavingTo] = useState<Tab | null>(null) // 입력 중 이동 확인 창이 열려 있으면 갈 탭
@@ -76,6 +82,25 @@ function App() {
     })
     return () => setLoginRequiredListener(null)
   }, [])
+
+  // 앱을 켰을 때 이 기기에 설명서를 보여 줄 차례가 남아 있으면, 홈 목록을 한 번 불러 로그인이 살아 있는지 보고 설명서를 연다 (D-206)
+  useEffect(() => {
+    if (!checkingGuide) return
+    let alive = true
+    getFoods()
+      .then(() => {
+        if (alive) setScreen({ name: 'guide', again: false })
+      })
+      .catch(() => {
+        // 로그인이 끝났으면 위 리스너가 로그인 화면으로 보내고, 그 밖의 실패는 홈이 보인다
+      })
+      .finally(() => {
+        if (alive) setCheckingGuide(false)
+      })
+    return () => {
+      alive = false
+    }
+  }, [checkingGuide])
 
   // 탭 화면(홈 · 기록 · 음식추천 · 설정)에서만 그 탭을 강조한다. 등록 · 상세에서는 강조하지 않는다 (사용자 결정)
   const activeTab: Tab | null =
@@ -134,8 +159,40 @@ function App() {
     void loadThenGo(async () => ({ name: 'register', today: (await getFoods()).today, from }))
   }
 
+  // 설명서를 볼 차례인지 확인하는 동안(로그인이 살아 있는지 보는 짧은 순간)은 홈이 깜빡이지 않게 비워 둔다
+  if (checkingGuide) return null
+
   if (screen.name === 'login') {
-    return <LoginPage onLoggedIn={() => go({ name: 'home' })} />
+    return (
+      <LoginPage
+        onLoggedIn={({ email, signup }) => {
+          if (signup) {
+            // 새 계정을 만든 직후: 설명서를 보여 줄 차례를 이 기기에 남기고 설명서를 먼저 보인다 (D-199, D-206)
+            markSignedUp(email)
+            go({ name: 'guide', again: false })
+            return
+          }
+          // 이미 있는 계정: 설명서 없이 홈으로. 단 이 기기에 이 계정의 '차례'가 남아 있으면(가입 직후 설명서를 닫지 않고 나간 경우) 설명서가 먼저다
+          markLoggedIn(email)
+          go(shouldShowGuide() ? { name: 'guide', again: false } : { name: 'home' })
+        }}
+      />
+    )
+  }
+
+  // 사용 설명서: 아래 탭 · 로그아웃 버튼이 없는 전체 화면 (SCREEN-SPEC 17.2).
+  // 가입 직후에는 닫으면(끝까지 봄 · 건너뜀) 차례를 지우고 홈으로, 설정에서 다시 볼 때는 차례를 건드리지 않고 설정으로 돌아간다 (D-206)
+  if (screen.name === 'guide') {
+    const again = screen.again
+    return (
+      <Guide
+        again={again}
+        onClose={() => {
+          if (!again) finishGuide()
+          go(again ? { name: 'settings' } : { name: 'home' })
+        }}
+      />
+    )
   }
 
   let page
@@ -174,7 +231,15 @@ function App() {
   } else if (screen.name === 'recommend') {
     page = <RecommendPage onAddFood={() => addFoodFrom('recommend')} onDirtyChange={setDirty} />
   } else if (screen.name === 'settings') {
-    page = <SettingsPage onWithdrawn={() => go({ name: 'login' })} />
+    page = (
+      <SettingsPage
+        onWithdrawn={() => {
+          forgetAccount() // 탈퇴하면 이 기기에 남은 계정 흔적(설명서 차례 포함)도 지운다
+          go({ name: 'login' })
+        }}
+        onOpenGuide={() => go({ name: 'guide', again: true })}
+      />
+    )
   } else {
     page = (
       <HomePage
@@ -189,7 +254,14 @@ function App() {
   return (
     <div className="app--tabs">
       {/* 전체 달력은 홈에서 여는 달력이라 로그아웃 버튼을 따로 두지 않는다 (13.2 의 2번) */}
-      {screen.name !== 'calendar' && <LogoutBar onLoggedOut={() => go({ name: 'login' })} />}
+      {screen.name !== 'calendar' && (
+        <LogoutBar
+          onLoggedOut={() => {
+            markLoggedOut() // 이 기기에 지금 로그인한 계정이 없다
+            go({ name: 'login' })
+          }}
+        />
+      )}
       {tabError && (
         <div className="app__notice">
           <ErrorNotice message={tabError.message} />
